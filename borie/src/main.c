@@ -9,14 +9,13 @@
 
 /* How to use the program in command line. */
 void usage(int argc, char* argv[]){
-  fprintf(stderr, "Usage: ./%s [-s random_seed] file_name\n", argv[0]);
+  fprintf(stderr, "Usage: ./%s [-s random_seed] < file_graph.gr > output.ost\n", argv[0]);
 }
 
 
 int main(int argc, char* argv[]){
   int opt;
   int seed = 0;
-  char* path_file_output;
 
   while ((opt = getopt(argc, argv, "s:")) != -1){
     switch (opt){
@@ -30,18 +29,11 @@ int main(int argc, char* argv[]){
     }
   }
 
-  if (optind >= argc) {
-    fprintf(stderr, "Expected argument for graph file\n");
-    usage(argc, argv);
-    exit(EXIT_FAILURE);
-  } 
-  path_file_output = argv[optind];
-
   /* Initilization of the seed */
   srand(seed);
 
-  Graph_dense g;
-  load_graph_dense(path_file_output, &g);
+  Graph_sparse g;
+  load_graph_sparse(stdin, &g);
   
   return 0;
 }

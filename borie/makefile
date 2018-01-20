@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -ansi -O2
+CFLAGS = -Wall -ansi -g
 LDFLAGS =
 OBJ = bin/main.o bin/load_graph.o bin/graph_common.o
 
