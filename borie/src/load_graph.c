@@ -119,7 +119,7 @@ int load_graph_dense(const char* path_file_output, Graph_dense* g){
 /* Parse to build a sparse graph */
 int load_graph_sparse(FILE* stream, Graph_sparse* g){
   char word[64];
-  int i, j, src, dst, weigth;
+  int i, j, src, dst, weight;
   
   assert(fscanf(stream, "%s", word) == 1);
   assert(!strcmp(word, "SECTION"));
@@ -129,13 +129,13 @@ int load_graph_sparse(FILE* stream, Graph_sparse* g){
   assert(!strcmp(word, "Nodes"));
   
   assert(fscanf(stream, "%d", &(g->nb_nodes)) == 1);
-  printf("%d nodes in the graph\n", g->nb_nodes);
+  fprintf(stderr, "%d nodes in the graph\n", g->nb_nodes);
 
   assert(fscanf(stream, "%s", word) == 1);
   assert(!strcmp(word, "Edges"));
 
   assert(fscanf(stream, "%d", &(g->nb_edges)) == 1);
-  printf("%d edges in the graph\n", g->nb_edges);
+  fprintf(stderr, "%d edges in the graph\n", g->nb_edges);
 
   /* Memory allocation for edges list */
   g->edges = (Edge*)malloc((g->nb_edges*2)*sizeof(Edge));
@@ -146,17 +146,17 @@ int load_graph_sparse(FILE* stream, Graph_sparse* g){
 
   /* Read the edges */
   for (i=0 ; i<g->nb_edges ; i++){
-    if (fscanf(stream, "%*s %d %d %d", &src, &dst, &weigth) != 3){
+    if (fscanf(stream, "%*s %d %d %d", &src, &dst, &weight) != 3){
       fprintf(stderr, "Error in graph file : can't read E src dst weigth\n");
       return 0;
     }
     g->edges[2*i].src = src;
     g->edges[2*i].dst = dst;
-    g->edges[2*i].weigth = weigth;
+    g->edges[2*i].weight = weight;
     
     g->edges[2*i+1].src = dst;
     g->edges[2*i+1].dst = src;
-    g->edges[2*i+1].weigth = weigth;
+    g->edges[2*i+1].weight = weight;
   }
 
   assert(fscanf(stream, "%s", word) == 1);
@@ -170,7 +170,7 @@ int load_graph_sparse(FILE* stream, Graph_sparse* g){
   assert(!strcmp(word, "Terminals"));
   
   assert(fscanf(stream, "%d", &(g->nb_terminals)) == 1);
-  printf("%d are terminal nodes\n", g->nb_terminals);
+  fprintf(stderr, "%d are terminal nodes\n", g->nb_terminals);
 
   /* Memory allocation for terminal nodes */
   g->terminals = (int*)malloc((g->nb_terminals)*sizeof(int));
@@ -193,7 +193,7 @@ int load_graph_sparse(FILE* stream, Graph_sparse* g){
   assert(fscanf(stream, "%s", word) == 1);
   assert(!strcmp(word, "EOF"));
 
-  printf("Reading EOF done... parsing OK!\n");
+  fprintf(stderr, "Reading EOF done... parsing OK!\n");
   
   return 1;
 }

@@ -4,8 +4,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <time.h>
 
 #include "../include/load_graph.h"
+#include "../include/graph_common.h"
 
 /* How to use the program in command line. */
 void usage(int argc, char* argv[]){
@@ -15,7 +17,7 @@ void usage(int argc, char* argv[]){
 
 int main(int argc, char* argv[]){
   int opt;
-  int seed = 0;
+  int seed = time(NULL);
 
   while ((opt = getopt(argc, argv, "s:")) != -1){
     switch (opt){
@@ -33,7 +35,12 @@ int main(int argc, char* argv[]){
   srand(seed);
 
   Graph_sparse g;
+  Short_paths shorts;
   load_graph_sparse(stdin, &g);
+  sort_edges_sparse(&g);
+  /* display_edges_sparse(&g); */
+
+  allocate_short_paths(&g, &shorts);
   
   return 0;
 }
