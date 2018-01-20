@@ -101,6 +101,10 @@ int index_short_path(Path_terminal* path, int from);
 void change_father_heap(Path* heap, int index);
 int add_path_in_path_heap(Path_terminal* path, int from, int next, int weight);
 int add_new_short_path(Path_terminal* paths, int from, int next, int weight);
+int allocate_union_find(Graph_sparse* g, Union_find* components);
+int find_reduce(Union_find* components, int index);
+void union_reduce(Graph_sparse* g, Union_find* components, int src, int dst);
+int connected_union_find(Graph_sparse* g, Union_find* components);
 
-  
+
 #endif

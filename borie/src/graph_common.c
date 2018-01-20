@@ -16,9 +16,43 @@ static int cmp_edge(const void* e1, const void* e2){
 }
 
 
+/* compare two integer */
+static int cmp_int(const void* e1, const void* e2){
+  const int* a = e1;
+  const int* b = e2;
+
+  return *a - *b; 
+}
+
+
 /* Sort the edges in lexicographic order... */
+/* Sort also the terminals indices just in case... */
 void sort_edges_sparse(Graph_sparse* g){
   qsort(g->edges, 2*g->nb_edges, sizeof(Edge), cmp_edge);
+  qsort(g->terminals, g->nb_terminals, sizeof(int), cmp_int);
+}
+
+
+/* Return 1 if index is a terminal, return 0 otherwise... */
+int is_terminal(Graph_sparse* g, int index){
+  int start = 0;
+  int end = g->nb_terminals - 1;
+  int middle;
+
+  if (g->terminals[0] == index){
+    return 1;
+  }
+  else{
+    while (end - start > 1){
+      middle = (start + end) / 2;
+      if (g->terminals[middle] < index)
+	start = middle;
+      else
+	end = middle;
+    }
+  }
+  
+  return g->terminals[end] == index;
 }
 
 
@@ -265,4 +299,114 @@ int add_new_short_path(Path_terminal* paths, int from, int next, int weight){
   
   paths->short_size += 1;
   return 1;
+}
+
+
+int allocate_union_find(Graph_sparse* g, Union_find* components){
+  int i;
+
+  components->father = (int*)malloc((g->nb_nodes+1)*sizeof(int));
+  if (components->father == NULL){
+    fprintf(stderr, "Memory allocation error\n");
+    return 0;
+  }
+  components->father_2 = (int*)malloc((g->nb_nodes+1)*sizeof(int));
+  if (components->father_2 == NULL){
+    fprintf(stderr, "Memory allocation error\n");
+    return 0;
+  }
+  components->father_3 = (int*)malloc((g->nb_nodes+1)*sizeof(int));
+  if (components->father_3 == NULL){
+    fprintf(stderr, "Memory allocation error\n");
+    return 0;
+  }
+  components->father_4 = (int*)malloc((g->nb_nodes+1)*sizeof(int));
+  if (components->father_4 == NULL){
+    fprintf(stderr, "Memory allocation error\n");
+    return 0;
+  }
+  components->father_5 = (int*)malloc((g->nb_nodes+1)*sizeof(int));
+  if (components->father_5 == NULL){
+    fprintf(stderr, "Memory allocation error\n");
+    return 0;
+  }
+  components->father_reduce = (int*)malloc((g->nb_nodes+1)*sizeof(int));
+  if (components->father_reduce == NULL){
+    fprintf(stderr, "Memory allocation error\n");
+    return 0;
+  }
+
+  for (i=0 ; i<=g->nb_nodes ; i++){
+    components->father[i] = i;
+    components->father_2[i] = 0;
+    components->father_3[i] = 0;
+    components->father_4[i] = 0;
+    components->father_5[i] = 0;
+    components->father_reduce[i] = i;
+  }
+
+  fprintf(stderr, "Allocation/Initialization of union-find OK!\n");
+  return 1;
+}
+
+
+/* Return the representative of the set in which index lives. */
+/* Reduce futher searching path during backtrack */
+int find_reduce(Union_find* components, int index){
+  int father;
+  
+  if (components->father_reduce[index] == index)
+    return index;
+  father = find_reduce(components, components->father_reduce[index]);
+  components->father_reduce[index] = father;
+  return father;
+}
+
+
+/* Merge the two set containing dst and src */
+/* Reduce serch paths and harmonize representatives to smaller */
+/* Use it when you register a new shortest path form src to dst */
+/* src is any node */
+void union_reduce(Graph_sparse* g, Union_find* components, int src, int dst){
+  int father1 = find_reduce(components, src);
+  int father2 = find_reduce(components, dst);
+  int father = (father1 < father2)?father1:father2;
+
+  components->father_reduce[src] = father;
+  components->father_reduce[dst] = father;
+
+  if (components->father[src] == src && (!is_terminal(g, src))){
+    components->father[src] = dst;
+    return ;
+  }
+  if (components->father_2[src] == 0){
+    components->father_2[src] = dst;
+    return ;
+  }
+  if (components->father_3[src] == 0){
+    components->father_3[src] = dst;
+    return ;
+  }
+  if (components->father_4[src] == 0){
+    components->father_4[src] = dst;
+    return ;
+  }
+  if (components->father_5[src] == 0){
+    components->father_5[src] = dst;
+    return ;
+  }
+}
+
+
+/* Return 0 if all terminals live in connected balls */
+/* Return the smallest index of a non connected terminals otherwise */
+int connected_union_find(Graph_sparse* g, Union_find* components){
+  int i;
+  int godfather = find_reduce(components, g->terminals[0]);
+
+  for (i=1 ; i<g->nb_terminals ; i++){
+    if (find_reduce(components, g->terminals[i]) != godfather)
+      return g->terminals[i];
+  }
+  return 0;
 }
