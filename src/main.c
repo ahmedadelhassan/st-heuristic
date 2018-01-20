@@ -4,6 +4,15 @@
 #include <getopt.h>
 #include <string.h>
 #include <ctype.h>
+#include <signal.h>
+
+/* done is declared volatile to let the compiler know it might change asynchronously. */
+volatile sig_atomic_t done = 0;
+
+void term(int signum)
+{
+  done = 1;
+}
 
 /* command line arguments */
 typedef struct
@@ -15,6 +24,7 @@ typedef struct
 
 static const char* opt_string = "s:vh?";
 
+/* long options (command line arguments) */
 static const struct option long_opts[] = {
     { "seed",    required_argument, NULL, 's' },
     { "verbose", no_argument,       NULL, 'v' },
@@ -33,6 +43,12 @@ void here_we_are(command_line_args args)
 
 int main( int argc, char *argv[] )
 {
+  /* SIGTERM handler */
+  struct sigaction action;
+  memset(&action, 0, sizeof(struct sigaction));
+  action.sa_handler = term;
+  sigaction(SIGTERM, &action, NULL);
+
   /* Initialize args before we get to work. */
   command_line_args args;
 	args.seed      = -1;
@@ -78,8 +94,22 @@ int main( int argc, char *argv[] )
   }
   args.filename = strdup(argv[optind]);
 
-  /* here we are */
-  here_we_are(args);
+  int loop = 0;
+  while (! done)
+  {
+      int t = sleep(2);
+      /* sleep returns the number of seconds left if
+       * interrupted */
+      while (t > 0)
+      {
+          printf("Loop run was interrupted with %d sec to go, finishing...\n", t);
+          t = sleep(t);
+      }
+      printf("Finished loop run %d.\n", loop++);
+  }
+
+  printf("done.\n");
+
 
 	return(EXIT_SUCCESS);
 }
