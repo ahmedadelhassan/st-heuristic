@@ -37,12 +37,17 @@ int main(int argc, char* argv[]){
   Graph_sparse g;
   Short_paths shorts;
   Union_find components;
+  
   load_graph_sparse(stdin, &g);
   sort_edges_sparse(&g);
   /* display_edges_sparse(&g); */
 
   allocate_short_paths(&g, &shorts);
   allocate_union_find(&g, &components);
+
+  merge_all_balanced(&g, &shorts, &components);
+
+  fprintf(stderr, "Everything connected : it works!\n");
   
   return 0;
 }
