@@ -12,6 +12,8 @@ type steiner = {
     contains_edge : Graph.edge -> bool
 }
 
+(**********************************************************************)
+
 let contains_all_terminals steiner =
     List.for_all steiner.contains_vertex (Graph.terminal_vertices steiner.graph)
 
