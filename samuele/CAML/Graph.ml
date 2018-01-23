@@ -10,33 +10,43 @@ type vertex = int
 (** An edge is an ordered pair of vertices. *)
 type edge = vertex * vertex
 
-(** Representation of a graph for an instance of the Steiner tree 
+(** A weighted edge is an edge together with a weight (a positive
+ *  integer).
+**)
+type weighted_edge = {
+    edge : edge;
+    weight : int
+}
+
+(** Representation of a graph for an instance of the Steiner tree
  *  problem.
- * A graph is here a functional data.
+ *  Structural hypothesis :
+ *      - the list terminal_vertices is sorted ;
+ *      - the list weighted_edges is (lexicographically) sorted.
 **)
 type graph = {
     nb_vertices : int;
-    is_terminal : vertex -> bool;
-    edge_value : edge -> int option
+    terminal_vertices : vertex list;
+    weighted_edges : weighted_edge list
 }
 
 (**********************************************************************)
 
 (** nb_vertices graph : returns the number of vertices of graph. *)
-let nb_vertices graph = 
+let nb_vertices graph =
     graph.nb_vertices
 
 (** vertices graph : returns the list [1 ; ... ; n] of all vertices of
  *  graph.
 **)
-let vertices graph = 
+let vertices graph =
     Tools.inter 1 (nb_vertices graph)
 
-(** terminal_vertices graph : returns the list [1 ; ... ; n] of all 
+(** terminal_vertices graph : returns the list [1 ; ... ; n] of all
  *  terminal vertices of graph.
 **)
 let terminal_vertices graph =
-    List.filter (fun x -> graph.is_terminal x) (vertices graph)
+    graph.terminal_vertices
 
 (** nb_terminal_vertices graph : returns the number of terminal vertices
  *  of graph.
@@ -44,111 +54,106 @@ let terminal_vertices graph =
 let nb_terminal_vertices graph =
     List.length (terminal_vertices graph)
 
-(** vertices_pairs graph : returns the list of all pairs of vertices of 
- * graph. 
+(** vertices_pairs graph : returns the list of all pairs of vertices of
+ * graph.
 **)
 let vertices_pairs graph =
     let vertices = vertices graph in
-    Tools.lists_product vertices vertices 
+    Tools.lists_product vertices vertices
 
-(** valued_edges graph : returns the list of all triples (x, y, w) where
- *  (x, y) is an edge valued by w in graph.
+(** weighted_edges graph : returns the list of all weighted edges of
+ *  the graph.
 **)
-let valued_edges graph =
-    Tools.filtered_map 
-        (fun (x, y, v) -> Tools.is_some v)
-        (fun (x, y, v) -> (x, y, Tools.get_option v))
-        (List.map 
-            (fun (x, y) -> (x, y, graph.edge_value (x, y)))
-            (vertices_pairs graph))
+let weighted_edges graph =
+    graph.weighted_edges
 
 (** nb_edges graph : returns the number of edges in graph. *)
-let nb_edges graph = 
-    List.length (valued_edges graph)
+let nb_edges graph =
+    List.length (weighted_edges graph)
+
+(** edge_weight graph edge : returns the weight of the edge in the
+ *  graph.
+ *  Raises Not_found if the edge is not in the graph.
+**)
+let edge_weight graph edge =
+    let weighted_edge = List.find
+        (fun we -> we.edge = edge)
+        (weighted_edges graph)
+    in
+    weighted_edge.weight
 
 (** to_string graph : returns a string for the graph in the format
- *  of PACE 2018 (STP file Format).
+ *  of PACE 2018 (STP File Format).
 **)
 let to_string graph =
     let graph_data_string =
-        Printf.sprintf "Nodes %d\nEdges %d\n" 
+        Printf.sprintf "Nodes %d\nEdges %d\n"
             (nb_vertices graph)
             (nb_edges graph)
-    in    
-    let edges_values_string =
-        List.fold_left (^) "" 
+    in
+    let edges_weight_string =
+        List.fold_left (^) ""
             (List.map
-                (fun (x, y, v) -> Printf.sprintf "E %d %d %d\n" x y v)
-                (valued_edges graph))
+                (fun v -> Printf.sprintf "E %d %d %d\n"
+                    (fst v.edge) (snd v.edge) v.weight)
+                (weighted_edges graph))
     in
     let terminal_data_string =
         Printf.sprintf "Terminals %d\n" (nb_terminal_vertices graph)
     in
-    let terminal_vertices_string = 
-        List.fold_left (^) "" 
+    let terminal_vertices_string =
+        List.fold_left (^) ""
             (List.map
                 (fun x -> Printf.sprintf "T %d\n" x)
                 (terminal_vertices graph))
     in
-    Printf.sprintf 
+    Printf.sprintf
         "SECTION Graph\n%s%sEND\nSECTION Terminals\n%s%sEND\n"
-        graph_data_string edges_values_string terminal_data_string 
+        graph_data_string edges_weight_string terminal_data_string
         terminal_vertices_string
 
 (** from_string str : returns a graph specified by the string str
- *  formated following the specifications of PACE 2018 (STP file 
+ *  formated following the specifications of PACE 2018 (STP File
  *  Format).
- *  NOT EFFICIENT.
 **)
 let from_string str =
-
-    let preprocess = Str.split (Str.regexp "[ \t\n]+") str in 
-    let stream = Scanf.Scanning.from_string (String.concat " " preprocess) in
+    let preprocess = Str.split (Str.regexp "[ \t\n]+") str in
+    let stream = Scanf.Scanning.from_string
+        (String.concat " " preprocess)
+    in
     let _ = Scanf.bscanf stream "SECTION Graph%s " (fun s -> None) in
     let nb_vertices = Scanf.bscanf stream "Nodes %d " (fun n -> n) in
     let nb_edges = Scanf.bscanf stream "Edges %d " (fun n -> n) in
     let rec parse_edges res =
-        try 
-            parse_edges 
-            (Scanf.bscanf stream "E %d %d %d " 
-                (fun x y w -> (x, y, w) :: res))
+        try
+            parse_edges
+            (Scanf.bscanf stream "E %d %d %d "
+                (fun x y w ->
+                {edge = (x, y); weight = w} :: res))
         with
             |Scanf.Scan_failure _ -> res
             |End_of_file -> res
     in
-    let valued_edges = parse_edges [] in
+    let weighted_edges = List.sort compare (parse_edges []) in
     let _ = Scanf.bscanf stream "ND%s " (fun s -> None) in
-    let _ = Scanf.bscanf stream "SECTION Terminals%s " (fun s -> None) in
-    let nb_terminals = Scanf.bscanf stream "Terminals %d " 
-        (fun n -> n) 
+    let _ = Scanf.bscanf stream "SECTION Terminals%s " (fun s -> None)
+    in
+    let nb_terminals = Scanf.bscanf stream "Terminals %d "
+        (fun n -> n)
     in
     let rec parse_terminals res =
-        try 
+        try
             parse_terminals
-            (Scanf.bscanf stream "T %d " 
+            (Scanf.bscanf stream "T %d "
                 (fun x -> x :: res))
         with
             |Scanf.Scan_failure _ -> res
             |End_of_file -> res
     in
-    let terminals = parse_terminals [] in
+    let terminal_vertices = List.sort compare (parse_terminals []) in
     let _ = Scanf.bscanf stream "END%s " (fun s -> None) in
-    let is_terminal x = 
-        List.mem x terminals 
-    in
-    let edge_value edge =
-        let (x, y) = edge in
-        let rec find lst =
-            match lst with
-                |[] -> None
-                |(xx, yy, ww) :: tail when xx = x && yy = y -> Some ww
-                |_ :: tail -> find tail
-        in
-        find valued_edges
-    in
     {
-        nb_vertices = nb_vertices ;
-        is_terminal = is_terminal ;
-        edge_value = edge_value
+        nb_vertices = nb_vertices;
+        terminal_vertices = terminal_vertices;
+        weighted_edges = weighted_edges
     }
-
