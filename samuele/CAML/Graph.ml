@@ -4,33 +4,35 @@
  * Modifications: jan. 2018
 **)
 
-(** A vertex is a natural integer. *)
-type vertex = int
-
-(** An edge is an ordered pair of vertices. *)
-type edge = vertex * vertex
-
-(** A weighted edge is an edge together with a weight (a positive
- *  integer).
-**)
-type weighted_edge = {
-    edge : edge;
-    weight : int
-}
-
 (** Representation of a graph for an instance of the Steiner tree
  *  problem.
- *  Structural hypothesis :
- *      - the list terminal_vertices is sorted ;
- *      - the list weighted_edges is (lexicographically) sorted.
+ *  Structural hypothesis:
+ *      - the list terminal_vertices is sorted;
+ *      - all the vertices of terminal_vertices are between 1 and 
+ *        nb_vertices;
+ *      - the list weighted_edges is (lexicographically) sorted;
+ *      - all the vertices of weighted_edges are between 1 and 
+ *        nb_vertices.
 **)
 type graph = {
     nb_vertices : int;
-    terminal_vertices : vertex list;
-    weighted_edges : weighted_edge list
+    terminal_vertices : Vertex.vertex list;
+    weighted_edges : WeightedEdge.weighted_edge list
 }
 
 (**********************************************************************)
+
+exception Not_an_edge
+
+(**********************************************************************)
+
+let create nb_vertices terminal_vertices weighted_edges = 
+    assert (nb_vertices >= 0);
+    {
+        nb_vertices = nb_vertices;
+        terminal_vertices = terminal_vertices;
+        weighted_edges = weighted_edges
+   }
 
 (** nb_vertices graph : returns the number of vertices of graph. *)
 let nb_vertices graph =
@@ -73,14 +75,17 @@ let nb_edges graph =
 
 (** edge_weight graph edge : returns the weight of the edge in the
  *  graph.
- *  Raises Not_found if the edge is not in the graph.
+ *  Raises Not_an_edge if the edge is not in the graph.
 **)
 let edge_weight graph edge =
-    let weighted_edge = List.find
-        (fun we -> we.edge = edge)
-        (weighted_edges graph)
-    in
-    weighted_edge.weight
+    try
+        let weighted_edge = List.find
+            (fun we -> (WeightedEdge.edge we) = edge)
+            (weighted_edges graph)
+        in
+        weighted_edge.weight
+    with
+        |_ -> raise Not_an_edge
 
 (** to_string graph : returns a string for the graph in the format
  *  of PACE 2018 (STP File Format).
@@ -94,8 +99,8 @@ let to_string graph =
     let edges_weight_string =
         List.fold_left (^) ""
             (List.map
-                (fun v -> Printf.sprintf "E %d %d %d\n"
-                    (fst v.edge) (snd v.edge) v.weight)
+                (fun we -> Printf.sprintf "E %s\n" 
+                    (WeightedEdge.to_string we)) 
                 (weighted_edges graph))
     in
     let terminal_data_string =
@@ -104,7 +109,7 @@ let to_string graph =
     let terminal_vertices_string =
         List.fold_left (^) ""
             (List.map
-                (fun x -> Printf.sprintf "T %d\n" x)
+                (fun x -> Printf.sprintf "T %s\n" (Vertex.to_string x))
                 (terminal_vertices graph))
     in
     Printf.sprintf
@@ -128,8 +133,7 @@ let from_string str =
         try
             parse_edges
             (Scanf.bscanf stream "E %d %d %d "
-                (fun x y w ->
-                {edge = (x, y); weight = w} :: res))
+                (fun x y w -> (WeightedEdge.create x y w) :: res))
         with
             |Scanf.Scan_failure _ -> res
             |End_of_file -> res
@@ -157,3 +161,4 @@ let from_string str =
         terminal_vertices = terminal_vertices;
         weighted_edges = weighted_edges
     }
+
