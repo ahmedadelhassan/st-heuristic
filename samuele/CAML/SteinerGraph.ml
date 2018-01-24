@@ -19,11 +19,27 @@ type steiner = {
 
 (**********************************************************************)
 
+let create g e =
+    {graph = g; edges = e}
+
 let graph s = 
     s.graph
 
 let edges s =
     s.edges
+
+(** vertices s : returns the list of all the vertices of the Steiner
+ *  graph `s`. These are the vertices of the ground graph of `s` that
+ *  are adjacent to at least one edge in `s`.
+**)
+let vertices s =
+    let vertices = 
+        List.fold_left 
+            (fun l e -> (Edge.small e) :: (Edge.big e) :: l)
+            []
+            (edges s)
+    in
+    Tools.list_suppress_runs (List.sort compare vertices)
 
 (** contains_all_terminal_vertices s : tests if the Steiner graph `s`
  *  contains all terminal vertices of its ground graph.
@@ -46,17 +62,38 @@ let adjacent_vertices s v =
     in
     Tools.list_suppress_runs (List.sort compare vertices)
 
-(** TO DO. *)
-let is_acyclic s = 
-    false
-
-(** TO DO. 
- *  Union-Find
+(** is_connex s : tests if the Steiner graph `s` is connex.
+ *  NOT EFFICIENT.
 **)
 let is_connex s =
-    false
+    let uf =
+        List.fold_left 
+            (fun uf e -> UnionFind.union uf (Edge.small e) (Edge.big e))
+            (List.map (fun v -> [v]) (vertices s))
+            (edges s)
+    in
+    match uf with
+        |[] -> true
+        |[cl] -> true
+        |_ -> false
 
-(** is_tree s : tests if the Steiner graph `s` is a tree. **)
+(** is_acyclic s : tests if the Steiner graph `s` is acyclic.
+ *  NOT EFFICIENT.
+**)
+let is_acyclic s = 
+    let rec treat_edges uf edges =
+        match edges with 
+            |[] -> true
+            |e :: tail ->
+                let x = Edge.small e and y = Edge.big e in
+                if UnionFind.are_in_same_class uf x y then
+                    false
+                else
+                    treat_edges (UnionFind.union uf x y) tail
+    in
+    treat_edges (List.map (fun v -> [v]) (vertices s)) (edges s)
+
+(** is_tree s : tests if the Steiner graph `s` is a tree. *)
 let is_tree s =
     (is_acyclic s) && (is_connex s)
 
