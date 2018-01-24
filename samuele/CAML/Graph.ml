@@ -149,7 +149,7 @@ let from_string str =
         try
             parse_terminals
             (Scanf.bscanf stream "T %d "
-                (fun x -> x :: res))
+                (fun x -> (Vertex.create x) :: res))
         with
             |Scanf.Scan_failure _ -> res
             |End_of_file -> res

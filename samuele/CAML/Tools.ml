@@ -4,23 +4,9 @@
  * Modifications: jan. 2018
 **)
 
-exception Option_None
-
-let get_option x =
-    match x with
-        |Some xx -> xx
-        |None -> raise Option_None
-
-let is_some x =
-    match x with
-        |Some _ -> true
-        |None -> false
-
-let alternative_option x a b =
-    match x with
-        |Some xx -> a xx
-        |None -> b
-
+(** filtered_map filter map lst : returns the sublist of lst obtained
+ *  by transforming by map its elements satisfying the predicate filter.
+**)
 let rec filtered_map filter map lst =
     match lst with
         |[] -> []

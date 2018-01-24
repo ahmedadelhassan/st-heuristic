@@ -31,6 +31,9 @@ let big we =
 let weight we =
     we.weight
 
+let contains_vertex e v =
+    (small e) = v || (big e) = v
+
 let to_string we =
     Printf.sprintf "%d %d %d" (small we) (big we) (weight we)
 

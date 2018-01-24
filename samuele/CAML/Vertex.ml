@@ -9,6 +9,10 @@ type vertex = int
 
 (**********************************************************************)
 
+let create v =
+    assert (v >= 1);
+    v
+
 let to_string v =
     Printf.sprintf "%d" v
 

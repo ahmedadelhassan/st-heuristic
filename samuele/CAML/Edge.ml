@@ -23,6 +23,9 @@ let small e =
 let big e =
     snd e
 
+let contains_vertex e v =
+    (small e) = v || (big e) = v
+
 let to_string e =
     Printf.sprintf "%d %d" (small e) (big e)
 

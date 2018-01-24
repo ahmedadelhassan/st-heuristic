@@ -26,19 +26,25 @@ let contains_all_terminal_vertices steiner =
     List.for_all
         (fun x -> 
             (List.exists 
-                (fun e -> (Edge.small e) = x || (Edge.big e) = x) 
+                (fun e -> Edge.contains_vertex e x) 
                 steiner.edges))
         (Graph.terminal_vertices steiner.graph)
 
-(** is_tree steiner : tests if the steiner graph is a tree.
- *  TO DO.
-**)
-let is_tree steiner =
+(** TO DO. *)
+let is_acyclic steiner = 
     false
+
+(** TO DO. *)
+let is_connex steiner =
+    false
+
+(** is_tree steiner : tests if the steiner graph is a tree. **)
+let is_tree steiner =
+    (is_acyclic steiner) && (is_connex steiner)
 
 (** is_valid steiner : tests if the steiner graph is valid (that is, a
  *  tree containing all terminal vertices.
-** *)
+**)
 let is_valid steiner =
     (contains_all_terminal_vertices steiner) && (is_tree steiner)
 
@@ -76,7 +82,9 @@ let random_flip steiner =
 let force_include_all_terminal_vertices steiner =
     ()
 
-(** Prim or Kruskal. *)
+(** Prim or Kruskal. 
+ *  TO DO
+**)
 let force_be_a_tree steiner =
     ()
 
