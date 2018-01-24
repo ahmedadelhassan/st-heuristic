@@ -34,14 +34,14 @@ Nodes 3
 Edges
 
 2
-E 1 2
+E 1  2
 
    1
 
 
 E 3 2 2
 END
-SECTION Terminals
+SECTION   Terminals
 
 Terminals 2
 
@@ -49,7 +49,9 @@ T    1
 T 3
 
 
-END"
+END    EOF
+
+"
 in
 print_string string_2;
 let graph_2 = Graph.from_string string_2 in
@@ -58,7 +60,7 @@ print_string (Graph.to_string graph_2);
 
 (** Test: file to graph. *)
 
-let file_1 = open_in "../../public/instance039.gr" in
+let file_1 = open_in "../../public/instance075.gr" in
 let string_3 = really_input_string file_1 (in_channel_length file_1) in
 let graph_3 = Graph.from_string string_3 in
 print_string (Graph.to_string graph_3);

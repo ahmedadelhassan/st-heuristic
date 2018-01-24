@@ -26,9 +26,16 @@ let big e =
 let contains_vertex e v =
     (small e) = v || (big e) = v
 
+let other e v =
+    assert (contains_vertex e v);
+    if (small e) = v then
+        big e
+     else
+        small e
+
 let to_string e =
     Printf.sprintf "%d %d" (small e) (big e)
 
-let from_string str =
-    Scanf.sscanf str " %d %d " (fun x y -> create x y)
+let from_string s =
+    Scanf.sscanf s " %d %d " (fun x y -> create x y)
 

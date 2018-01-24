@@ -31,14 +31,18 @@ let big we =
 let weight we =
     we.weight
 
-let contains_vertex e v =
-    (small e) = v || (big e) = v
+let contains_vertex we v =
+    (small we) = v || (big we) = v
+
+let other we v =
+    assert (contains_vertex we v);
+    Edge.other (edge we) v
 
 let to_string we =
     Printf.sprintf "%d %d %d" (small we) (big we) (weight we)
 
-let from_string str =
-    Scanf.sscanf str " %d %d %d " (fun x y w -> create x y w)
+let from_string s =
+    Scanf.sscanf s " %d %d %d " (fun x y w -> create x y w)
 
     
     

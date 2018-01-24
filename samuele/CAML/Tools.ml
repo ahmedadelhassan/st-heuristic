@@ -32,3 +32,19 @@ let rec lists_product lst_1 lst_2 =
         (List.map
             (fun e_1 -> List.map (fun e_2 -> (e_1, e_2)) lst_2)
             lst_1)
+
+(** list_suppress_runs lst : returns the list obtained from the list
+ *  `lst` obtained by replacing each factor of equal elements by one
+ *  single occurrence.
+ *  # list_suppress_runs [0; 1; 1; 0; 0; 0; 0; 2; 1; 1];;;
+ *  - : int list = [0; 1; 0; 2; 1]
+**)
+let rec list_suppress_runs lst =
+    match lst with
+        |[] -> []
+        |[x] -> [x]
+        |e_1 :: e_2 :: tail when e_1 = e_2 -> 
+            list_suppress_runs (e_2 :: tail)
+        |e :: tail -> e :: (list_suppress_runs tail)
+        
+

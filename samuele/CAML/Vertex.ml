@@ -16,6 +16,6 @@ let create v =
 let to_string v =
     Printf.sprintf "%d" v
 
-let from_string str =
-    Scanf.sscanf str " %d " (fun d -> d)
+let from_string s =
+    Scanf.sscanf s " %d " (fun d -> d)
 
