@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# To obtain an executable.
+ocamlbuild -cflags -w,a -verbose 0 -lib str Main.native

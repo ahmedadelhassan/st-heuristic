@@ -20,3 +20,7 @@ clean:
 	rm -rf bin/*.o
 	rm -rf *~
 	rm -rf */*~
+
+rebuild:
+	make clean
+	make
