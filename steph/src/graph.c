@@ -31,14 +31,14 @@ graph* graph_alloc(size_t n_vertices)
     exit(EXIT_FAILURE);
   }
 
-  for (int i = 0; i < n_vertices + 1; i++)
+  for (int u = 0; u < n_vertices + 1; u++)
   {
-    g->vertices[i].label    = i;
-    g->vertices[i].color    = WHITE;
-    g->vertices[i].terminal = 0;
-    g->vertices[i].degree   = 0;
-    g->vertices[i].n_alloc  = 0;
-    g->vertices[i].edges    = NULL;
+    g->vertices[u].label    = u;
+    g->vertices[u].color    = WHITE;
+    g->vertices[u].terminal = 0;
+    g->vertices[u].degree   = 0;
+    g->vertices[u].n_alloc  = 0;
+    g->vertices[u].edges    = NULL;
   }
 
   return(g);
@@ -53,12 +53,12 @@ void graph_release(graph* g)
   {
     if (g->vertices)
     {
-      for (int i = 0; i < g->n_vertices + 1; i++)
+      for (int u = 0; u < g->n_vertices + 1; u++)
       {
-        if (g->vertices[i].edges)
+        if (g->vertices[u].edges)
         {
-          memset(g->vertices[i].edges, 0x0, g->vertices[i].n_alloc * sizeof(edge));
-          free(g->vertices[i].edges);
+          memset(g->vertices[u].edges, 0x0, g->vertices[u].n_alloc * sizeof(edge));
+          free(g->vertices[u].edges);
         }
       }
 
@@ -80,7 +80,7 @@ void graph_adjust(graph* g)
   {
     for (int u = 0; u < g->n_vertices + 1; u++)
     {
-      if (g->vertices[u].n_alloc != g->vertices[u].degree)
+      if (g->vertices[u].n_alloc == g->vertices[u].degree)
       {
         edge* edges = (edge*) realloc(g->vertices[u].edges, g->vertices[u].degree * sizeof(edge));
         if (edges == NULL)
