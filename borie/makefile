@@ -1,7 +1,8 @@
 CC = gcc
-CFLAGS = -Wall -ansi -O2
+CFLAGS = -Wall -ansi -O3
 LDFLAGS =
-OBJ = bin/main.o bin/load_graph.o bin/graph_common.o
+# OBJ = bin/main.o bin/load_graph.o bin/graph_common.o bin/soft_strategy.o
+OBJ = bin/main.o bin/load_graph.o bin/soft_strategy.o
 
 st-heuristic: $(OBJ)
 	gcc -o st-heuristic $(OBJ) $(LDFLAGS)
@@ -14,6 +15,9 @@ bin/load_graph.o: src/load_graph.c include/load_graph.h include/graph_common.h
 
 bin/graph_common.o: src/graph_common.c include/graph_common.h
 	gcc -c -o bin/graph_common.o src/graph_common.c $(CFLAGS)
+
+bin/soft_strategy.o: src/soft_strategy.c include/soft_strategy.h
+	gcc -c -o bin/soft_strategy.o src/soft_strategy.c $(CFLAGS)
 
 clean:
 	rm -rf st-heuristic
