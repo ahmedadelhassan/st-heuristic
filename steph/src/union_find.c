@@ -4,52 +4,62 @@
 #include <time.h>
 #include <assert.h>
 
+#include "graph.h"
 #include "union_find.h"
 
+/**
+ *
+ * @param g
+ * @return
+ */
+union_find_t* union_find_alloc(graph_t* g)
+{
+  if (g == NULL)
+  {
+    return(NULL);
+  }
 
-union_find_t* union_find_alloc(size_t n) {
   union_find_t* uf = (union_find_t*) malloc(sizeof(union_find_t));
 
-  if (uf == NULL) {
+  if (uf == NULL)
+  {
     fprintf(stderr, "%s\n", "memory allocation error");
     exit(EXIT_FAILURE);
   }
 
-  uf->size  = n;
-  uf->count = n;
+  uf->graph = g;
+  uf->size  = g->n_nodes;
+  uf->count = g->n_nodes;
 
-  uf->parents = (int*) calloc(n, sizeof(int));
-  if (uf->parents == NULL) {
+  uf->items = (union_find_item_t*) calloc(uf->size, sizeof(union_find_item_t));
+  if (uf->items == NULL)
+  {
     fprintf(stderr, "%s\n", "memory allocation error");
     exit(EXIT_FAILURE);
   }
-  for (int i = 0; i < uf->size; i++) {
-    uf->parents[i] = i;
-  }
 
-  uf->ranks = (int*) calloc(n, sizeof(int));
-  if (uf->ranks == NULL) {
-    fprintf(stderr, "%s\n", "memory allocation error");
-    exit(EXIT_FAILURE);
-  }
-  for (int i = 0; i < uf->size; i++) {
-    uf->ranks[i] = 0;
+  for (vertex_t i = 0; i < uf->size; i++)
+  {
+    uf->items[i].parent      = i;
+    uf->items[i].rank        = 0;
+    uf->items[i].n_terminals = graph_is_terminal(g, i) ? 1 : 0;
   }
 
   return(uf);
 }
 
-
-void union_find_release(union_find_t* uf) {
-  if (uf) {
-    if (uf->parents) {
-      memset(uf->parents, 0x0, uf->size * sizeof(int));
-      free(uf->parents);
-    }
-
-    if (uf->ranks) {
-      memset(uf->ranks, 0x0, uf->size * sizeof(int));
-      free(uf->ranks);
+/**
+ *
+ * @param uf
+ */
+void union_find_release(union_find_t* uf)
+{
+  if (uf != NULL)
+  {
+    if (uf->items != NULL)
+    {
+      memset(uf->items, 0x0, uf->size * sizeof(union_find_item_t));
+      free(uf->items);
     }
 
     memset(uf, 0x0, sizeof(union_find_t));
@@ -57,50 +67,70 @@ void union_find_release(union_find_t* uf) {
   }
 }
 
-int union_find_find_recursive_compression(union_find_t* uf, int i) {
-  assert(uf != NULL);
-  assert((uf->size == 0) || (uf->ranks != NULL));
-  assert((uf->parents == 0) || (uf->parents != NULL));
-  assert((i >= 0) && (i < uf->size));
+/**
+ *
+ * @param uf
+ * @param i
+ * @return
+ */
+vertex_t union_find_find_recursive_compression(union_find_t* uf, vertex_t i)
+{
+  assert(i < uf->size);
 
-  if (uf->parents[i] != uf->parents[uf->parents[i]]) {
-    uf->parents[i] = union_find_find_recursive_compression(uf, uf->parents[i]);
+  if (uf->items[i].parents != uf->items[uf->items[i].parents].parents)
+  {
+    uf->items[i].parents = union_find_find_recursive_compression(uf, uf->items[i].parents);
   }
 
-  return(uf->parents[i]);
+  return(uf->items[i].parents);
 }
 
-int union_find_find_iterative_splitting(union_find_t* uf, int i) {
-  assert(uf != NULL);
-  assert((uf->size == 0) || (uf->ranks != NULL));
-  assert((uf->parents == 0) || (uf->parents != NULL));
-  assert((i >= 0) && (i < uf->size));
+/**
+ *
+ * @param uf
+ * @param i
+ * @return
+ */
+vertex_t union_find_find_iterative_splitting(union_find_t* uf, vertex_t i)
+{
+  assert(i < uf->size);
 
-  int j = uf->parents[i];
-  while (j != uf->parents[j]) {
-    uf->parents[i] = uf->parents[j];
+  vertex_t j = uf->items[i].parents;
+  while (j != uf->items[j].parents)
+  {
+    uf->items[i].parents = uf->items[j].parents;
     i = j;
-    j = uf->parents[j];
+    j = uf->items[j].parents;
   }
 
   return(j);
 }
 
-int union_find_find_iterative_halving(union_find_t* uf, int i) {
-  assert(uf != NULL);
-  assert((uf->size == 0) || (uf->ranks != NULL));
-  assert((uf->parents == 0) || (uf->parents != NULL));
-  assert((i >= 0) && (i < uf->size));
+/**
+ *
+ * @param uf
+ * @param i
+ * @return
+ */
+vertex_t union_find_find_iterative_halving(union_find_t* uf, vertex_t i) {
+  assert(i < uf->size);
 
-  while (uf->parents[i] != uf->parents[uf->parents[i]]) {
-    uf->parents[i] = uf->parents[uf->parents[i]];
-    i = uf->parents[i];
+  while (uf->items[i].parents != uf->items[uf->items[i]].parent].parent)
+  {
+    uf->items[i].parents = uf->items[uf->items[i].parents].parents;
+    i = uf->items[i].parents;
   }
 
-  return(uf->parents[i]);
+  return(uf->items[i].parents);
 }
 
-int union_find_find_iterative_compression(union_find_t* uf, int i) {
+/**
+ *
+ * @param uf
+ * @param i
+ * @return
+ */
+vertex_t union_find_find_iterative_compression(union_find_t* uf, int i) {
   assert(uf != NULL);
   assert((uf->size == 0) || (uf->ranks != NULL));
   assert((uf->parents == 0) || (uf->parents != NULL));
@@ -124,7 +154,13 @@ int union_find_find_iterative_compression(union_find_t* uf, int i) {
   return(p);
 }
 
-void union_find_union(union_find_t* uf, int i, int j) {
+/**
+ *
+ * @param uf
+ * @param i
+ * @param j
+ */
+void union_find_union(union_find_t* uf, vertex_t i, vertex_t j) {
   #ifdef DEBUG
   printf("union %d %d\n", i, j);
   #endif
@@ -142,35 +178,20 @@ void union_find_union(union_find_t* uf, int i, int j) {
 
   uf->count--;
 
-  if (uf->ranks[i_root] == uf->ranks[j_root]) {
-    uf->parents[j_root] = i_root;
-    uf->ranks[i_root]++;
+  if (uf->items[i_root].ranks == uf->items[j_root].ranks) {
+    uf->items[j_root].parents     = i_root;
+    uf->items[i_root].n_terminals += uf->items[j_root].n_terminals
+    uf->items[i_root].ranks++;
     return;
   }
 
-  if (uf->ranks[i_root] < uf->ranks[j_root]) {
-    uf->parents[i_root] = j_root;
+  if (uf->items[i_root].ranks < uf->items[j_root].ranks) {
+    uf->items[i_root].parents     = j_root;
+    uf->items[j_root].n_terminals += uf->items[i_root].n_terminals
+
   }
   else {
-    uf->parents[j_root] = i_root;
+    uf->items[j_root].parents     = i_root;
+    uf->items[i_root].n_terminals += uf->items[j_root].n_terminals
   }
-}
-
-int main(int argc, char *argv[]) {
-  int n = 10000000;
-  int threshold = 10;
-
-  srand(time(NULL));
-
-  for (int i = 0; i < 10; i++) {
-    union_find_t* uf = union_find_alloc(n);
-    while (uf->count > threshold) {
-      int i = rand() % n;
-      int j = rand() % n;
-      union_find_union(uf, i, j);
-    }
-    union_find_release(uf);
-  }
-
-  return(EXIT_SUCCESS);
 }
