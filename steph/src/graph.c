@@ -4,42 +4,40 @@
 #include <assert.h>
 
 #include "list.h"
-#include "graph.h"
+#include "graph_t.h"
 #include "sp_table.h"
 
 /**
  *
  */
-graph* graph_alloc(size_t n_vertices)
+graph_t* graph_alloc(size_t, size_t n_alloc_edges, size_t n_alloc_terminals)
 {
-  graph* g = (graph*) malloc(sizeof(graph));
+  graph_t* g = (graph_t*) malloc(sizeof(graph_t));
   if (g == NULL)
   {
     perror("mem alloc");
     exit(EXIT_FAILURE);
   }
 
-  g->n_vertices  = n_vertices;
-  g->n_edges     = 0;
-  g->n_terminals = 0;
+  g->n_vertices  = 0;
 
-  g->vertices = (vertex*) calloc(n_vertices, sizeof(vertex));
-  if (g->vertices == NULL)
+  g->n_alloc_edges = n_alloc_edges;
+  g->n_edges       = 0;
+  g->edges         = (edge_t*) malloc(2 * n_alloc_edges * sizeof(graph_t));
+  if (g->edges == NULL)
   {
-    graph_release(g);
     perror("mem alloc");
     exit(EXIT_FAILURE);
   }
 
-  for (int u = 0; u < n_vertices + 1; u++)
-  {
-    g->vertices[u].label    = u;
-    g->vertices[u].color    = WHITE;
-    g->vertices[u].terminal = 0;
-    g->vertices[u].degree   = 0;
-    g->vertices[u].n_alloc  = 0;
-    g->vertices[u].edges    = NULL;
-  }
+  g->n_alloc_terminals = n_alloc_terminals;
+  g->n_terminals = 0;
+
+  g->edges       = NULL;
+  g->terminals   = NULL;
+
+  g->n_alloc_edges     = 0;
+  g->n_alloc_terminals = 0;
 
   return(g);
 }
@@ -47,59 +45,34 @@ graph* graph_alloc(size_t n_vertices)
 /**
  *
  */
-void graph_release(graph* g)
+void graph_release(graph_t* g)
 {
   if (g)
   {
-    if (g->vertices)
+    if (g->edges)
     {
-      for (int u = 0; u < g->n_vertices + 1; u++)
-      {
-        if (g->vertices[u].edges)
-        {
-          memset(g->vertices[u].edges, 0x0, g->vertices[u].n_alloc * sizeof(edge));
-          free(g->vertices[u].edges);
-        }
-      }
-
-      memset(g->vertices, 0x0, (g->n_vertices + 1) * sizeof(vertex));
-      free(g->vertices);
+      memset(g->edges, 0x0, g->n_alloc_edges * suzeof(edge_t));
+      free(g->edges);
     }
 
-    memset(g, 0x0, sizeof(graph));
+    if (g->ternminals)
+    {
+      memset(g->terminals, 0x0, g->terminals * sizeof(terminal_t));
+      free(g->terminals);
+    }
+
+    memset(g, 0x0, sizeof(graph_t));
     free(g);
   }
 }
 
-/**
- *
- */
-void graph_adjust(graph* g)
-{
-  if (g)
-  {
-    for (int u = 0; u < g->n_vertices + 1; u++)
-    {
-      if (g->vertices[u].n_alloc == g->vertices[u].degree)
-      {
-        edge* edges = (edge*) realloc(g->vertices[u].edges, g->vertices[u].degree * sizeof(edge));
-        if (edges == NULL)
-        {
-          graph_release(g);
-          perror("mem alloc");
-          exit(EXIT_FAILURE);
-        }
-        g->vertices[u].edges = edges;
-      }
-    }
-  }
-}
+
 
 /**
  *
  */
 static
-void _graph_add_edge(graph* g, vertex_idx u, vertex_idx v, weight w)
+void _graph_add_edge(graph_t* g, vertex_idx u, vertex_idx v, weight w)
 {
   if (g->vertices[u].n_alloc == g->vertices[u].degree)
   {
@@ -124,11 +97,11 @@ void _graph_add_edge(graph* g, vertex_idx u, vertex_idx v, weight w)
 /**
  *
  */
-void graph_add_edge(graph* g, vertex_idx u, vertex_idx v, weight w)
+void graph_add_edge(graph_t* g, vertex_idx u, vertex_idx v, weight w)
 {
   if (g == NULL)
   {
-    fprintf(stderr, "graph_add_edge. NULL graph\n");
+    fprintf(stderr, "graph_add_edge. NULL graph_t\n");
     exit(EXIT_FAILURE);
   }
 
@@ -159,11 +132,11 @@ void graph_add_edge(graph* g, vertex_idx u, vertex_idx v, weight w)
 /**
  *
  */
-void graph_set_terminal(graph* g, vertex_idx u)
+void graph_set_terminal(graph_t* g, vertex_idx u)
 {
   if (g == NULL)
   {
-    fprintf(stderr, "graph_set_terminal. NULL graph\n");
+    fprintf(stderr, "graph_set_terminal. NULL graph_t\n");
     exit(EXIT_FAILURE);
   }
 
@@ -177,7 +150,7 @@ void graph_set_terminal(graph* g, vertex_idx u)
 }
 
 
-sp_table* floyd_warshall(graph* g)
+sp_table* floyd_warshall(graph_t* g)
 {
   sp_table* spt = sp_table_alloc(g->n_vertices);
 

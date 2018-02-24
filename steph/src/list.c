@@ -2,12 +2,16 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "list.h"
+#include "list_t.h"
 
-list* list_alloc()
+/**
+ *
+ * @return
+ */
+list_t* list_alloc()
 {
-    list* l = (list*) malloc(sizeof(list));
-    if (! l)
+    list_t* l = (list_t*) malloc(sizeof(list_t));
+    if (l == NULL)
     {
       perror("mem alloc");
       exit(EXIT_FAILURE);
@@ -19,20 +23,81 @@ list* list_alloc()
     return(l);
 }
 
-void list_release(list* l)
+/**
+ *
+ * @param l
+ */
+static void list_free(list_t* l)
+{
+    if (l != NULL)
+    {
+        memset(l, 0x0, sizeof(list_t));
+        free(l);
+    }
+}
+
+/**
+ *
+ * @param l
+ */
+void list_release(list_t* l)
 {
   if (l)
   {
-    memset(l, 0x0, sizeof(list));
-    free(l);
+      list_release(l->next);
+      list_free(l);
   }
 }
 
-void list_release_all(list* l)
+/**
+ *
+ * @param l
+ * @return
+ */
+size_t list_size(list_t* l)
 {
-  if (l)
-  {
-    list_release_all(l->next);
-    list_release(l);
-  }
+    size_t size = 0;
+    while (l != NULL)
+    {
+        size++;
+        l = l->next;
+    }
+    return(size);
+}
+
+extern list_t* list_delete(list_t* l, size_t i);
+extern list_t* list_delete_first(list_t* l);
+
+/**
+ *
+ * @param l
+ * @return
+ */
+list_t* list_delete_last(list_t* l) {
+    list_t* p = l;
+
+    /* empty list */
+    if (p == NULL)
+    {
+        return(NULL);
+    }
+
+    /* progress till the end */
+    while (p->next != NULL)
+    {
+        p = p->next;
+    }
+
+    /* singleton list */
+    if (p == l)
+    {
+        list_free(p);
+        return(NULL);
+    }
+
+    /* non-singleton list */
+    list_free(p->next);
+    p->next = NULL;
+    return(l);
+
 }

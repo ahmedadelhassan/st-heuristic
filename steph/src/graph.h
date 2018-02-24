@@ -10,13 +10,15 @@ typedef unsigned int weight_t;
 #define GREY  1
 #define BLACK 2
 
-typedef struct edge_t {
+typedef struct edge_t
+{
     vertex_t src;
     vertex_t dest;
     weight_t weight
 } edge_t;
 
-typedef struct graph_t {
+typedef struct graph_t
+{
     size_t    n_vertices;
     size_t    n_edges;
     size_t    n_alloc_edges;
@@ -28,8 +30,7 @@ typedef struct graph_t {
 
 extern graph_t* graph_read(FILE* f);
 extern void     graph_write(FILE* f, graph_t g);
-
-extern graph_t* graph_alloc();
+extern graph_t* graph_alloc(size_t n_alloc_edges, size_t n_alloc_terminals);
 extern void     graph_release(graph_t* g);
 extern void     graph_add_edge(graph_t* g, vertex_t src, vertex_t dest, weight_t w);
 extern void     graph_add_terminal(graph_t* g, vertex_t u);
