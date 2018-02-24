@@ -2,7 +2,7 @@
 #define _GRAPH_COMMON__
 
 #define START_HEAP_SIZE 10 /* intial size of heaps and arrays */
-#define REALLOC_FACTOR 1.3 /* reallocation factor for heaps and arrays */
+#define REALLOC_FACTOR 1.4 /* reallocation factor for heaps and arrays */
 
 
 /* Dense graph : use probably too much memory !!!! */
@@ -95,7 +95,6 @@ void display_edges_sparse(Graph_sparse* g);
 int edges_from_index(Graph_sparse* g, int node, int* first, int* last);
 Path* allocate_new_path_heap(void);
 int allocate_short_paths(Graph_sparse* g, Short_paths* shorts);
-int add_path(Short_paths* shorts, int goal, int from, int next, int weight);
 int index_path(Path_terminal* path, int from);
 int index_short_path(Path_terminal* path, int from);
 void change_father_heap(Path* heap, int index);
@@ -105,6 +104,13 @@ int allocate_union_find(Graph_sparse* g, Union_find* components);
 int find_reduce(Union_find* components, int index);
 void union_reduce(Graph_sparse* g, Union_find* components, int src, int dst);
 int connected_union_find(Graph_sparse* g, Union_find* components);
-
+void change_children_heap(Path* heap, int index, int size_heap);
+int remove_root_in_path_heap(Path_terminal* path,int* from,int* next,int* weight);
+void send_stolon(Graph_sparse* g,
+		 Short_paths* shorts,
+		 Union_find* components,
+		 int index);
+void merge_all_balanced(Graph_sparse* g, Short_paths* s, Union_find* c);
+void print_heap(Path* heap, int size_heap);
 
 #endif

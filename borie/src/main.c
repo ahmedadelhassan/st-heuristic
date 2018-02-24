@@ -7,7 +7,9 @@
 #include <time.h>
 
 #include "../include/load_graph.h"
-#include "../include/graph_common.h"
+/* #include "../include/graph_common.h" */
+#include "../include/soft_strategy.h"
+
 
 /* How to use the program in command line. */
 void usage(int argc, char* argv[]){
@@ -35,14 +37,30 @@ int main(int argc, char* argv[]){
   srand(seed);
 
   Graph_sparse g;
-  Short_paths shorts;
-  Union_find components;
+  /* Short_paths shorts; */
+  /* Union_find components; */
+
   load_graph_sparse(stdin, &g);
   sort_edges_sparse(&g);
   /* display_edges_sparse(&g); */
 
-  allocate_short_paths(&g, &shorts);
-  allocate_union_find(&g, &components);
+  /* allocate_short_paths(&g, &shorts); */
+  /* allocate_union_find(&g, &components); */
+  /* merge_all_balanced(&g, &shorts, &components); */
+
+  Pop pop;
+  int i=0;
+  
+  init_population(&g, &pop);
+
+  while(1){
+    fprintf(stderr, "Generation %d :\n", i);
+    fprintf(stderr, "Best %d :\n", pop.solution[0]->weight);    
+    next_generation(&g, &pop);
+    i++;
+  }
+  
+  fprintf(stderr, "Everything connected : it works!\n");
   
   return 0;
 }
