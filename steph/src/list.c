@@ -42,11 +42,11 @@ static void list_free(list_t* l)
  */
 void list_release(list_t* l)
 {
-  if (l)
-  {
-      list_release(l->next);
-      list_free(l);
-  }
+    (l != NULL)
+    {
+        list_release(l->next);
+        list_free(l);
+    }
 }
 
 /**
@@ -65,39 +65,62 @@ size_t list_size(list_t* l)
     return(size);
 }
 
-extern list_t* list_delete(list_t* l, size_t i);
-extern list_t* list_delete_first(list_t* l);
+/**
+ *
+ * @param l
+ * @param i
+ * @return
+ */
+list_t* list_delete_aux(list_t* l, size_t i)
+{
+    if (l == NULL)
+    {
+        return(NULL);
+    }
+
+    if (i == 0)
+    {
+
+    }
+}
 
 /**
  *
  * @param l
+ * @param i
  * @return
  */
-list_t* list_delete_last(list_t* l) {
-    list_t* p = l;
+list_t* list_delete_ith(list_t* l, size_t i)
+{
+    list_t* prev_p = NULL;
+    list_t* p      = l;
 
-    /* empty list */
+    while ((p != NULL) && (i > 0))
+    {
+        prev_p = p;
+        p      = p->next;
+        i--;
+    }
+
     if (p == NULL)
     {
-        return(NULL);
+        return(l);
     }
-
-    /* progress till the end */
-    while (p->next != NULL)
+    else /* i == 0 */
     {
-        p = p->next;
+        if (prev_p == NULL)
+        {
+            /* delete first item of l */
+            list_t* next_p = p->next;
+            list_free(p);
+            return(next_p);
+        }
+        else
+        {
+            prev_p->next = p->next;
+            list_free(p);
+            return(l);
+        }
     }
-
-    /* singleton list */
-    if (p == l)
-    {
-        list_free(p);
-        return(NULL);
-    }
-
-    /* non-singleton list */
-    list_free(p->next);
-    p->next = NULL;
-    return(l);
 
 }

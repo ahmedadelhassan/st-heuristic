@@ -1,5 +1,5 @@
-#ifndef __GRAPH__
-#define __GRAPH__
+#ifndef ST_HEURISTIC_UNION_GRAPH_H
+#define ST_HEURISTIC_UNION_GRAPH_H
 
 #include <stdio.h>
 
@@ -35,4 +35,4 @@ extern void     graph_release(graph_t* g);
 extern void     graph_add_edge(graph_t* g, vertex_t src, vertex_t dest, weight_t w);
 extern void     graph_add_terminal(graph_t* g, vertex_t u);
 
-#endif /* __GRAPH__ */
+#endif /* ST_HEURISTIC_UNION_GRAPH_H */
