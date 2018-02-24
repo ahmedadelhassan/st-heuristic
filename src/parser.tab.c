@@ -96,6 +96,7 @@
 /* Copy the first part of user declarations.  */
 #line 1 "parser.y"
 
+
 #include <stdio.h>
 #include <string.h>
 
@@ -106,9 +107,13 @@ void yyerror(char* str)
   fprintf(stderr, "error: %s\n", str);
 }
 
+/*
+ * The scanner terminates (returning 0 to its caller) it receives an end-of-file
+ * indication from YY_INPUT.
+ */
 int yywrap()
 {
-  return 1;
+  return(1);
 }
 
 int main()
@@ -150,7 +155,7 @@ typedef int YYSTYPE;
 
 
 /* Line 216 of yacc.c.  */
-#line 154 "parser.tab.c"
+#line 159 "parser.tab.c"
 
 #ifdef short
 # undef short
@@ -437,8 +442,8 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    30,    30,    33,    36,    43,    49,    50,    53,    60,
-      63,    69,    70,    73
+       0,    35,    35,    38,    41,    48,    54,    55,    58,    65,
+      68,    74,    75,    78
 };
 #endif
 
@@ -1348,35 +1353,35 @@ yyreduce:
   switch (yyn)
     {
         case 4:
-#line 37 "parser.y"
+#line 42 "parser.y"
     {
     printf("number of nodes %d\n", (yyvsp[(2) - (2)]));
   ;}
     break;
 
   case 5:
-#line 44 "parser.y"
+#line 49 "parser.y"
     {
     printf("number of edges %d\n", (yyvsp[(2) - (2)]));
   ;}
     break;
 
   case 8:
-#line 54 "parser.y"
+#line 59 "parser.y"
     {
     printf("edges %d %d %d\n", (yyvsp[(2) - (4)]), (yyvsp[(3) - (4)]), (yyvsp[(4) - (4)]));
   ;}
     break;
 
   case 10:
-#line 64 "parser.y"
+#line 69 "parser.y"
     {
     printf("number of terminals %d\n", (yyvsp[(2) - (2)]));
   ;}
     break;
 
   case 13:
-#line 74 "parser.y"
+#line 79 "parser.y"
     {
     printf("terminal %d\n", (yyvsp[(2) - (2)]));
   ;}
@@ -1384,7 +1389,7 @@ yyreduce:
 
 
 /* Line 1267 of yacc.c.  */
-#line 1388 "parser.tab.c"
+#line 1393 "parser.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);

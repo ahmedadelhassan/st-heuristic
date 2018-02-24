@@ -58,14 +58,17 @@ int main( int argc, char *argv[] )
   /* parse command line arguments */
   int opt = 0;
   int long_index = 0;
-	while ((opt = getopt_long( argc, argv, opt_string, long_opts, &long_index)) != -1) {
+	while ((opt = getopt_long( argc, argv, opt_string, long_opts, &long_index)) != -1)
+  {
 		switch (opt) {
 			case 's':
-        if (sscanf(optarg, "%i", &args.seed) != 1) {
+        if (sscanf(optarg, "%i", &args.seed) != 1)
+        {
           fprintf(stderr, "error. could not parse \"%s\" as a positive integer\n", optarg);
           exit(EXIT_FAILURE);
         }
-        if (args.seed < 0) {
+        if (args.seed < 0)
+        {
           fprintf(stderr, "error. could not parse \"%s\" as a positive integer\n", optarg);
           exit(EXIT_FAILURE);
         }
@@ -94,6 +97,8 @@ int main( int argc, char *argv[] )
   }
   args.filename = strdup(argv[optind]);
 
+  /* real stuff goes here ! */
+  here_we_are(args);
   int loop = 0;
   while (! done)
   {
@@ -107,9 +112,8 @@ int main( int argc, char *argv[] )
       }
       printf("Finished loop run %d.\n", loop++);
   }
-
   printf("done.\n");
 
-
+  /* done ! */
 	return(EXIT_SUCCESS);
 }
