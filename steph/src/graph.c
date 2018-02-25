@@ -3,47 +3,176 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include "list.h"
 #include "graph_t.h"
-#include "sp_table.h"
 
 /**
  *
+ * @param stream
+ * @return
  */
-graph_t* graph_alloc(size_t, size_t n_alloc_edges, size_t n_alloc_terminals)
+graph_t* graph_read(FILE* stream)
 {
-  graph_t* g = (graph_t*) malloc(sizeof(graph_t));
-  if (g == NULL)
-  {
-    perror("mem alloc");
-    exit(EXIT_FAILURE);
-  }
+    char     buffer[64];
+    int      n_nodes;
+    int      n_edges;
+    node_t   src;
+    node_t   dst;
+    weight_t w;
 
-  g->n_vertices  = 0;
+    if ((fscanf(stream, "%s", buffer) != 1) || (strcmp(buffer, "SECTION") != 0))
+    {
+        fprintf(stderr, "parse error\n");
+        exit(EXIT_FAILURE);
+    }
 
-  g->n_alloc_edges = n_alloc_edges;
-  g->n_edges       = 0;
-  g->edges         = (edge_t*) malloc(2 * n_alloc_edges * sizeof(graph_t));
-  if (g->edges == NULL)
-  {
-    perror("mem alloc");
-    exit(EXIT_FAILURE);
-  }
+    if ((fscanf(stream, "%s", buffer) != 1) || (strcmp(buffer, "Graph") != 0))
+    {
+        fprintf(stderr, "parse error\n");
+        exit(EXIT_FAILURE);
+    }
 
-  g->n_alloc_terminals = n_alloc_terminals;
-  g->n_terminals = 0;
+    if ((fscanf(stream, "%s", buffer) != 1) || (strcmp(buffer, "Nodes") != 0))
+    {
+        fprintf(stderr, "parse error\n");
+        exit(EXIT_FAILURE);
+    }
 
-  g->edges       = NULL;
-  g->terminals   = NULL;
+    if (fscanf(stream, "%d", &n_nodes) != 1)
+    {
+        fprintf(stderr, "parse error\n");
+        exit(EXIT_FAILURE);
+    }
 
-  g->n_alloc_edges     = 0;
-  g->n_alloc_terminals = 0;
+    if ((fscanf(stream, "%s", buffer) != 1) || (strcmp(buffer, "Edges") != 0))
+    {
+        fprintf(stderr, "parse error\n");
+        exit(EXIT_FAILURE);
+    }
 
-  return(g);
+    if (fscanf(stream, "%d", &n_edges) != 1)
+    {
+        fprintf(stderr, "parse error\n");
+        exit(EXIT_FAILURE);
+    }
+
+    graph_t* g = graph_alloc();
+    g->n_nodes = n_nodes;
+    g->n_edges = n_edges;
+
+    /* Memory allocation for edges list */
+    g->edges = (edge_t*) calloc(2 * n_edges * sizeof(edge_t));
+    if (g->edges == NULL)
+    {
+        fprintf(stderr, "memory allocation error\n");
+        exit(EXIT_FAILURE);
+    }
+
+    /* Read the edges */
+    for (i = 0 ; i < n_edges ; i++){
+        if (fscanf(stream, "%*s %d %d %d", &src, &dst, &x) != 3){
+            fprintf(stderr, "parse error\n");
+            exit(EXIT_FAILURE);
+        }
+        g->edges[2*i].src      = src;
+        g->edges[2*i].dst      = dst;
+        g->edges[2*i].weight   = w;
+
+        g->edges[2*i+1].src    = dst;
+        g->edges[2*i+1].dst    = src;
+        g->edges[2*i+1].weight = w;
+    }
+
+    if ((fscanf(stream, "%s", buffer) != 1) || (strcmp(buffer, "END") != 0))
+    {
+        fprintf(stderr, "parse error\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if ((fscanf(stream, "%s", buffer) != 1) || (strcmp(buffer, "SECTION") != 0))
+    {
+        fprintf(stderr, "parse error\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if ((fscanf(stream, "%s", buffer) != 1) || (strcmp(buffer, "Terminals") != 0))
+    {
+        fprintf(stderr, "parse error\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if ((fscanf(stream, "%s", buffer) != 1) || (strcmp(buffer, "Terminals") != 0))
+    {
+        fprintf(stderr, "parse error\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if (fscanf(stream, "%d", &n_terminals) != 1)
+    {
+        fprintf(stderr, "parse error\n");
+        exit(EXIT_FAILURE);
+    }
+
+    g->n_terminals = n_terminals;
+
+    /* Memory allocation for terminal nodes */
+    g->terminals = (node_t*) calloc(n_terminals, sizeof(node_t));
+    if (g->terminals == NULL){
+        fprintf(stderr, "memory allocation error\n");
+        exit(EXIT_FAILURE);
+    }
+
+    /* Read the terminals */
+    for (i = 0 ; i < g->nb_terminals ; i++){
+        if (fscanf(stream, "%*s %d", &t) != 1){
+            fprintf(stderr, "parse error\n");
+            exit(EXIT_FAILURE);
+        }
+        g->terminals[i] = t;
+    }
+
+    if ((fscanf(stream, "%s", buffer) != 1) || (strcmp(buffer, "END") != 0))
+    {
+        fprintf(stderr, "parse error\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if ((fscanf(stream, "%s", buffer) != 1) || (strcmp(buffer, "EOF") != 0))
+    {
+        fprintf(stderr, "parse error\n");
+        exit(EXIT_FAILURE);
+    }
+
+    return(g);
 }
 
 /**
  *
+ * @param n_alloc_edges
+ * @param n_alloc_terminals
+ * @return
+ */
+graph_t* graph_alloc()
+{
+    graph_t* g = (graph_t*) malloc(sizeof(graph_t));
+    if (g == NULL)
+    {
+        perror("mem alloc");
+        exit(EXIT_FAILURE);
+    }
+
+    g->n_nodes     = 0;
+    g->n_edges     = 0;
+    g->n_terminals = 0;
+
+    g->edges       = NULL;
+    g->terminals   = NULL;
+
+    return(g);
+}
+
+/**
+ *
+ * @param g
  */
 void graph_release(graph_t* g)
 {
@@ -51,13 +180,13 @@ void graph_release(graph_t* g)
   {
     if (g->edges)
     {
-      memset(g->edges, 0x0, g->n_alloc_edges * suzeof(edge_t));
+      memset(g->edges, 0x0, 2 * g->n_edges * sizeof(edge_t));
       free(g->edges);
     }
 
     if (g->ternminals)
     {
-      memset(g->terminals, 0x0, g->terminals * sizeof(terminal_t));
+      memset(g->terminals, 0x0, 2 * g->terminals * sizeof(terminal_t));
       free(g->terminals);
     }
 
@@ -66,126 +195,54 @@ void graph_release(graph_t* g)
   }
 }
 
-
-
 /**
  *
+ * @param pe1
+ * @param pe2
+ * @return
  */
-static
-void _graph_add_edge(graph_t* g, vertex_idx u, vertex_idx v, weight w)
+static int cmp_edge(const void* pe1, const void* pe2)
 {
-  if (g->vertices[u].n_alloc == g->vertices[u].degree)
-  {
-    n_alloc = (g->vertices[u].n_alloc == 0) ? 1 :  (2 * g->vertices[u].n_alloc);
-    edge* edges = (edge*) realloc(n_alloc * sizeof(edge));
-    if (edge == NULL)
+    const edge_t* e1 = pe1;
+    const edge_t* e2 = pe2;
+
+    int c = e1->src - e2->src;
+    if (c != 0)
     {
-      graph_release(g);
-      perror("mem alloc");
-      exit(EXIT_FAILURE);
+        return(c);
     }
 
-    g->vertices[u].n_alloc = n_alloc;
-  }
-
-  g->vertices[u].edges[degree].v = v;
-  g->vertices[u].edges[degree].w = w;
-
-  ++g->vertices[u].edges[degree];
+    return(e1->dest - e2>dest);
 }
+
 
 /**
- *
+ * 
+ * @param g
+ * @return
  */
-void graph_add_edge(graph_t* g, vertex_idx u, vertex_idx v, weight w)
+list_t* graph_kruskal_min_spanning_tree(graph_t* g)
 {
-  if (g == NULL)
-  {
-    fprintf(stderr, "graph_add_edge. NULL graph_t\n");
-    exit(EXIT_FAILURE);
-  }
-
-  if (u > g->n_vertices)
-  {
-    fprintf(stderr, "graph_add_edge: bad vertex label \"%ud\"\n", u);
-    exit(EXIT_FAILURE);
-  }
-
-  if (v > g->n_vertices)
-  {
-    fprintf(stderr, "graph_add_edge: bad vertex label \"%ud\"\n", v);
-    exit(EXIT_FAILURE);
-  }
-
-  if (u == v)
-  {
-    fprintf(stderr, "graph_add_edge: self-loop add for label \"%ud\"\n", u_label);
-    exit(EXIT_FAILURE);
-  }
-
-  _graph_insert_edge(g, u, v, w);
-  _graph_insert_edge(g, v, u, w);
-
-  g-> n_edges += 1;
-}
-
-/**
- *
- */
-void graph_set_terminal(graph_t* g, vertex_idx u)
-{
-  if (g == NULL)
-  {
-    fprintf(stderr, "graph_set_terminal. NULL graph_t\n");
-    exit(EXIT_FAILURE);
-  }
-
-  if (u > g->n_vertices)
-  {
-    fprintf(stderr, "graph_set_terminal: bad vertex label \"%ud\"\n", u);
-    exit(EXIT_FAILURE);
-  }
-
-  g->vertices[u].terminal = 1;
-}
-
-
-sp_table* floyd_warshall(graph_t* g)
-{
-  sp_table* spt = sp_table_alloc(g->n_vertices);
-
-  /* init */
-  for (int i = 0; i < g->n_vertices; i++)
-  {
-    list* es = g->vertices[i].edges;
-    while (es)
+    list_t* l = NULL;
+    union_find_t* uf = union_find_alloc(g);
+    for (int e = 0; i < g->n_edges; e += 2)
     {
-      edge* e = (edge*) es->data;
-      if (g->vertices[i].label < e->v_label)
-      {
-        sp_table_set_dist(spt, g->vertices[i].label, e->v_label, e->w);
-      }
-      es = es->next;
-    }
-  }
+        node_t i = g->nodes[g->edges[e].src];
+        node_t j = g->nodes[g->edges[e].dest];
 
-  /* fill dp table */
-  for (int k = 0; k < g->n_vertices; k++)
-  {
-    for (int i = 0; i < g->n_vertices; i++)
-    {
-      for (int j = 0; j < g->n_vertices; j++)
-      {
-        unsigned int d_i_j = sp_table_get_dist(spt, i, j);
-        unsigned int d_i_k = sp_table_get_dist(spt, i, k);
-        unsigned int d_k_j = sp_table_get_dist(spt, k, j);
-        if (d_i_j > d_i_k + d_k_j)
+        if ((g->nodes[i].color == BLACK) && (g->nodes[i].color == BLACK))
         {
-          sp_table_set_dist(spt, i, j, d_i_k + d_k_j);
-        }
-      }
-    }
-  }
+            vertex_t rep_i = union_find_find_recursive_compression(uf, i);
+            vertex_t rep_j = union_find_find_recursive_compression(uf, j);
 
-  return(spt);
+            if (rep_i != rep_j)
+            {
+                l = l.insert(g->edges[e]);
+                union_find_union(rep_i, rep_j);
+            }
+        }
+    }
+    union_find_release(uf);
+
+    return(l);
 }
