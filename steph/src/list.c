@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "list.h"
+#include "sorted_list.h"
 
 /**
  *
@@ -39,7 +40,7 @@ static void list_free(list_t *l) {
 void list_release(list_t *l) {
     if (l != NULL) {
         list_release(l->next);
-        list_free(l);
+        list_free(l);     
     }
 }
 
@@ -123,20 +124,13 @@ list_t *list_insert_front(list_t *l, void *data) {
     return (new_l);
 }
 
-
 /**
- *
- * The following function moves the top item in the linked list_t
- * to its correct position.  This is similar to insertion sort.
- * The item that was the second item in the list_t becomes the
- * top item. The list_t should contain at least 2 items and
- * from the second item on, the list_t should already be sorted.
  *
  * @param l
  * @return
  */
 list_t *list_reverse(list_t *l) {
-    list_t rev_l = NULL;
+    list_t *rev_l = NULL;
 
     while (l != NULL) {
         list_t *tmp_l = l->next;
@@ -150,6 +144,12 @@ list_t *list_reverse(list_t *l) {
 
 
 /**
+ *
+ * The following function moves the top item in the linked list_t
+ * to its correct position.  This is similar to insertion sort.
+ * The item that was the second item in the list_t becomes the
+ * top item. The list_t should contain at least 2 items and
+ * from the second item on, the list_t should already be sorted.
  *
  * @param [in] l Input list
  * @param compar Comparing function
@@ -181,17 +181,17 @@ static list_t *list_move(list_t *l, int (*compar)(const void *, const void *)) {
  * @param compar
  * @return
  */
-list_t *list_sort(list_t *start, int (*compar)(const void *, const void *)) {
-    if (start == NULL) {
+list_t *list_sort(list_t *l, int (*compar)(const void *, const void *)) {
+    if (l == NULL) {
         return (NULL);
     }
 
-    start->next = list_sort(start->next, compar);
-    if ((start->next != NULL) && (compar(start->data, start->next->data) > 0)) {
-        start = list_move(start, compar);
+    l->next = list_sort(l->next, compar);
+    if ((l->next != NULL) && (compar(l->data, l->next->data) > 0)) {
+        l = list_move(l, compar);
     }
 
-    return (start);
+    return (l);
 }
 
 /**
@@ -201,7 +201,7 @@ list_t *list_sort(list_t *start, int (*compar)(const void *, const void *)) {
  * @param compar
  * @return
  */
-list_t *list_union(list_t *l1, t *l2, int (*compar)(const void *, const void *)) {
+list_t *list_union(list_t *l1, list_t *l2, int (*compar)(const void *, const void *)) {
     list_t *sorted_l1 = list_sort(l1, compar);
     list_t *sorted_l2 = list_sort(l2, compar);
     list_t *l = sorted_list_union(sorted_l1, sorted_l2, compar);
@@ -215,7 +215,7 @@ list_t *list_union(list_t *l1, t *l2, int (*compar)(const void *, const void *))
  * @param compar
  * @return
  */
-list_t *list_intersection(list_t *l1, t *l2, int (*compar)(const void *, const void *)) {
+list_t *list_intersection(list_t *l1, list_t *l2, int (*compar)(const void *, const void *)) {
     list_t *sorted_l1 = list_sort(l1, compar);
     list_t *sorted_l2 = list_sort(l2, compar);
     list_t *l = sorted_list_intersection(sorted_l1, sorted_l2, compar);
@@ -229,7 +229,7 @@ list_t *list_intersection(list_t *l1, t *l2, int (*compar)(const void *, const v
  * @param compar
  * @return
  */
-list_t *list_difference(list_t *l1, t *l2, int (*compar)(const void *, const void *)) {
+list_t *list_difference(list_t *l1, list_t *l2, int (*compar)(const void *, const void *)) {
     list_t *sorted_l1 = list_sort(l1, compar);
     list_t *sorted_l2 = list_sort(l2, compar);
     list_t *l = sorted_list_difference(sorted_l1, sorted_l2, compar);

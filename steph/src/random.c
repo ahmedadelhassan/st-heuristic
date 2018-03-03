@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <time.h>
 
 
@@ -18,7 +19,7 @@ void random_init() {
  */
 void random_shuffle(void *array, size_t n, size_t m) {
     char *char_array = array;
-    size_t stride = size * sizeof(char);
+    size_t stride = n * sizeof(char);
 
     char *buffer = (char *) calloc(m, sizeof(char));
     if (buffer == NULL) {

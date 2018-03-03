@@ -4,7 +4,7 @@
 #include "graph.h"
 
 typedef struct union_find_t {
-    node *parent;      /**< Node's parents.                                   */
+    node_t *parent;      /**< Node's parents.                                   */
     size_t *rank;        /**< Node's ranks.                                     */
     size_t *n_terminals; /**< Number of terminals in the part rooted at a node. */
     size_t size;        /**< Number of nodes.                                  */
@@ -18,14 +18,14 @@ extern void union_find_init(union_find_t *uf);
 
 extern void union_find_release(union_find_t *uf);
 
-extern vertex_t union_find_find_recursive_compression(union_find_t *uf, vertex_t i);
+extern node_t union_find_find_recursive_compression(union_find_t *uf, node_t i);
 
-extern vertex_t union_find_find_iterative_splitting(union_find_t *uf, vertex_t i);
+extern node_t union_find_find_iterative_splitting(union_find_t *uf, node_t i);
 
-extern vertex_t union_find_find_iterative_halving(union_find_t *uf, vertex_t i);
+extern node_t union_find_find_iterative_halving(union_find_t *uf, node_t i);
 
-extern vertex_t union_find_find_iterative_compression(union_find_t *uf, vertex_t i);
+extern node_t union_find_find_iterative_compression(union_find_t *uf, node_t i);
 
-extern size_t union_find_union(union_find_t *uf, vertex_t i, vertex_t j);
+extern size_t union_find_union(union_find_t *uf, node_t i, node_t j);
 
 #endif /* ST_HEURISTIC_UNION_FIND_H */

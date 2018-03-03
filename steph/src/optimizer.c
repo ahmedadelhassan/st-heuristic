@@ -86,11 +86,26 @@ void optimizer_release(optimizer_t opt) {
     }
 }
 
-void optimizer_run(optimizer_t opt) {
+/**
+ *
+ * @param opt
+ * @return
+ */
+list_t *optimizer_run(optimizer_t opt) {
 
     if (opt.individuals == NULL) {
         fprintf(stderr, "optimizer_run. uninitialized optimizer\n");
         exit(EXIT_FAILURE);
     }
+
+    union_find_t *uf = union_find_alloc(opt.config.graph);
+
+    /* initial individuals */
+    for (int i = 0; i < opt.config.n_individuals; i++) {
+        individual_mk()
+    }
+
+    /* loop and improve individuals */
+
 
 }

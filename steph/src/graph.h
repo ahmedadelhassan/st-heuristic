@@ -2,40 +2,54 @@
 #define ST_HEURISTIC_UNION_GRAPH_H
 
 #include <stdio.h>
+#include "color.h"
+#include "list.h"
 
 typedef unsigned int node_t;
+
 typedef unsigned int weight_t;
 
-/* WHITE, GREY, BLACK colors */
-#define WHITE 0
-#define GREY  1
-#define BLACK 2
-
 typedef struct edge_t {
-    node_t src;
-    node_t dest;
-    weight_t weight
+    node_t src;   /**< Source node id.      */
+    node_t dest;  /**< Destination node id. */
+    weight_t weight; /**< Edge's weight.       */
 } edge_t;
 
 typedef struct graph_t {
-    size_t n_nodes;      /**< Number of nodes.      */
-    node_t *nodes;
-    size_t n_edges;      /**< Number of edges.      */
-    edge_t *edges;        /**< Edges array.          */
-    size_t n_terminals;  /**< Number of terminals.  */
-    node_t *terminals;    /**< Terminals array.      */
+    size_t n_nodes;     /**< Number of nodes.     */
+    color_t *node_colors;      /**< Nodes' array         */
+    int *node_counters;
+    size_t n_terminals; /**< Number of terminals. */
+    size_t min_terminal_index;
+    int *node_terminals;
+    size_t n_edges;     /**< Number of edges.     */
+    edge_t *edges;      /**< Edges' array.        */
 } graph_t;
 
 
 extern graph_t *graph_read(FILE *f);
 
-extern void graph_write(FILE *f, graph_t g);
-
-extern graph_t *graph_alloc();
+extern void graph_write(FILE *f, graph_t *g);
 
 extern void graph_release(graph_t *g);
 
+extern int graph_node_is_terminal(graph_t *g, node_t i);
+
+extern void graph_node_counter_set_all(graph_t *g, color_t c);
+
+extern void graph_node_counter_set(graph_t *g, node_t i, color_t c);
+
+extern color_t graph_node_counter_get(graph_t *g, node_t i);
+
+extern void graph_node_counter_set_all(graph_t *g, color_t c);
+
+extern void graph_node_counter_set(graph_t *g, node_t i, color_t c);
+
+extern color_t graph_node_counter_get(graph_t *g, node_t i);
+
 extern void graph_init_colors(graph_t *g, color_t c);
+
+extern void graph_random_shuffle_edges(graph_t *g);
 
 extern list_t *graph_kruskal_min_spanning_tree(graph_t *g);
 

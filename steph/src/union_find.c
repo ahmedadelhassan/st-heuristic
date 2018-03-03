@@ -178,10 +178,6 @@ node_t union_find_find_iterative_compression(union_find_t *uf, int i) {
  * @param j
  */
 size_t union_find_union(union_find_t *uf, node_t i, node_t j) {
-#ifdef DEBUG
-    printf("union %d %d\n", i, j);
-#endif
-
     if (i == j) {
         return;
     }
@@ -190,26 +186,28 @@ size_t union_find_union(union_find_t *uf, node_t i, node_t j) {
     int j_root = union_find_find_iterative_compression(uf, j);
 
     if (i_root == j_root) {
-        return;
+        /* i and j are in the same part */
+        return(uf->n_terminals[i_root]);
     }
 
+    /* merging two parts */
     uf->count--;
 
     if (uf->rank[i_root] == uf->rank[j_root]) {
-        uf->parent[i_roo] = i_root;
+        uf->parent[j_root] = i_root;
         uf->n_terminals[i_root] += uf->n_terminals[j_root]
         uf->rank[i_root]++;
         return (uf->n_terminals[i_root]);
     }
 
     if (uf->rank[i_root] < uf->rank[j_root]) {
-        uf->parent[i_roo] = j_root;
+        uf->parent[i_root] = j_root;
         uf->n_terminals[j_root] += uf->n_terminals[i_root];
         return (uf->n_terminals[j_root]);
     }
 
     /* uf->rank[i_root] > uf->rank[j_root] */
-    uf->parent[i_roo] = i_root;
+    uf->parent[i_root] = i_root;
     uf->n_terminals[i_root] += uf->n_terminals[j_root]
     return (uf->n_terminals[i_root]);
 }

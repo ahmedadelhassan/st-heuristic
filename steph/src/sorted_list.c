@@ -1,5 +1,6 @@
-#include "sorted_list.h"
+#include <stdlib.h>
 
+#include "list.h"
 
 /**
  *
@@ -33,10 +34,10 @@ list_t *sorted_list_insert(list_t *l, void *data, int (*compar)(const void *, co
 
 /**
  *
- * @param l1
- * @param l2
+ * @param l1 first sorted list
+ * @param l2 second sorted list
  * @param compar
- * @return
+ * @return the sorted union of l1 and l2
  */
 list_t *sorted_list_union(list_t *l1, list_t *l2, int (*compar)(const void *, const void *)) {
     list_t *l = NULL;
@@ -47,9 +48,10 @@ list_t *sorted_list_union(list_t *l1, list_t *l2, int (*compar)(const void *, co
             l1 = l1->next;
         } else {
             if (compar(l1->data, l2->data) > 0) {
-                list_insert_front(l, l1->data);
+                list_insert_front(l, l2->data);
                 l2 = l2->next;
             } else {
+                /* compar(l1->data, l2->data) == 0 */
                 list_insert_front(l, l1->data);
                 l1 = l1->next;
                 l2 = l2->next;
@@ -64,31 +66,30 @@ list_t *sorted_list_union(list_t *l1, list_t *l2, int (*compar)(const void *, co
 
     while (l2 != NULL) {
         list_insert_front(l, l2->data);
-        l1 = l2->next;
+        l2 = l2->next;
     }
 
-    l = list_reverse(l);
-
-    return (l);
+    return (list_reverse(l));
 }
 
 /**
  *
- * @param l1
- * @param l2
+ * @param l1 first sorted list
+ * @param l2 second sorted list
  * @param compar
- * @return
+ * @return the sorted intersection of l1 and l2
  */
-static list_t *sorted_list_intersection(list_t *l1, list_t *l2, int (*compar)(const void *, const void *)) {
+list_t *sorted_list_intersection(list_t *l1, list_t *l2, int (*compar)(const void *, const void *)) {
     list_t *l = NULL;
 
-    while ((l1 != NULL) && (l1 != NULL)) {
+    while ((l1 != NULL) && (l2 != NULL)) {
         if (compar(l1->data, l2->data) < 0) {
             l1 = l1->next;
         } else {
             if (compar(l1->data, l2->data) > 0) {
                 l2 = l2->next;
             } else {
+                /* compar(l1->data, l2->data) == 0 */
                 list_insert_front(l, l1->data);
                 l1 = l1->next;
                 l2 = l2->next;
@@ -96,22 +97,20 @@ static list_t *sorted_list_intersection(list_t *l1, list_t *l2, int (*compar)(co
         }
     }
 
-    l = list_reverse(l);
-
-    return (l);
+    return (list_reverse(l));
 }
 
 /**
  *
- * @param l1
- * @param l2
+ * @param l1 first sorted list
+ * @param l2 second sorted list
  * @param compar
- * @return
+ * @return the sorted difference of l1 with l2
  */
-list_t *sorted_list_difference(list_t *l1, sorted_t *l2, int (*compar)(const void *, const void *)) {
+list_t *sorted_list_difference(list_t *l1, list_t *l2, int (*compar)(const void *, const void *)) {
     list_t *l = NULL;
 
-    while ((l1 != NULL) && (l1 != NULL)) {
+    while ((l1 != NULL) && (l2 != NULL)) {
         if (compar(l1->data, l2->data) < 0) {
             l = list_insert_front(l, l1->data);
             l1 = l1->next;
@@ -119,6 +118,7 @@ list_t *sorted_list_difference(list_t *l1, sorted_t *l2, int (*compar)(const voi
             if (compar(l1->data, l2->data) > 0) {
                 l2 = l2->next;
             } else {
+                /* compar(l1->data, l2->data) == 0 */
                 l1 = l1->next;
                 l2 = l2->next;
             }
@@ -130,7 +130,5 @@ list_t *sorted_list_difference(list_t *l1, sorted_t *l2, int (*compar)(const voi
         l1 = l1->next;
     }
 
-    l = list_reverse(l);
-
-    return (l);
+    return (list_reverse(l));
 }

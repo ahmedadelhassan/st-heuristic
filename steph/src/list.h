@@ -22,10 +22,10 @@ extern list_t *list_reverse(list_t *l);
 
 extern list_t *list_sort(list_t *start, int (*compar)(const void *, const void *));
 
-extern list_t *list_union(list_t *l1, t *l2, int (*compar)(const void *, const void *));
+extern list_t *list_union(list_t *l1, list_t *l2, int (*compar)(const void *, const void *));
 
-extern list_t *list_intersection(list_t *l1, t *l2, int (*compar)(const void *, const void *));
+extern list_t *list_intersection(list_t *l1, list_t *l2, int (*compar)(const void *, const void *));
 
-extern list_t *list_difference(list_t *l1, t *l2, int (*compar)(const void *, const void *));
+extern list_t *list_difference(list_t *l1, list_t *l2, int (*compar)(const void *, const void *));
 
 #endif /* ST_HEURISTIC_LIST_H */
