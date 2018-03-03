@@ -1,176 +1,223 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include "avc_tree.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "avl_tree.h"
 
 #define AVL_MAX(x, y) ((x) > (y) ? (x) : (y))
 
-// A utility function to get height of the tree
-int avl_height(avl_node* n)
-{
-    if (n == NULL)
-    {
-      return(0);
-    }
-    return(n->height);
-}
 
-/* Helper function that allocates a new node with the given key and
-    NULL left and right pointers. */
-avl_node* avl_node_mk(avl_key key)
+/**
+ *
+ * @param key
+ * @return
+ */
+avl_tree_t* avl_tree_alloc(void* key)
 {
-    avl_node* n = (avl_node*) malloc(sizeof(avl_node));
-    if (avl_node == NULL)
+    avl_tree_t* t = (avl_tree_t*) malloc(sizeof(avl_tree_t));
+    if (t == NULL)
     {
-      perror("avl_node_mk");
+      fprintf(stderr, "avl_tree_alloc. memory allocation error\n");
       exit(EXIT_FAILURE);
     }
 
-    n->key    = key;
-    n->left   = NULL;
-    n->right  = NULL;
-    n->height = 1;
+    t->key    = key;
+    t->left   = NULL;
+    t->right  = NULL;
+    t->height = 1;
 
-    return(n);
+    return(t);
 }
 
-// A utility function to right rotate subtree rooted with y
-// See the diagram given above.
-avl_node* avl_tree_right_rotate(avl_node* n)
+/**
+ *
+ * @param t
+ */
+void avl_tree_release(avl_tree_t* t)
 {
-    avl_node* x = n->left;
-    avl_node* y = x->right;
+    if (t != NULL)
+    {
+        avl_tree_release(t->left);
+        avl_tree_release(t->right);
+        memset(t, 0x0, sizeof(avl_tree_t));
+        free(t);
+    }
+}
 
-    // Perform rotation
-    x->right = n;
-    n->left  = y;
+/**
+ *
+ * @param n
+ * @return
+ */
+static avl_tree_t* avl_tree_right_rotate(avl_tree_t* t)
+{
+    avl_tree_t* x = t->left;
+    avl_tree_t* y = x->right;
 
-    // Update heights
-    n->height = AVL_MAX(height(n->left), height(n->right)) + 1;
-    x->height = AVL_MAX(height(x->left), height(x->right)) + 1;
+    /* perform rotation */
+    x->right = t;
+    t->left  = y;
 
-    // Return new root
+    /* Update heights */
+    t->height = 1 + AVL_MAX(avl_tree_height(t->left), avl_tree_height(t->right));
+    x->height = 1 + AVL_MAX(avl_tree_height(x->left), avl_tree_height(x->right));
+
+    /* return new root */
     return(x);
 }
 
-// A utility function to left rotate subtree rooted with x
-// See the diagram given above.
-avl_node* leftRotate(avl_node* n)
+/**
+ *
+ * @param n
+ * @return
+ */
+static avl_tree_t* avl_tree_left_rotate(avl_tree_t* t)
 {
-    avl_node* x = n->right;
-    avl_node* y = x->left;
+    avl_tree_t* x = t->right;
+    avl_tree_t* y = x->left;
 
-    // Perform rotation
-    x->left  = n;
-    n->right = y;
+    /* perform rotation */
+    x->left  = t;
+    t->right = y;
 
-    //  Update heights
-    n->height = max(height(n->left), height(n->right))+1;
-    x->height = max(height(x->left), height(x->right))+1;
+    /* Update heights */
+    t->height = 1 + AVL_MAX(avl_tree_height(t->left), avl_tree_height(t->right));
+    x->height = 1 + AVL_MAX(avl_tree_height(x->left), avl_tree_height(x->right));
 
-    // Return new root
+    /* return new root */
     return(x);
 }
 
-// Get Balance factor of node N
-int avl_tree_balance(avl_node* n)
+/**
+ *
+ * @param n
+ * @return
+ */
+static int avl_tree_get_balance(avl_tree_t* t)
 {
-    if (n == NULL)
+    if (t == NULL)
     {
       return(0);
     }
-    return(height(n->left) - height(n->right));
+    return(avl_tree_height(t->left) - avl_tree_height(t->right));
 }
 
-// Recursive function to insert key in subtree rooted
-// with node and returns new root of subtree.
-struct Node* insert(struct Node* node, int key)
+/**
+ *
+ * @param n
+ * @param key
+ * @param compar
+ * @return
+ */
+avl_tree_t* avl_tree_insert(avl_tree_t* t, void* key, int (*compar)(const void*, const void*))
 {
     /* 1.  Perform the normal BST insertion */
-    if (node == NULL)
-        return(newNode(key));
+    if (t == NULL) {
+        return(avl_tree_alloc(key));
+    }
 
-    if (key < node->key)
-        node->left  = insert(node->left, key);
-    else if (key > node->key)
-        node->right = insert(node->right, key);
-    else // Equal keys are not allowed in BST
-        return node;
+    if (compar(key, t->key) < 0)
+    {
+        t->left = avl_tree_insert(t->left, key, compar);
+    }
+    else
+    {
+        if (compar(key, t->key) > 0)
+        {
+            t->right = avl_tree_insert(t->right, key, compar);
+        }
+        else
+        {
+            /* not allowed */
+            return(t);
+        }
+    }
 
     /* 2. Update height of this ancestor node */
-    node->height = 1 + max(height(node->left),
-                           height(node->right));
+    t->height = 1 + AVL_MAX(avl_tree_height(t->left), avl_tree_height(t->right));
 
     /* 3. Get the balance factor of this ancestor
           node to check whether this node became
           unbalanced */
-    int balance = getBalance(node);
+    int balance = avl_tree_get_balance(t);
 
     // If this node becomes unbalanced, then
     // there are 4 cases
 
     // Left Left Case
-    if (balance > 1 && key < node->left->key)
-        return rightRotate(node);
+    if ((balance > 1) && (compar(key, t->left->key) < 0))
+    {
+        return(avl_tree_right_rotate(t));
+    }
 
     // Right Right Case
-    if (balance < -1 && key > node->right->key)
-        return leftRotate(node);
+    if ((balance < -1) && (compar(key, t->right->key) > 0))
+    {
+        return(avl_tree_left_rotate(t));
+
+    }
 
     // Left Right Case
-    if (balance > 1 && key > node->left->key)
+    if ((balance > 1) && (compar(key, t->left->key) > 0))
     {
-        node->left =  leftRotate(node->left);
-        return rightRotate(node);
+        t->left =  avl_tree_left_rotate(t->left);
+        return(avl_tree_right_rotate(t));
     }
 
     // Right Left Case
-    if (balance < -1 && key < node->right->key)
+    if ((balance < -1) && (compar(key, t->right->key) < 0))
     {
-        node->right = rightRotate(node->right);
-        return leftRotate(node);
+        t->right = avl_tree_right_rotate(t->right);
+        return(avl_tree_left_rotate(t));
     }
 
     /* return the (unchanged) node pointer */
-    return node;
+    return(t);
 }
 
-// A utility function to print preorder traversal
-// of the tree.
-// The function also prints height of every node
-void avl_tree_preorder(avl_node* n)
+/**
+ *
+ * @param n
+ * @return
+ */
+size_t avl_tree_height(avl_tree_t* t)
 {
-    if(root != NULL)
+    if (t == NULL)
     {
-        printf("(%d, %d) ", root->key.key1, n->key.key2);
-        preOrder(n->left);
-        preOrder(n->right);
+        return(0);
     }
+    return(t->height);
 }
 
-/* Drier program to test above function*/
-int main()
+/**
+ *
+ * @param t
+ * @param key
+ * @param compar
+ * @return
+ */
+int avl_tree_lookup(avl_tree_t* t, void* key, int (*compar)(const void*, const void*))
 {
-  struct Node *root = NULL;
+    while (t != NULL)
+    {
+        if (compar(t->key, key) > 0)
+        {
+            t = t->left;
+        }
+        else
+        {
+            if (compar(t->key, key) < 0)
+            {
+                t = t->right;
+            }
+            else
+            {
+                return(1);
+            }
+        }
+    }
 
-  /* Constructing tree given in the above figure */
-  root = insert(root, 10);
-  root = insert(root, 20);
-  root = insert(root, 30);
-  root = insert(root, 40);
-  root = insert(root, 50);
-  root = insert(root, 25);
-
-  /* The constructed AVL Tree would be
-            30
-           /  \
-         20   40
-        /  \     \
-       10  25    50
-  */
-
-  printf("Preorder traversal of the constructed AVL"
-         " tree is \n");
-  preOrder(root);
-
-  return 0;
+    /* still here !? not found */
+    return(0);
 }
+
