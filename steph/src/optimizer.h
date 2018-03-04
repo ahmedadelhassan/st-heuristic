@@ -14,8 +14,8 @@ typedef struct optimizer_config_t {
 typedef struct optimizer_t {
     optimizer_config_t config;
     individual_t **individuals;
-    weight_t best_individual_value;
-    weight_t worst_individual_value;
+    weight_t best_total_weight;
+    weight_t worst_total_weight;
 } optimizer_t;
 
 extern optimizer_t optimizer_init(optimizer_config_t config);

@@ -1,98 +1,180 @@
+#include <assert.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 #include "individual.h"
 
 /**
  *
+ * @param u
  * @return
  */
-individual_t *individual_alloc(list_t *nodes) {
+static node_t *individual_node_alloc(node_t u) {
+    node_t *pu = (node_t *) malloc(sizeof(node_t));
+    if (pu == NULL) {
+        fprintf(stderr, "individual_node_alloc. memory allocation error for node %zu.\n", u);
+        exit(EXIT_FAILURE);
+    }
+    *pu = u;
+    return (pu);
+}
+
+/**
+ *
+ * @param pu
+ */
+static void individual_node_release(node_t *pu) {
+    if (pu != NULL) {
+        memset(pu, 0x0, sizeof(node_t));
+        free(pu);
+    }
+}
+
+
+/**
+ *
+ * @param n_nodes
+ * @param w
+ * @return
+ */
+static individual_t *individual_alloc(graph_t *g, weight_t w) {
     individual_t *ind = (individual_t *) malloc(sizeof(individual_t));
     if (ind == NULL) {
         fprintf(stderr, "individual_alloc. memory allocation error\n");
         exit(EXIT_FAILURE);
     }
 
-    st->nodes = nodes;
-    st->n_nodes = list_size(nodes);
-    st->min_weight_spanning_tree = 0;
+    ind->nodes = NULL;
+    for (int u = 0; u < g->n_nodes; u++) {
+        if (graph_node_color_get(g, u) == BLACK) {
+            node_t *pu = individual_node_alloc(u);
+            ind->nodes = list_insert_front(ind->nodes, pu);
+        }
+    }
 
-    return (st);
+    ind->n_nodes = n_nodes;
+    ind->min_weight_spanning_tree = w;
+
+    return (ind);
 }
 
 
 /**
  *
- * @param st
+ * @param ind
  */
-void individual_release(individual_t *st) {
-    if (st != NULL) {
-        list_release(st->nodes);
+void individual_release(individual_t *ind) {
+    if (ind != NULL) {
+        list_release_with_data_release(ind->nodes, individual_node_release);
         memset(st, 0x0, sizeof(individual_t));
-        free(st);
+        free(ind);
     }
 }
 
+/**
+ *
+ * @param g
+ * @return
+ */
+individual_t *individual_mk_rand(graph_t *g) {
+    individual_mk_rand_from_individual(g, NULL);
+}
 
-individual_t *individual_mk(graph_t *g) {
-    if (g == NULL) {
-        fprintf(stderr, "individual_mk. NULL graph.\n");
-        exit(EXIT_FAILURE);
-    }
+/**
+ *
+ * @param g
+ * @param ind
+ * @return
+ */
+individual_t *individual_mk_rand_from_nodes(graph_t *g, list_t *nodes) {
+    assert(g != NULL);
 
-    /* */
+    /* random shuffle the edges of the reference graph */
     graph_random_shuffle_edges(g);
-    edges_t *edges = g->edges;
+
+    /* new union find */
+    union_find_t *uf = union_find_alloc(g->n_nodes);
+
+    /* if a new individual is built from nodes, add them */
+    size_t n_terminals = 0
+    if (nodes != NULL) {
+        list_t *l = nodes;
+        node_t u = *((node_t *) l->data);
+        l = l->next;
+        while (l != NULL) {
+            node_t v = *((node_t *) l->data);
+            n_terminals = union_find_union(uf, u, v);
+            l = l->next;
+        }
+    }
 
     /* add edges one by one until all terminal nodes are part of the same connected component */
-    union_find_t *uf = union_find_alloc(g->n_ndoes);
-    size_t n_terminals = 0
     for (int i = 0; (n_terminals < g->n_terminals) && (i < g->n_edges); i++) {
-        n_terminals = union_find_union(uf, edges[i].src, edges[i].dest);
-    }
-
-    /* color BLACK all nodes that are part of the terminal connected component, all other nodes are colored WHITE  */
-    graph_set_all_color(g, WHITE);
-    node_t root = union_find_find(uf, g->terminals[0]);
-    for (node_t u = 0; u < g->n_nodes; u++) {
-        if (union_find_find(uf, first_terminal) == root) {
-            graph_set_color(g, u, BLACK);
-        }
+        n_terminals = union_find_union(uf, g->edges[i].src, g->edges[i].dest);
     }
 
     /*
-     * inv 1: terminal nodes are colored BLACK.
-     * inv 2: BLACK nodes do form a connected subgraph of g.
+     * inv: terminals nodes are part of the same connected component.
      */
 
+    /* color BLACK all nodes that are part of the terminal connected component, all other nodes are colored WHITE  */
+    graph_node_color_set_all(g, WHITE);
+    node_t root = union_find_find(uf, g->min_terminal_node);
+    for (node_t u = 0; u < g->n_nodes; u++) {
+        if (union_find_find(uf, u) == root) {
+            graph_node_color_set(g, u, BLACK);
+        }
+    }
+
+    int done = 0;
+    weight_t w = 0;
+    list_t *edges = NULL;
+
     do {
+        /*
+         * inv 1: terminal nodes are BLACK in graph g (some non-terminal nodes are BLACK).
+         * inv 2: BLACK nodes do form a connected subgraph of g.
+         */
+
         /* compute a minimum spanning tree on BLACK vertices */
-        list_t *edges = graph_kruskal_min_spanning_tree(g);
+        edges = graph_kruskal_min_spanning_tree(g);
 
-        min_heap_t *h = min_heap_alloc();
-        list_t *it = edges;
-        while (it != NULL) {
-            if (heap_lookup(h, e->src)) {
-                head_increment(h, e->src);
-            }
-            else {
-                heap_insert(h, e->src, 1);
-            }
+        /* compute the degree of each node in the spanning tree */
+        graph_node_counter_set_all(0);
+        w = 0;
+        list_t *it_l = edges;
+        while (it_l != NULL) {
+            edge_t *pe = (edge_t) it_l->data;
+            graph_node_counter_increment(g, pe->src);
+            graph_node_counter_increment(g, pe->dest);
+            w += pe->weight;
+            it_l = it_l->next;
+        }
 
-            if (heap_lookup(h, e->dest)) {
-                head_increment(h, e->dest);
-            }
-            else {
-                heap_insert(h, e->dest, 1);
+        /* find (if it exists) a non-terminal BLACK node with degree 1 in the spanning tree */
+        int found = 0;
+        node_t u = 0;
+        while ((u < g->n_nodes) && (found == 0)) {
+            if ((graph_node_is_terminal(g, u) == 0) && (graph_node_color_get(g, u) == BLACK) && (graph_node_counter_get(g, u) == 1)) {
+                found = 1;
             }
         }
 
-        node_t u = heap_min(h);
-        while () {
-            graph_set_color(g, u, WHITE);
+        if (found == 1) {
+            /* node u is a non-terminal BLACK node with degree 1 in the spanning tree */
+            graph_node_color_set(g, u, WHITE);
+        } else {
+            done = 1;
         }
-    } while ();
+    } while (done == 0);
 
+    /*
+     * inv 1: terminal nodes are BLACK in graph g (some non-terminal nodes are BLACK).
+     * inv 2: BLACK nodes do form a connected subgraph of g.
+     * inv 3: edges is a min weight spanning tree of the BLACK nodes in which every non-terminal has degree at least 2.
+     */
 
+    individual_t *ind = individual_alloc(g, w);
 
-    return(individual_alloc(l));
+    return (ind);
 }

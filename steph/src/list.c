@@ -24,6 +24,17 @@ list_t *list_alloc() {
 
 /**
  *
+ * @param data
+ * @return
+ */
+list_t *list_alloc_with_data_init(void *data) {
+    list_t *l = list_alloc();
+    l->data = data;
+    return (l);
+}
+
+/**
+ *
  * @param l
  */
 static void list_free(list_t *l) {
@@ -40,6 +51,19 @@ static void list_free(list_t *l) {
 void list_release(list_t *l) {
     if (l != NULL) {
         list_release(l->next);
+        list_free(l);
+    }
+}
+
+/**
+ *
+ * @param l
+ * @param data_release
+ */
+void list_release_with_data_release(list_t *l, void (data_release)(const void *)) {
+    if (l != NULL) {
+        list_release_with_data_release(l->next, data_release);
+        data_release(l->data);
         list_free(l);
     }
 }

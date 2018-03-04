@@ -8,7 +8,11 @@ typedef struct list_t {
 
 extern list_t *list_alloc();
 
+extern list_t *list_alloc_with_data_init(void *data);
+
 extern void list_release(list_t *l);
+
+extern void list_release_with_data_release(list_t *l, void (data_release)(const void *));
 
 extern list_t *list_copy(const list_t *l);
 

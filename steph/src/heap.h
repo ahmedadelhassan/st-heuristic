@@ -1,28 +1,26 @@
 #ifndef ST_HEURISTIC_HEAP_H
 #define ST_HEURISTIC_HEAP_H
 
-typedef struct heap_item_t {
-    node_t node;
-    size_t count;
-} heap_item_t;
+#include <stdlib.h>
 
-typedef enum {
-    MIN_HEAP,
-    MAX_HEAP
-} heap_type_t;
-
-typedef struct heap_t {
+typedef struct {
     void **array;
     size_t size;
-    size_t alloc_size;
-    heap_type_t type;
-    int (compar)(const void*, const void*);
+    size_t capacity;
+
+    int (*compar)(const void *, const void *);
 } heap_t;
 
-extern heap_t *heap_alloc(heap_type_t type, size_t alloc_size, int (compar)(const void*, const void*));
+extern heap_t *heap_alloc(size_t capacity, int (*ompar)(const void *, const void *));
+
 extern void heap_release(heap_t *h);
-extern void *heap_search(heap_t *h, const void *x);
-extern int heap_insert(heap_t *h, const void *x);
-extern void *heap_peek(heap_t *h);
+
+extern void heap_release_with_data_release(heap_t *h, void (*data_release)(void *));
+
+extern void heap_insert(heap_t *h, void *data);
+
+extern void *heap_extract_rand(heap_t *h);
+
+extern void *heap_extract_max(heap_t *h);
 
 #endif /* ST_HEURISTIC_HEAP_H */

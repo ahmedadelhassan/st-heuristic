@@ -57,8 +57,8 @@ optimizer_t optimizer_init(optimizer_config_t config) {
 
     optimizer_t opt;
     opt.config                        = config;
-    opt.config.best_individual_value  = 0;
-    opt.config.worst_individual_value = 0;
+    opt.config.best_total_weight  = 0;
+    opt.config.worst_total_weight = 0;
 
     opt.individuals = (individuals**) calloc(config.n_individuals, sizeof(individuals_t*));
     if (opt.individuals == NULL) {
@@ -68,7 +68,7 @@ optimizer_t optimizer_init(optimizer_config_t config) {
 
     opt = optimizer_build_initial_individuals(opt);
 
-    retrn(opt);
+    return(opt);
 }
 
 

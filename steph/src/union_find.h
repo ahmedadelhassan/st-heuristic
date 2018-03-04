@@ -4,8 +4,8 @@
 #include "graph.h"
 
 typedef struct union_find_t {
-    node_t *parent;      /**< Node's parents.                                   */
-    size_t *rank;        /**< Node's ranks.                                     */
+    node_t *parents;      /**< Node's parents.                                   */
+    size_t *ranks;        /**< Node's ranks.                                     */
     size_t *n_terminals; /**< Number of terminals in the part rooted at a node. */
     size_t size;        /**< Number of nodes.                                  */
     size_t count;       /**< The number of parts.                              */
@@ -13,8 +13,6 @@ typedef struct union_find_t {
 } union_find_t;
 
 extern union_find_t *union_find_alloc(graph_t *g);
-
-extern void union_find_init(union_find_t *uf);
 
 extern void union_find_release(union_find_t *uf);
 

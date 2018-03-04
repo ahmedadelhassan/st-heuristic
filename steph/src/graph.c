@@ -198,7 +198,21 @@ int graph_node_is_terminal(graph_t *g, node_t i) {
     assert((g->n_nodes == 0) || (g->node_terminals != NULL));
     assert(i < g->n_nodes);
 
-    return (g->node_terminals[i]);
+    return (g->node_terminals[i] != 0);
+}
+
+/**
+ *
+ * @param g
+ * @param i
+ * @return
+ */
+int graph_node_is_non_terminal(graph_t *g, node_t i) {
+    assert(g != NULL);
+    assert((g->n_nodes == 0) || (g->node_terminals != NULL));
+    assert(i < g->n_nodes);
+
+    return (g->node_terminals[i] == 0);
 }
 
 /**
@@ -248,12 +262,33 @@ color_t graph_node_color_get(graph_t *g, node_t i) {
  * @param g
  * @param c
  */
-void graph_node_counter_set_all(graph_t *g, int val) {
+void graph_node_counter_set_all(graph_t *g, int counter) {
     assert(g != NULL);
     assert((g->n_nodes == 0) || (g->node_counters != NULL));
 
     for (int i = 0; i < g->n_nodes; i++) {
-        g->node_counters[i] = val;
+        g->node_counters[i] = counter;
+    }
+}
+
+/**
+ *
+ * @param g
+ */
+void graph_node_counter_reset_all(graph_t *g) {
+    graph_node_counter_set_all(g, 0);
+}
+
+/**
+ *
+ * @param g
+ */
+void graph_node_counter_increment_all(graph_t *g) {
+    assert(g != NULL);
+    assert((g->n_nodes == 0) || (g->node_counters != NULL));
+
+    for (int i = 0; i < g->n_nodes; i++) {
+        g->node_counters[i]++;
     }
 }
 
@@ -263,12 +298,34 @@ void graph_node_counter_set_all(graph_t *g, int val) {
  * @param i
  * @param c
  */
-void graph_counter_set(graph_t *g, node_t i, int val) {
+void graph_node_counter_set(graph_t *g, node_t i, int counter) {
     assert(g != NULL);
     assert((g->n_nodes == 0) || (g->node_counters != NULL));
     assert(i < g->n_nodes);
 
-    g->node_counters[i] = val;
+    g->node_counters[i] = counter;
+}
+
+/**
+ *
+ * @param g
+ * @param i
+ */
+void graph_node_counter_reset(graph_t *g, node_t i) {
+    graph_node_counter_set(g, i):
+}
+
+/**
+ *
+ * @param g
+ * @param i
+ */
+void graph_node_counter_increment(graph_t *g, node_t i) {
+    assert(g != NULL);
+    assert((g->n_nodes == 0) || (g->node_counters != NULL));
+    assert(i < g->n_nodes);
+
+    g->node_counters[i]++;
 }
 
 /**
@@ -277,7 +334,7 @@ void graph_counter_set(graph_t *g, node_t i, int val) {
  * @param i
  * @return the color of node i
  */
-int graph_counter_get(graph_t *g, node_t i) {
+int graph_node_counter_get(graph_t *g, node_t i) {
     assert(g != NULL);
     assert((g->n_nodes == 0) || (g->node_counters != NULL));
     assert(i < g->n_nodes);
