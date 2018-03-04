@@ -40,7 +40,7 @@ static void list_free(list_t *l) {
 void list_release(list_t *l) {
     if (l != NULL) {
         list_release(l->next);
-        list_free(l);     
+        list_free(l);
     }
 }
 
@@ -57,9 +57,7 @@ list_t *list_copy(const list_t *l) {
         l = l->next;
     }
 
-    new_l = list_reverse(new_l);
-
-    return (new_l);
+    return (list_reverse(new_l));
 }
 
 
