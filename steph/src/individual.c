@@ -4,31 +4,6 @@
 
 #include "individual.h"
 
-/**
- *
- * @param u
- * @return
- */
-static node_t *individual_node_alloc(node_t u) {
-    node_t *pu = (node_t *) malloc(sizeof(node_t));
-    if (pu == NULL) {
-        fprintf(stderr, "individual_node_alloc. memory allocation error for node %zu.\n", u);
-        exit(EXIT_FAILURE);
-    }
-    *pu = u;
-    return (pu);
-}
-
-/**
- *
- * @param pu
- */
-static void individual_node_release(node_t *pu) {
-    if (pu != NULL) {
-        memset(pu, 0x0, sizeof(node_t));
-        free(pu);
-    }
-}
 
 
 /**
@@ -66,7 +41,7 @@ static individual_t *individual_alloc(graph_t *g, weight_t w) {
 void individual_release(individual_t *ind) {
     if (ind != NULL) {
         list_release_with_data_release(ind->nodes, individual_node_release);
-        memset(st, 0x0, sizeof(individual_t));
+        memset(ind, 0x0, sizeof(individual_t));
         free(ind);
     }
 }
@@ -86,7 +61,7 @@ individual_t *individual_mk_rand(graph_t *g) {
  * @param ind
  * @return
  */
-individual_t *individual_mk_rand_from_nodes(graph_t *g, list_t *nodes) {
+individual_t *individual_mk_rand_from_nodes(graph_t *g, list_t *nodes_l) {
     assert(g != NULL);
 
     /* random shuffle the edges of the reference graph */
@@ -97,8 +72,8 @@ individual_t *individual_mk_rand_from_nodes(graph_t *g, list_t *nodes) {
 
     /* if a new individual is built from nodes, add them */
     size_t n_terminals = 0
-    if (nodes != NULL) {
-        list_t *l = nodes;
+    if (nodes_l != NULL) {
+        list_t *l = nodes_l;
         node_t u = *((node_t *) l->data);
         l = l->next;
         while (l != NULL) {
@@ -155,7 +130,8 @@ individual_t *individual_mk_rand_from_nodes(graph_t *g, list_t *nodes) {
         int found = 0;
         node_t u = 0;
         while ((u < g->n_nodes) && (found == 0)) {
-            if ((graph_node_is_terminal(g, u) == 0) && (graph_node_color_get(g, u) == BLACK) && (graph_node_counter_get(g, u) == 1)) {
+            if ((graph_node_is_terminal(g, u) == 0) && (graph_node_color_get(g, u) == BLACK) &&
+                (graph_node_counter_get(g, u) == 1)) {
                 found = 1;
             }
         }
@@ -177,4 +153,87 @@ individual_t *individual_mk_rand_from_nodes(graph_t *g, list_t *nodes) {
     individual_t *ind = individual_alloc(g, w);
 
     return (ind);
+}
+
+/**
+ *
+ * @param g
+ * @param ind1
+ * @param ind2
+ * @return
+ */
+individual_t *individual_union(graph_t *g, individual_t *ind1, individual_t *ind2) {
+    assert(g != NULL);
+    assert(ind1 != NULL);
+    assert(ind2 != NULL);
+
+    list_t *union_l = sorted_list_union(ind1->nodes, ind1->nodes, individual_node_compar, individual_node_copy);
+
+    individual_t *union_ind = individual_mk_rand_from_nodes(g, union_l);
+
+    list_release_with_data_release(union_l, individual_node_release);
+
+    return (union_ind);
+}
+
+/**
+ *
+ * @param g
+ * @param ind1
+ * @param ind2
+ * @return
+ */
+individual_t *individual_intersection(graph_t *g, individual_t *ind1, individual_t *ind2) {
+    assert(g != NULL);
+    assert(ind1 != NULL);
+    assert(ind2 != NULL);
+
+    list_t *inter_l = sorted_list_intersection(ind1->nodes, ind1->nodes, individual_node_compar, individual_node_copy);
+
+    individual_t *intersection_ind = individual_mk_rand_from_nodes(g, inter_l);
+
+    list_release_with_data_release(mut_l, individual_node_release);
+
+    return (intersection_ind);
+}
+
+/**
+ *
+ * @param g
+ * @param ind
+ * @return
+ */
+individual_t *individual_mutation(graph_t *g, individual_t *ind) {
+    assert(g != NULL);
+    assert(ind != NULL);
+
+    /* mutate individual ind by deleting its i-th non-terminal */
+    int i = rand() % (ind->n_nodes - g->n_non_terminals);
+
+    list_t *l = ind->nodes;
+    list_t *mut_l = NULL;
+
+    int counter = 0;
+    while (l != NULL) {
+        node_t u = *((node_t *) l->data);
+
+        if (graph_node_is_terminal(g, u) || (graph_node_is_non_terminal(g, u) && (counter != i))) {
+            node_t *pu = individual_node_alloc(u);
+            mut_l = list_insert_front(mut_l, pu);
+        }
+
+        if (graph_node_is_non_terminal(g, u)) {
+            counter++;
+        }
+
+        l = l->next;
+    }
+
+    mut_l = list_reverse(mut_l);
+
+    individual_t *mut_ind = individual_mk_rand_from_nodes(g, mut_l);
+
+    list_release_with_data_release(mut_l, individual_node_release);
+
+    return (mut_ind);
 }

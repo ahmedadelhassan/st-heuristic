@@ -17,4 +17,11 @@ extern individual_t *individual_mk_rand(graph_t *g);
 
 extern individual_t *individual_mk_rand_from_nodes(graph_t *g, individual_t *ind);
 
+extern individual_t *individual_union(graph_t *g, individual_t *ind1, individual_t *ind2);
+
+extern individual_t *individual_intersection(graph_t *g, individual_t *ind1, individual_t *ind2);
+
+extern individual_t *individual_mutation(graph_t *g, individual_t *ind);
+
+
 #endif /* ST_HEURISTIC_INDIVIDUAL_H */

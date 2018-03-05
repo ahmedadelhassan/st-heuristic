@@ -128,6 +128,7 @@ graph_t *graph_read(FILE *stream) {
     }
 
     g->n_terminals = n_terminals;
+    g->n_non_terminals = g->n_nodes - n_terminals;
     g->min_terminal_index = n_nodes;
 
     /* Read the terminals */
@@ -190,15 +191,14 @@ void graph_release(graph_t *g) {
 /**
  *
  * @param g
- * @param i
+ * @param u
  * @return
  */
-int graph_node_is_terminal(graph_t *g, node_t i) {
+int graph_node_is_terminal(graph_t *g, node_t u) {
     assert(g != NULL);
-    assert((g->n_nodes == 0) || (g->node_terminals != NULL));
-    assert(i < g->n_nodes);
+    assert(u < g->n_nodes);
 
-    return (g->node_terminals[i] != 0);
+    return (g->node_terminals[u] != 0);
 }
 
 /**
@@ -207,12 +207,11 @@ int graph_node_is_terminal(graph_t *g, node_t i) {
  * @param i
  * @return
  */
-int graph_node_is_non_terminal(graph_t *g, node_t i) {
+int graph_node_is_non_terminal(graph_t *g, node_t u) {
     assert(g != NULL);
-    assert((g->n_nodes == 0) || (g->node_terminals != NULL));
-    assert(i < g->n_nodes);
+    assert(u < g->n_nodes);
 
-    return (g->node_terminals[i] == 0);
+    return (g->node_terminals[u] == 0);
 }
 
 /**
@@ -222,39 +221,36 @@ int graph_node_is_non_terminal(graph_t *g, node_t i) {
  */
 void graph_color_set_all(graph_t *g, color_t c) {
     assert(g != NULL);
-    assert((g->n_nodes == 0) || (g->node_colors != NULL));
 
-    for (int i = 0; i < g->n_nodes; i++) {
-        g->node_colors[i] = c;
+    for (node_t u = 0; u < g->n_nodes; u++) {
+        g->node_colors[u] = c;
     }
 }
 
 /**
  *
  * @param g
- * @param i
+ * @param u
  * @param c
  */
-void graph_color_set(graph_t *g, node_t i, color_t c) {
+void graph_color_set(graph_t *g, node_t u, color_t c) {
     assert(g != NULL);
-    assert((g->n_nodes == 0) || (g->node_colors != NULL));
     assert(i < g->n_nodes);
 
-    g->node_colors[i] = c;
+    g->node_colors[u] = c;
 }
 
 /**
  *
  * @param g
- * @param i
+ * @param u
  * @return the color of node i
  */
-color_t graph_node_color_get(graph_t *g, node_t i) {
+color_t graph_node_color_get(graph_t *g, node_t u) {
     assert(g != NULL);
-    assert((g->n_nodes == 0) || (g->node_colors != NULL));
-    assert(i < g->n_nodes);
+    assert(u < g->n_nodes);
 
-    return (g->node_colors[i]);
+    return (g->node_colors[u]);
 }
 
 /**
@@ -266,8 +262,8 @@ void graph_node_counter_set_all(graph_t *g, int counter) {
     assert(g != NULL);
     assert((g->n_nodes == 0) || (g->node_counters != NULL));
 
-    for (int i = 0; i < g->n_nodes; i++) {
-        g->node_counters[i] = counter;
+    for (node_t u = 0; u < g->n_nodes; u++) {
+        g->node_counters[u] = counter;
     }
 }
 
@@ -285,82 +281,57 @@ void graph_node_counter_reset_all(graph_t *g) {
  */
 void graph_node_counter_increment_all(graph_t *g) {
     assert(g != NULL);
-    assert((g->n_nodes == 0) || (g->node_counters != NULL));
 
-    for (int i = 0; i < g->n_nodes; i++) {
-        g->node_counters[i]++;
+    for (node_t u = 0; u < g->n_nodes; u++) {
+        g->node_counters[u]++;
     }
 }
 
 /**
  *
  * @param g
- * @param i
+ * @param u
  * @param c
  */
-void graph_node_counter_set(graph_t *g, node_t i, int counter) {
+void graph_node_counter_set(graph_t *g, node_t u, int counter) {
     assert(g != NULL);
-    assert((g->n_nodes == 0) || (g->node_counters != NULL));
-    assert(i < g->n_nodes);
+    assert(u < g->n_nodes);
 
-    g->node_counters[i] = counter;
+    g->node_counters[u] = counter;
 }
 
 /**
  *
  * @param g
- * @param i
+ * @param u
  */
-void graph_node_counter_reset(graph_t *g, node_t i) {
-    graph_node_counter_set(g, i):
+void graph_node_counter_reset(graph_t *g, node_t u) {
+    graph_node_counter_set(g, u, 0):
 }
 
 /**
  *
  * @param g
- * @param i
+ * @param u
  */
-void graph_node_counter_increment(graph_t *g, node_t i) {
+void graph_node_counter_increment(graph_t *g, node_t u) {
     assert(g != NULL);
-    assert((g->n_nodes == 0) || (g->node_counters != NULL));
-    assert(i < g->n_nodes);
+    assert(u < g->n_nodes);
 
-    g->node_counters[i]++;
+    g->node_counters[u]++;
 }
 
 /**
  *
  * @param g
- * @param i
- * @return the color of node i
+ * @param u
+ * @return the counter associated to node u
  */
-int graph_node_counter_get(graph_t *g, node_t i) {
+int graph_node_counter_get(graph_t *g, node_t u) {
     assert(g != NULL);
-    assert((g->n_nodes == 0) || (g->node_counters != NULL));
     assert(i < g->n_nodes);
 
-    return (g->node_counters[i]);
-}
-
-/**
- *
- * @param pe1
- * @param pe2
- * @return
- */
-static int cmp_edge(const void *pe1, const void *pe2) {
-    const edge_t *e1 = pe1;
-    const edge_t *e2 = pe2;
-
-    assert(e1 != NULL);
-    assert(e2 != NULL);
-
-    int c = e1->src - e2->src;
-    if (c != 0) {
-        return (c);
-    }
-
-    return (e1->dest - e2->dest);
+    return (g->node_counters[u]);
 }
 
 /**

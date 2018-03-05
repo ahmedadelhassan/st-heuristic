@@ -1,25 +1,20 @@
-#ifndef ST_HEURISTIC_UNION_GRAPH_H
-#define ST_HEURISTIC_UNION_GRAPH_H
+#ifndef ST_HEURISTIC_GRAPH_H
+#define ST_HEURISTIC_GRAPH_H
 
-#include <stdio.h>
+#include <stdlib.h>
+
 #include "color.h"
+#include "edge.h"
+#include "node.h"
 #include "list.h"
-
-typedef unsigned int node_t;
-
-typedef unsigned int weight_t;
-
-typedef struct edge_t {
-    node_t src;   /**< Source node id.      */
-    node_t dest;  /**< Destination node id. */
-    weight_t weight; /**< Edge's weight.       */
-} edge_t;
+#include "weight.h"
 
 typedef struct graph_t {
     size_t n_nodes;     /**< Number of nodes.     */
     color_t *node_colors;      /**< Nodes' array         */
     int *node_counters;
     size_t n_terminals; /**< Number of terminals. */
+    size_t n_non_terminals; /**< Number of terminals. */
     node_t min_terminal_node;
     int *node_terminals;
     size_t n_edges;     /**< Number of edges.     */
@@ -61,4 +56,4 @@ extern void graph_random_shuffle_edges(graph_t *g);
 
 extern list_t *graph_kruskal_min_spanning_tree(graph_t *g);
 
-#endif /* ST_HEURISTIC_UNION_GRAPH_H */
+#endif /* ST_HEURISTIC_GRAPH_H */
