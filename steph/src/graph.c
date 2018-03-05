@@ -306,7 +306,7 @@ void graph_node_counter_set(graph_t *g, node_t u, int counter) {
  * @param u
  */
 void graph_node_counter_reset(graph_t *g, node_t u) {
-    graph_node_counter_set(g, u, 0):
+    graph_node_counter_set(g, u, 0);
 }
 
 /**

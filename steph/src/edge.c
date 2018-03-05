@@ -14,7 +14,7 @@
  */
 edge_t *edge_alloc(node_t src, edge_t dest, weight w) {
     edge_t *p_e = (edge_t*) malloc(sizeof(edge_t));
-    if (p_e = NULL) {
+    if (p_e == NULL) {
         fprintf(stderr, "edge_alloc. memory allocation error for (%zu, %zu, %zu).\n", src, dest, w);
         exit(EXIST_FAILURE);
     }

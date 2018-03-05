@@ -71,7 +71,7 @@ individual_t *individual_mk_rand_from_nodes(graph_t *g, list_t *nodes_l) {
     union_find_t *uf = union_find_alloc(g->n_nodes);
 
     /* if a new individual is built from nodes, add them */
-    size_t n_terminals = 0
+    size_t n_terminals = 0;
     if (nodes_l != NULL) {
         list_t *l = nodes_l;
         node_t u = *((node_t *) l->data);
