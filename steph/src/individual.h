@@ -6,9 +6,9 @@
 #include "union_find.h"
 
 typedef struct individual_t {
-    size_t n_nodes;
-    list_t *nodes;
-    weight_t min_weight_spanning_tree;
+    size_t n_non_terminal_nodes;
+    list_t *non_terminal_nodes;
+    weight_t weight;
 } individual;
 
 extern void individual_release(individual_t *st);

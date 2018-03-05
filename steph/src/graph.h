@@ -5,6 +5,7 @@
 
 #include "color.h"
 #include "edge.h"
+#include "edge_list.h"
 #include "node.h"
 #include "list.h"
 #include "weight.h"
@@ -54,6 +55,6 @@ extern color_t graph_node_counter_get(graph_t *g, node_t i);
 
 extern void graph_random_shuffle_edges(graph_t *g);
 
-extern list_t *graph_kruskal_min_spanning_tree(graph_t *g);
+extern edge_list_t *graph_kruskal_min_spanning_tree(graph_t *g);
 
 #endif /* ST_HEURISTIC_GRAPH_H */
