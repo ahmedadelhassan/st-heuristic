@@ -103,6 +103,20 @@ node_list_t *node_list_delete_ith(node_list_t *nl, unsigned int i) {
 /**
  *
  * @param nl
+ * @return
+ */
+node_list_t *node_list_delete_rand(node_list_t *nl) {
+    if (nl = NULL) {
+        return(NULL);
+    }
+
+    int i = rand() % node_list_size(nl);
+    return node_list_delete_ith(nl, i);
+}
+
+/**
+ *
+ * @param nl
  * @param n
  * @return
  */

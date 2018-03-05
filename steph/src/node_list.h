@@ -18,6 +18,8 @@ extern size_t node_list_size(node_list_t *nl);
 
 extern node_list_t *node_list_delete_ith(node_list_t *nl, unsigned int i);
 
+extern node_list_t *node_list_delete_rand(node_list_t *nl);
+
 extern node_list_t *node_list_insert_front(node_list_t *nl, node_t n);
 
 extern node_list_t *node_list_reverse(node_list_t *nl);
