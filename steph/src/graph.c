@@ -3,216 +3,374 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include "list.h"
+#include "color.h"
 #include "graph.h"
-#include "sp_table.h"
+#include "list.h"
+#include "union_find.h"
+#include "random.h"
 
 /**
  *
+ * @param stream
+ * @return
  */
-graph* graph_alloc(size_t n_vertices)
-{
-  graph* g = (graph*) malloc(sizeof(graph));
-  if (g == NULL)
-  {
-    perror("mem alloc");
-    exit(EXIT_FAILURE);
-  }
+graph_t *graph_read(FILE *stream) {
+    char buffer[64];
+    int n_nodes;
+    int n_edges;
 
-  g->n_vertices  = n_vertices;
-  g->n_edges     = 0;
-  g->n_terminals = 0;
 
-  g->vertices = (vertex*) calloc(n_vertices, sizeof(vertex));
-  if (g->vertices == NULL)
-  {
-    graph_release(g);
-    perror("mem alloc");
-    exit(EXIT_FAILURE);
-  }
+    if ((fscanf(stream, "%s", buffer) != 1) || (strcmp(buffer, "SECTION") != 0)) {
+        fprintf(stderr, "graph_read. parse error: could not read \"SECTION\" token.\n");
+        exit(EXIT_FAILURE);
+    }
 
-  for (int u = 0; u < n_vertices + 1; u++)
-  {
-    g->vertices[u].label    = u;
-    g->vertices[u].color    = WHITE;
-    g->vertices[u].terminal = 0;
-    g->vertices[u].degree   = 0;
-    g->vertices[u].n_alloc  = 0;
-    g->vertices[u].edges    = NULL;
-  }
+    if ((fscanf(stream, "%s", buffer) != 1) || (strcmp(buffer, "Graph") != 0)) {
+        fprintf(stderr, "graph_read. parse error: could not read \"Graph\" token.\n");
+        exit(EXIT_FAILURE);
+    }
 
-  return(g);
-}
+    if ((fscanf(stream, "%s", buffer) != 1) || (strcmp(buffer, "Nodes") != 0)) {
+        fprintf(stderr, "graph_read. parse error: could not read \"Nodes\" token.\n");
+        exit(EXIT_FAILURE);
+    }
 
-/**
- *
- */
-void graph_release(graph* g)
-{
-  if (g)
-  {
-    if (g->vertices)
-    {
-      for (int u = 0; u < g->n_vertices + 1; u++)
-      {
-        if (g->vertices[u].edges)
-        {
-          memset(g->vertices[u].edges, 0x0, g->vertices[u].n_alloc * sizeof(edge));
-          free(g->vertices[u].edges);
+    if (fscanf(stream, "%d", &n_nodes) != 1) {
+        fprintf(stderr, "graph_read. parse error: could not read number of nodes.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if ((fscanf(stream, "%s", buffer) != 1) || (strcmp(buffer, "Edges") != 0)) {
+        fprintf(stderr, "graph_read. parse error: could not read \"Edges\" token.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if (fscanf(stream, "%d", &n_edges) != 1) {
+        fprintf(stderr, "graph_read. parse error: could not read number of edges.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    graph_t *g = (graph_t *) malloc(sizeof(graph_t));
+    if (g == NULL) {
+        fprintf(stderr, "graph_read. memory allocation error.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    g->n_nodes = n_nodes;
+    g->n_edges = n_edges;
+
+    g->node_colors = (color_t *) calloc(n_nodes, sizeof(color_t));
+    if (g->node_colors == NULL) {
+        fprintf(stderr, "graph_read. memory allocation error: could not alloc \"node_colors\" array.\n");
+        exit(EXIT_FAILURE);
+    }
+    for (int i = 0; i < n_nodes; i++) {
+        g->node_colors[i] = WHITE;
+    }
+
+    g->node_counters = (int *) calloc(n_nodes, sizeof(int));
+    if (g->node_counters == NULL) {
+        fprintf(stderr, "graph_read. memory allocation error: could not alloc \"node_counters\" array.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    g->node_terminals = (int *) calloc(n_nodes, sizeof(color_t));
+    if (g->node_terminals == NULL) {
+        fprintf(stderr, "graph_read. memory allocation error: could not alloc \"node_terminals\" array.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    /* Memory allocation for colors */
+    g->edges = (edge_t *) calloc(n_nodes, sizeof(edge_t));
+    if (g->edges == NULL) {
+        fprintf(stderr, "memory allocation error: could not alloc \"edges\" array\n");
+        exit(EXIT_FAILURE);
+    }
+
+    /* Read the edges */
+    for (int i = 0; i < n_edges; i++) {
+        node_t src;
+        node_t dest;
+        weight_t w;
+        if (fscanf(stream, "%*s %d %d %d", &src, &dest, &w) != 3) {
+            fprintf(stderr, "graph_read. parse error: could not read %d-th edge\n.", i);
+            exit(EXIT_FAILURE);
         }
-      }
-
-      memset(g->vertices, 0x0, (g->n_vertices + 1) * sizeof(vertex));
-      free(g->vertices);
+        g->edges[i].src = src;
+        g->edges[i].dest = dest;
+        g->edges[i].weight = w;
     }
 
-    memset(g, 0x0, sizeof(graph));
-    free(g);
-  }
-}
+    if ((fscanf(stream, "%s", buffer) != 1) || (strcmp(buffer, "END") != 0)) {
+        fprintf(stderr, "graph_read. parse error: could not read \"END\" token.\n");
+        exit(EXIT_FAILURE);
+    }
 
-/**
- *
- */
-void graph_adjust(graph* g)
-{
-  if (g)
-  {
-    for (int u = 0; u < g->n_vertices + 1; u++)
-    {
-      if (g->vertices[u].n_alloc == g->vertices[u].degree)
-      {
-        edge* edges = (edge*) realloc(g->vertices[u].edges, g->vertices[u].degree * sizeof(edge));
-        if (edges == NULL)
-        {
-          graph_release(g);
-          perror("mem alloc");
-          exit(EXIT_FAILURE);
+    if ((fscanf(stream, "%s", buffer) != 1) || (strcmp(buffer, "SECTION") != 0)) {
+        fprintf(stderr, "graph_read. parse error: could not read \"SECTION\" token.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if ((fscanf(stream, "%s", buffer) != 1) || (strcmp(buffer, "Terminals") != 0)) {
+        fprintf(stderr, "graph_read. parse error: could not read \"Terminals\" token.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if ((fscanf(stream, "%s", buffer) != 1) || (strcmp(buffer, "Terminals") != 0)) {
+        fprintf(stderr, "graph_read. parse error: could not read \"Terminals\" token.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    int n_terminals;
+    if (fscanf(stream, "%d", &n_terminals) != 1) {
+        fprintf(stderr, "graph_read. parse error: could not read number of terminal nodes.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    g->n_terminals = n_terminals;
+    g->n_non_terminals = g->n_nodes - n_terminals;
+    g->min_terminal_index = n_nodes;
+
+    /* Read the terminals */
+    for (int i = 0; i < g->n_terminals; i++) {
+        node_t t;
+        if (fscanf(stream, "%*s %d", &t) != 1) {
+            fprintf(stderr, "graph_read. parse error: could not read %d-th terminal\n", i);
+            exit(EXIT_FAILURE);
         }
-        g->vertices[u].edges = edges;
-      }
-    }
-  }
-}
-
-/**
- *
- */
-static
-void _graph_add_edge(graph* g, vertex_idx u, vertex_idx v, weight w)
-{
-  if (g->vertices[u].n_alloc == g->vertices[u].degree)
-  {
-    n_alloc = (g->vertices[u].n_alloc == 0) ? 1 :  (2 * g->vertices[u].n_alloc);
-    edge* edges = (edge*) realloc(n_alloc * sizeof(edge));
-    if (edge == NULL)
-    {
-      graph_release(g);
-      perror("mem alloc");
-      exit(EXIT_FAILURE);
-    }
-
-    g->vertices[u].n_alloc = n_alloc;
-  }
-
-  g->vertices[u].edges[degree].v = v;
-  g->vertices[u].edges[degree].w = w;
-
-  ++g->vertices[u].edges[degree];
-}
-
-/**
- *
- */
-void graph_add_edge(graph* g, vertex_idx u, vertex_idx v, weight w)
-{
-  if (g == NULL)
-  {
-    fprintf(stderr, "graph_add_edge. NULL graph\n");
-    exit(EXIT_FAILURE);
-  }
-
-  if (u > g->n_vertices)
-  {
-    fprintf(stderr, "graph_add_edge: bad vertex label \"%ud\"\n", u);
-    exit(EXIT_FAILURE);
-  }
-
-  if (v > g->n_vertices)
-  {
-    fprintf(stderr, "graph_add_edge: bad vertex label \"%ud\"\n", v);
-    exit(EXIT_FAILURE);
-  }
-
-  if (u == v)
-  {
-    fprintf(stderr, "graph_add_edge: self-loop add for label \"%ud\"\n", u_label);
-    exit(EXIT_FAILURE);
-  }
-
-  _graph_insert_edge(g, u, v, w);
-  _graph_insert_edge(g, v, u, w);
-
-  g-> n_edges += 1;
-}
-
-/**
- *
- */
-void graph_set_terminal(graph* g, vertex_idx u)
-{
-  if (g == NULL)
-  {
-    fprintf(stderr, "graph_set_terminal. NULL graph\n");
-    exit(EXIT_FAILURE);
-  }
-
-  if (u > g->n_vertices)
-  {
-    fprintf(stderr, "graph_set_terminal: bad vertex label \"%ud\"\n", u);
-    exit(EXIT_FAILURE);
-  }
-
-  g->vertices[u].terminal = 1;
-}
-
-
-sp_table* floyd_warshall(graph* g)
-{
-  sp_table* spt = sp_table_alloc(g->n_vertices);
-
-  /* init */
-  for (int i = 0; i < g->n_vertices; i++)
-  {
-    list* es = g->vertices[i].edges;
-    while (es)
-    {
-      edge* e = (edge*) es->data;
-      if (g->vertices[i].label < e->v_label)
-      {
-        sp_table_set_dist(spt, g->vertices[i].label, e->v_label, e->w);
-      }
-      es = es->next;
-    }
-  }
-
-  /* fill dp table */
-  for (int k = 0; k < g->n_vertices; k++)
-  {
-    for (int i = 0; i < g->n_vertices; i++)
-    {
-      for (int j = 0; j < g->n_vertices; j++)
-      {
-        unsigned int d_i_j = sp_table_get_dist(spt, i, j);
-        unsigned int d_i_k = sp_table_get_dist(spt, i, k);
-        unsigned int d_k_j = sp_table_get_dist(spt, k, j);
-        if (d_i_j > d_i_k + d_k_j)
-        {
-          sp_table_set_dist(spt, i, j, d_i_k + d_k_j);
+        g->node_terminals[t] = 1;
+        if (g->min_terminal_index > i) {
+            g->min_terminal_index = i;
         }
-      }
     }
-  }
 
-  return(spt);
+    if ((fscanf(stream, "%s", buffer) != 1) || (strcmp(buffer, "END") != 0)) {
+        fprintf(stderr, "graph_read. parse error: could not read \"END\" token.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if ((fscanf(stream, "%s", buffer) != 1) || (strcmp(buffer, "EOF") != 0)) {
+        fprintf(stderr, "graph_read. parse error: could not read \"EOF\" token.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    return (g);
+}
+
+/**
+ *
+ * @param g
+ */
+void graph_release(graph_t *g) {
+    if (g != NULL) {
+        if (g->node_colors) {
+            memset(g->node_colors, 0X0, g->n_nodes * sizeof(color_t));
+            free(g->node_colors);
+        }
+
+        if (g->node_counters != NULL) {
+            memset(g->node_counters, 0x0, g->n_nodes * sizeof(int));
+            free(g->node_counters);
+        }
+
+        if (g->node_terminals != NULL) {
+            memset(g->node_terminals, 0x0, g->n_nodes * sizeof(int));
+            free(g->node_terminals);
+        }
+
+        if (g->edges != NULL) {
+            memset(g->edges, 0x0, g->n_edges * sizeof(edge_t));
+            free(g->edges);
+        }
+
+        memset(g, 0x0, sizeof(graph_t));
+        free(g);
+    }
+}
+
+/**
+ *
+ * @param g
+ * @param u
+ * @return
+ */
+int graph_node_is_terminal(graph_t *g, node_t u) {
+    assert(g != NULL);
+    assert(u < g->n_nodes);
+
+    return (g->node_terminals[u] != 0);
+}
+
+/**
+ *
+ * @param g
+ * @param i
+ * @return
+ */
+int graph_node_is_non_terminal(graph_t *g, node_t u) {
+    assert(g != NULL);
+    assert(u < g->n_nodes);
+
+    return (g->node_terminals[u] == 0);
+}
+
+/**
+ *
+ * @param g
+ * @param c
+ */
+void graph_color_set_all(graph_t *g, color_t c) {
+    assert(g != NULL);
+
+    for (node_t u = 0; u < g->n_nodes; u++) {
+        g->node_colors[u] = c;
+    }
+}
+
+/**
+ *
+ * @param g
+ * @param u
+ * @param c
+ */
+void graph_color_set(graph_t *g, node_t u, color_t c) {
+    assert(g != NULL);
+    assert(i < g->n_nodes);
+
+    g->node_colors[u] = c;
+}
+
+/**
+ *
+ * @param g
+ * @param u
+ * @return the color of node i
+ */
+color_t graph_node_color_get(graph_t *g, node_t u) {
+    assert(g != NULL);
+    assert(u < g->n_nodes);
+
+    return (g->node_colors[u]);
+}
+
+/**
+ *
+ * @param g
+ * @param c
+ */
+void graph_node_counter_set_all(graph_t *g, int counter) {
+    assert(g != NULL);
+    assert((g->n_nodes == 0) || (g->node_counters != NULL));
+
+    for (node_t u = 0; u < g->n_nodes; u++) {
+        g->node_counters[u] = counter;
+    }
+}
+
+/**
+ *
+ * @param g
+ */
+void graph_node_counter_reset_all(graph_t *g) {
+    graph_node_counter_set_all(g, 0);
+}
+
+/**
+ *
+ * @param g
+ */
+void graph_node_counter_increment_all(graph_t *g) {
+    assert(g != NULL);
+
+    for (node_t u = 0; u < g->n_nodes; u++) {
+        g->node_counters[u]++;
+    }
+}
+
+/**
+ *
+ * @param g
+ * @param u
+ * @param c
+ */
+void graph_node_counter_set(graph_t *g, node_t u, int counter) {
+    assert(g != NULL);
+    assert(u < g->n_nodes);
+
+    g->node_counters[u] = counter;
+}
+
+/**
+ *
+ * @param g
+ * @param u
+ */
+void graph_node_counter_reset(graph_t *g, node_t u) {
+    graph_node_counter_set(g, u, 0);
+}
+
+/**
+ *
+ * @param g
+ * @param u
+ */
+void graph_node_counter_increment(graph_t *g, node_t u) {
+    assert(g != NULL);
+    assert(u < g->n_nodes);
+
+    g->node_counters[u]++;
+}
+
+/**
+ *
+ * @param g
+ * @param u
+ * @return the counter associated to node u
+ */
+int graph_node_counter_get(graph_t *g, node_t u) {
+    assert(g != NULL);
+    assert(i < g->n_nodes);
+
+    return (g->node_counters[u]);
+}
+
+/**
+ *
+ * @param g
+ */
+void graph_random_shuffle_edges(graph_t *g) {
+    assert(g != NULL);
+
+    random_shuffle(g->edges, g->n_edges, sizeof(edge_t));
+}
+
+/**
+ *
+ * @param g
+ * @return
+ */
+list_t *graph_kruskal_min_spanning_tree(graph_t *g) {
+    assert(g != NULL);
+
+    union_find_t *uf = union_find_alloc(g);
+
+    list_t *l = NULL;
+    for (int i = 0; i < g->n_edges; i++) {
+        node_t src = g->edges[i].src;
+        node_t dest = g->edges[i].dest;
+
+        if ((g->node_colors[src] == BLACK) && (g->node_colors[dest] == BLACK)) {
+            node_t root_src = union_find_find_recursive_compression(uf, src);
+            node_t root_dest = union_find_find_recursive_compression(uf, dest);
+
+            if (root_src != root_dest) {
+                union_find_union(uf, root_src, root_dest);
+                l = list_insert_front(l, &(g->edges[i]));
+            }
+        }
+    }
+
+    union_find_release(uf);
+
+    return (l);
 }

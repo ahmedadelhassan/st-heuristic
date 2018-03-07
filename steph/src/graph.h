@@ -1,41 +1,60 @@
-#ifndef __GRAPH__
-#define __GRAPH__
+#ifndef ST_HEURISTIC_GRAPH_H
+#define ST_HEURISTIC_GRAPH_H
 
-typedef unsigned int vertex_idx;
-typedef unsigned int weight;
+#include <stdlib.h>
 
-#define WHITE 0
-#define GREY  1
-#define BLACK 2
+#include "color.h"
+#include "edge.h"
+#include "edge_list.h"
+#include "node.h"
+#include "list.h"
+#include "weight.h"
 
-typedef struct edge
-{
-  vertex_idx v;
-  weight     w;
-} edge;
+typedef struct graph_t {
+    size_t n_nodes;     /**< Number of nodes.     */
+    color_t *node_colors;      /**< Nodes' array         */
+    int *node_counters;
+    size_t n_terminals; /**< Number of terminals. */
+    size_t n_non_terminals; /**< Number of terminals. */
+    node_t min_terminal_node;
+    int *node_terminals;
+    size_t n_edges;     /**< Number of edges.     */
+    edge_t *edges;      /**< Edges' array.        */
+} graph_t;
 
-typedef struct vertex
-{
-  unsigned int label;
-  char         color;
-  char         terminal,
-  size_t       degree;
-  size_t       n_alloc;
-  edge*        edges;
-} vertex;
 
-typedef struct graph
-{
-  size_t  n_vertices;
-  size_t  n_edges;
-  size_t  n_terminals;
-  vertex* vertices;
-} graph;
+extern graph_t *graph_read(FILE *f);
 
-extern graph* graph_alloc(size_t n_vertices);
-extern void   graph_release(graph* g);
-extern void   graph_adjust(graph* g);
-extern void   graph_add_edge(graph* g, vertex_idx u_label, vertex_idx v_label, weight w);
-extern void   graph_set_terminal(graph* g, vertex_idx u);
+extern void graph_write(FILE *f, graph_t *g);
 
-#endif /* __GRAPH__ */
+extern void graph_release(graph_t *g);
+
+extern int graph_node_is_terminal(graph_t *g, node_t i);
+
+extern int graph_node_is_non_terminal(graph_t *g, node_t i);
+
+extern void graph_node_color_set_all(graph_t *g, color_t c);
+
+extern void graph_node_color_set(graph_t *g, node_t i, color_t c);
+
+extern color_t graph_node_color_get(graph_t *g, node_t i);
+
+extern void graph_node_counter_set_all(graph_t *g, int counter);
+
+extern void graph_node_counter_set(graph_t *g, node_t i, int counter);
+
+extern void graph_node_counter_reset_all(graph_t *g);
+
+extern void graph_node_counter_reset(graph_t *g, node_t i);
+
+extern void graph_node_counter_increment_all(graph_t *g);
+
+extern void graph_node_counter_increment(graph_t *g, node_t i);
+
+extern color_t graph_node_counter_get(graph_t *g, node_t i);
+
+extern void graph_random_shuffle_edges(graph_t *g);
+
+extern edge_list_t *graph_kruskal_min_spanning_tree(graph_t *g);
+
+#endif /* ST_HEURISTIC_GRAPH_H */
