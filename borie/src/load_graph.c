@@ -143,6 +143,12 @@ int load_graph_sparse(FILE* stream, Graph_sparse* g){
     fprintf(stderr, "Memory allocation error\n");
     return 0;
   }
+  /* Memory allocation for edges list */
+  g->edges_by_weight = (Edge*)malloc((g->nb_edges*2)*sizeof(Edge));
+  if (g->edges_by_weight == NULL){
+    fprintf(stderr, "Memory allocation error\n");
+    return 0;
+  }
 
   /* Read the edges */
   for (i=0 ; i<g->nb_edges ; i++){
@@ -157,6 +163,14 @@ int load_graph_sparse(FILE* stream, Graph_sparse* g){
     g->edges[2*i+1].src = dst;
     g->edges[2*i+1].dst = src;
     g->edges[2*i+1].weight = weight;
+
+    g->edges_by_weight[2*i].src = src;
+    g->edges_by_weight[2*i].dst = dst;
+    g->edges_by_weight[2*i].weight = weight;
+    
+    g->edges_by_weight[2*i+1].src = dst;
+    g->edges_by_weight[2*i+1].dst = src;
+    g->edges_by_weight[2*i+1].weight = weight;    
   }
 
   assert(fscanf(stream, "%s", word) == 1);

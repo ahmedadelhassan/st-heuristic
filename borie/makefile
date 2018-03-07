@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS = -Wall -ansi -O3
-LDFLAGS =
+CFLAGS = -Wall -ansi -pg
+LDFLAGS = -pg
 # OBJ = bin/main.o bin/load_graph.o bin/graph_common.o bin/soft_strategy.o
 OBJ = bin/main.o bin/load_graph.o bin/soft_strategy.o
 
