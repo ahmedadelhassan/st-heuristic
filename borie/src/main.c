@@ -55,7 +55,7 @@ int main(int argc, char* argv[]){
 
   while(1){
     fprintf(stderr, "Generation %d :\n", i);
-    fprintf(stderr, "Best %d :\n", pop.solution[0]->weight);    
+    fprintf(stderr, "Best %ld :\n", pop.solution[0]->weight);    
     next_generation(&g, &pop);
     i++;
   }
