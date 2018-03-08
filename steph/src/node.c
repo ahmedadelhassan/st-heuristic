@@ -51,8 +51,8 @@ node_t *node_copy(const node_t *p_u) {
  * @return
  */
 int node_compar(const void *p, const void *q) {
-    assert(p_u != NULL);
-    assert(p_v != NULL);
+    assert(p != NULL);
+    assert(p != NULL);
 
     const node_t *p_u = (const node_t*) p;
     const node_t *q_u = (const node_t*) q;

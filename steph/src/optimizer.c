@@ -93,16 +93,12 @@ void optimizer_release(optimizer_t opt) {
  */
 list_t *optimizer_run(optimizer_t opt) {
 
-    if (opt.individuals == NULL) {
-        fprintf(stderr, "optimizer_run. uninitialized optimizer\n");
-        exit(EXIT_FAILURE);
-    }
-
-    union_find_t *uf = union_find_alloc(opt.config.graph);
+    individual_heap_t *ih = individual_heap_alloc(opt.config.n_individuals);
 
     /* initial individuals */
     for (int i = 0; i < opt.config.n_individuals; i++) {
-        individual_mk()
+        individual_t * individual = individual_mk_rand(opt.config.graph);
+        individual_heap_insert(ih, individual);
     }
 
     /* loop and improve individuals */

@@ -49,6 +49,58 @@ void individual_release(individual_t *ind) {
 /**
  *
  * @param g
+ * @param individual
+ */
+void individual_reduce(graph_t *g, individual_t *individual) {
+    int done = 0;
+    weight_t w = 0;
+    list_t *edges = NULL;
+
+    node_list_t *nl = individual->non_terminal_nodes;
+    while (nl != NULL) {
+        graph_color_set(g, nl->node);
+    }
+
+    do {
+        /* compute a minimum spanning tree on BLACK vertices */
+        el = graph_kruskal_min_spanning_tree(g);
+
+        /* compute the degree of each node in the spanning tree */
+        graph_node_counter_set_all(0);
+        w = 0;
+        edge_list_t *it_el = el;
+        while (it_el != NULL) {
+            graph_node_counter_increment(g, it_el->src);
+            graph_node_counter_increment(g, it_el->dest);
+            w += it_el->weight;
+            it_el = it_el->next;
+        }
+
+        /* find (if it exists) a non-terminal BLACK node with degree 1 in the spanning tree */
+        int found = 0;
+        node_t n = 0;
+        while ((n < g->n_nodes) && (found == 0)) {
+            if ((graph_node_is_terminal(g, u) == 0) && (graph_node_color_get(g, u) == BLACK)) {
+                if (graph_node_counter_get(g, u) == 1)) {
+                    found = 1;
+                }
+            }
+            n++;
+        }
+
+        if (found == 1) {
+            /* node u is a non-terminal BLACK node with degree 1 in the spanning tree */
+            graph_node_color_set(g, u, WHITE);
+        } else {
+            done = 1;
+        }
+    } while (done == 0);
+
+}
+
+/**
+ *
+ * @param g
  * @return
  */
 individual_t *individual_mk_rand(graph_t *g) {
@@ -61,7 +113,7 @@ individual_t *individual_mk_rand(graph_t *g) {
  * @param ind
  * @return
  */
-individual_t *individual_mk_rand_from_nodes(graph_t *g, list_t *nodes_l) {
+individual_t *individual_mk_rand_from_nodes(graph_t *g, node_list_t *nl) {
     assert(g != NULL);
 
     /* random shuffle the edges of the reference graph */
@@ -72,14 +124,13 @@ individual_t *individual_mk_rand_from_nodes(graph_t *g, list_t *nodes_l) {
 
     /* if a new individual is built from nodes, add them */
     size_t n_terminals = 0;
-    if (nodes_l != NULL) {
-        list_t *l = nodes_l;
-        node_t u = *((node_t *) l->data);
-        l = l->next;
-        while (l != NULL) {
-            node_t v = *((node_t *) l->data);
+    if (nl != NULL) {
+        node_t u = nl->node;;
+        nl = nl->next;
+        while (nl != NULL) {
+            node_t v = nl->node;
             n_terminals = union_find_union(uf, u, v);
-            l = l->next;
+            nl = nl->next;
         }
     }
 

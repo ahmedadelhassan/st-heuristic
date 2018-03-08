@@ -7,8 +7,6 @@ extern node_t *node_alloc(node_t u);
 
 extern void individual_node_release(node_t *p_u);
 
-extern void individual_node_release(node_t *p_u);
-
 extern node_t *node_copy(const node_t *p_u);
 
 extern int node_compar(const void *p_u, const void *p_v);

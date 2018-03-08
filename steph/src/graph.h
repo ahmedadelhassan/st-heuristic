@@ -15,9 +15,7 @@ typedef struct graph_t {
     color_t *node_colors;      /**< Nodes' array         */
     int *node_counters;
     size_t n_terminals; /**< Number of terminals. */
-    size_t n_non_terminals; /**< Number of terminals. */
-    node_t min_terminal_node;
-    int *node_terminals;
+    node_t *terminals;
     size_t n_edges;     /**< Number of edges.     */
     edge_t *edges;      /**< Edges' array.        */
 } graph_t;
