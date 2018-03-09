@@ -1,7 +1,7 @@
 #ifndef ST_HEURISTIC_EDGE_LIST_H
 #define ST_HEURISTIC_EDGE_LIST_H
 
-#include "edge.h"
+#include "../edge.h"
 
 typedef struct edge_list_t {
     struct edge_list_t *next;

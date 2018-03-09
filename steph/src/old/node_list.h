@@ -1,7 +1,7 @@
 #ifndef ST_HEURISTIC_NODE_LIST_H
 #define ST_HEURISTIC_NODE_LIST_H
 
-#include "node.h"
+#include "../node.h"
 
 typedef struct node_list_t {
     struct node_list_t *next;

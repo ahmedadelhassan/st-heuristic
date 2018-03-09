@@ -4,45 +4,53 @@
 
 #include "individual.h"
 
-
-
 /**
  *
- * @param n_nodes
- * @param w
+ * @param el
  * @return
  */
-static individual_t *individual_alloc(graph_t *g, weight_t w) {
-    individual_t *ind = (individual_t *) malloc(sizeof(individual_t));
-    if (ind == NULL) {
+static individual_t *individual_alloc(list_t *el) {
+    individual_t *individual = (individual_t *) malloc(sizeof(individual_t));
+    if (!individual) {
         fprintf(stderr, "individual_alloc. memory allocation error\n");
         exit(EXIT_FAILURE);
     }
 
-    ind->nodes = NULL;
-    for (int u = 0; u < g->n_nodes; u++) {
-        if (graph_node_color_get(g, u) == BLACK) {
-            node_t *pu = individual_node_alloc(u);
-            ind->nodes = list_insert_front(ind->nodes, pu);
+    if (!el) {
+        individual->n_edges = 0;
+        individual->edges = NULL;
+    } else {
+        individual->n_edges = list_size(el);
+        individual->edges = (edge_t *) calloc(individual->n_edges, sizeof(edge_t));
+        individual->weight = 0;
+
+        /* copy edges and compute total weight */
+        int i = 0;
+        while (el) {
+            individual->edges[i].n1 = el->n1;
+            individual->edges[i].n2 = el->n2;
+            individual->edges[i].weight += el->weight;
+            el = el->next;
+            i++;
         }
     }
 
-    ind->n_nodes = n_nodes;
-    ind->min_weight_spanning_tree = w;
+    /* edges are sorted according to the edge_compar function (i.e., n1 and next n2) */
+    qsort(individual->edges, individual->n_edges, sizeof(edge_t), edge_compar);
 
-    return (ind);
+    return (individual);
 }
-
 
 /**
  *
- * @param ind
+ * @param individual
  */
-void individual_release(individual_t *ind) {
-    if (ind != NULL) {
-        list_release_with_data_release(ind->nodes, individual_node_release);
-        memset(ind, 0x0, sizeof(individual_t));
-        free(ind);
+void individual_release(individual_t *individual) {
+    if (!individual) {
+        memset(individual->edges, 0x0, individual->n_edges * sizeof(edge_t));
+        free(individual->edges);
+        memset(individual, 0x0, sizeof(individual_t));
+        free(individual);
     }
 }
 
@@ -110,33 +118,46 @@ individual_t *individual_mk_rand(graph_t *g) {
 /**
  *
  * @param g
- * @param ind
+ * @param init_el
  * @return
  */
-individual_t *individual_mk_rand_from_nodes(graph_t *g, node_list_t *nl) {
-    assert(g != NULL);
+individual_t *individual_mk(graph_t *g, list_t *init_el) {
+    assert(g);
 
     /* random shuffle the edges of the reference graph */
-    graph_random_shuffle_edges(g);
+    graph_edges_random_shuffle(g);
 
     /* new union find */
     union_find_t *uf = union_find_alloc(g->n_nodes);
 
-    /* if a new individual is built from nodes, add them */
-    size_t n_terminals = 0;
-    if (nl != NULL) {
-        node_t u = nl->node;;
-        nl = nl->next;
-        while (nl != NULL) {
-            node_t v = nl->node;
-            n_terminals = union_find_union(uf, u, v);
-            nl = nl->next;
+    /* list of kept edges */
+    list_t *el = NULL;
+
+    /* add initializing edges (if any) */
+    list_t *it_init_el = init_el;
+    while (it_el) {
+        edge_t *e = (edge_t*) it_init_el->data;
+        node_t n1 = e->n1;
+        node_t n2 = e->n2;
+        if (union_find_union(uf, n1, n2)) {
+            list_insert_front(el, e);
+            it_el->data = NULL;
         }
+        it_init_el = it_init_el->next;
     }
 
+    /* get rid of initializing edges (do not release data !) */
+    list_release(init_el);
+    init_el = NULL;
+
     /* add edges one by one until all terminal nodes are part of the same connected component */
-    for (int i = 0; (n_terminals < g->n_terminals) && (i < g->n_edges); i++) {
-        n_terminals = union_find_union(uf, g->edges[i].src, g->edges[i].dest);
+    size_t n_terminals = union_find_max_n_terminals(uf);
+    for (int i = 0; union_find_max_n_terminals(uf) < g->n_terminals && i < g->n_edges; i++) {
+        node_t n1 = g->edges[i].n1;
+        note_t n2 = g->edges[i].n2;
+        if (union_find_union(uf, n1, n2)) {
+            list_insert_front(el, &(g-edges[i]));
+        }
     }
 
     /*

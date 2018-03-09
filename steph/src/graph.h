@@ -5,25 +5,36 @@
 
 #include "color.h"
 #include "edge.h"
-#include "edge_list.h"
 #include "node.h"
 #include "list.h"
 #include "weight.h"
 
+typedef struct union_find_t {
+    node_t *parents;     /**< Node's parents.                                   */
+    size_t *ranks;       /**< Node's ranks.                                     */
+    size_t *n_terminals; /**< Number of terminals in the part rooted at a node. */
+    size_t count;        /**< The number of parts.                              */
+} union_find_t;
+
 typedef struct graph_t {
-    size_t n_nodes;     /**< Number of nodes.     */
-    color_t *node_colors;      /**< Nodes' array         */
-    int *node_counters;
-    size_t n_terminals; /**< Number of terminals. */
-    node_t *terminals;
-    size_t n_edges;     /**< Number of edges.     */
-    edge_t *edges;      /**< Edges' array.        */
+    size_t n_nodes;          /**< Number of nodes.             */
+    size_t n_terminals;      /**< Number of terminal nodes     */
+    node_t *terminals;       /**< Terminal nodes               */
+    size_t n_non_terminals;  /**< Number of non-terminal nodes */
+    node_t *non_terminals;   /**< Non-terminal nodes           */
+    color_t *node_colors;    /**< Nodes' colors                */
+    int *node_counters;      /**< nodes' counters              */
+    size_t n_edges;          /**< Number of edges.             */
+    edge_t *edges;           /**< Edges' array.                */
+    union_find_t union_find; /**< Union find facility.         */
 } graph_t;
 
 
 extern graph_t *graph_read(FILE *f);
 
 extern void graph_write(FILE *f, graph_t *g);
+
+extern graph_t *graph_alloc();
 
 extern void graph_release(graph_t *g);
 
@@ -51,7 +62,7 @@ extern void graph_node_counter_increment(graph_t *g, node_t i);
 
 extern color_t graph_node_counter_get(graph_t *g, node_t i);
 
-extern void graph_random_shuffle_edges(graph_t *g);
+extern void graph_edge_random_shuffle(graph_t *g);
 
 extern edge_list_t *graph_kruskal_min_spanning_tree(graph_t *g);
 

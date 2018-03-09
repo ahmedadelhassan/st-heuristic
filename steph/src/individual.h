@@ -2,14 +2,16 @@
 #define ST_HEURISTIC_INDIVIDUAL_H
 
 #include "graph.h"
-#include "node_list.h"
+#include "old/node_list.h"
 #include "union_find.h"
 
 typedef struct individual_t {
-    size_t n_non_terminal_nodes;
-    node_list_t *non_terminal_nodes;
+    size_t n_edges;
+    edge_t *edges;
     weight_t weight;
 } individual;
+
+extern individual_t *indicivual_alloc(list_t *edges);
 
 extern void individual_release(individual_t *st);
 

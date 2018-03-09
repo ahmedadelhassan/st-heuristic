@@ -338,7 +338,7 @@ int graph_node_counter_get(graph_t *g, node_t u) {
  *
  * @param g
  */
-void graph_random_shuffle_edges(graph_t *g) {
+void graph_edge_random_shuffle(graph_t *g) {
     assert(g != NULL);
 
     random_shuffle(g->edges, g->n_edges, sizeof(edge_t));
