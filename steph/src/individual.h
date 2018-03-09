@@ -3,7 +3,7 @@
 
 #include "graph.h"
 #include "old/node_list.h"
-#include "union_find.h"
+#include "old/union_find.h"
 
 typedef struct individual_t {
     size_t n_edges;
