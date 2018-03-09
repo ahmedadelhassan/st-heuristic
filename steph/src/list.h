@@ -32,17 +32,17 @@ extern list_t *list_reverse(list_t *l);
 
 extern list_t *list_sort(list_t *l, int (*data_compar)(const void*, const void*));
 
-extern list_t *list_union(list_t *l1, list_t *l2);
+extern list_t *list_union(list_t *l1, list_t *l2, int (*data_compar)(const void*, const void*));
 
-extern list_t *list_union_with_data_alloc(list_t *l1, list_t *l2, void* (*data_alloc)(void *));
+extern list_t *list_union_with_data_alloc(list_t *l1, list_t *l2, int (*data_compar)(const void*, const void*), void* (*data_alloc)(void *));
 
-extern list_t *list_intersection(list_t *l1, list_t *l2);
+extern list_t *list_intersection(list_t *l1, list_t *l2, int (*data_compar)(const void*, const void*));
 
-extern list_t *list_intersection_with_data_alloc(list_t *l1, list_t *l2, void* (*data_alloc)(void *));
+extern list_t *list_intersection_with_data_alloc(list_t *l1, list_t *l2, int (*data_compar)(const void*, const void*), void* (*data_alloc)(void *));
 
-extern list_t *list_difference(list_t *l1, list_t *l2);
+extern list_t *list_difference(list_t *l1, list_t *l2, int (*data_compar)(const void*, const void*));
 
-extern list_t *list_difference_with_data_alloc(list_t *l1, list_t *l2, void* (*data_alloc)(void *));
+extern list_t *list_difference_with_data_alloc(list_t *l1, list_t *l2, int (*data_compar)(const void*, const void*), void* (*data_alloc)(void *));
 
 #endif /* ST_HEURISTIC_LIST_H */
 

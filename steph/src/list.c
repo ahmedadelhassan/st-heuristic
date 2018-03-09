@@ -9,11 +9,10 @@
  * @param e
  * @return
  */
-list_t *list_alloc(void* data) {
+list_t *list_alloc(void *data) {
     list_t *l = (list_t *) malloc(sizeof(list_t));
-    if (l == NULL) {
-        fprintf(stderr, "list_alloc. memory allocation error for node (%zu, %zu, %zu).\n", e.src, e.dest,
-                e.weight);
+    if (! l) {
+        fprintf(stderr, "list_alloc. memory allocation error.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -36,7 +35,7 @@ void list_release(list_t *l) {
  * @param l
  * @param data_release
  */
-void list_release_with_data_release(list_t *l, void (*data_release)(void*)) {
+void list_release_with_data_release(list_t *l, void (*data_release)(void *)) {
     if (l != NULL) {
         list_release_with_data_release(l->next, data_release);
         if (data_release) {
@@ -53,7 +52,7 @@ void list_release_with_data_release(list_t *l, void (*data_release)(void*)) {
  * @return
  */
 list_t *list_copy(const list_t *l) {
-    list_copy_with_data_copy(l, NULL);
+    return (list_copy_with_data_copy(l, NULL));
 }
 
 /**
@@ -62,8 +61,8 @@ list_t *list_copy(const list_t *l) {
  * @param data_copy
  * @return
  */
-list_t *list_copy_with_data_copy(const list_t *l, void* (*data_copy)(void*)) {
-    if (l == NULL) {
+list_t *list_copy_with_data_copy(const list_t *l, void *(*data_copy)(const void *)) {
+    if (! l) {
         return (NULL);
     } else {
         void *data = data_copy ? data_copy(l->data) : l->data;
@@ -80,7 +79,7 @@ list_t *list_copy_with_data_copy(const list_t *l, void* (*data_copy)(void*)) {
  */
 size_t list_size(list_t *l) {
     size_t size = 0;
-    while (l != NULL) {
+    while (l) {
         size++;
         l = l->next;
     }
@@ -94,7 +93,7 @@ size_t list_size(list_t *l) {
  * @return
  */
 list_t *list_delete_ith(list_t *l, unsigned int i) {
-    list_delete_ith_with_data_release(l, i, NULL);
+    return(list_delete_ith_with_data_release(l, i, NULL));
 }
 
 /**
@@ -104,33 +103,33 @@ list_t *list_delete_ith(list_t *l, unsigned int i) {
  * @param data_release
  * @return
  */
-list_t *list_delete_ith(list_t *l, unsigned int i, void (*data_release)(void*)) {
+list_t *list_delete_ith_with_data_release(list_t *l, unsigned int i, void (*data_release)(void *)) {
     list_t *prev_l = NULL;
     list_t *it_l = l;
 
-    while ((it_l != NULL) && (i > 0)) {
+    while (it_l && i > 0) {
         prev_l = l;
         it_l = it_l->next;
         i--;
     }
 
-    if (it_l == NULL) {
+    if (! it_l) {
         return (NULL);
     }
 
     /* l != NULL */
-    if (prev_l == NULL) {
+    if (! prev_l) {
         /* delete first item of l */
         list_t *next_l = l->next;
-        it_l->next == NULL;
-        list_release_with_data_release((it_l, data_release);
+        it_l->next = NULL;
+        list_release_with_data_release(it_l, data_release);
         return (next_l);
     }
 
     /* l != NULL && prev_l != NULL */
     prev_l->next = it_l->next;
     it_l->next = NULL;
-    list_release(it_l, data_release);
+    list_release_with_data_release(it_l, data_release);
     return (l);
 }
 
@@ -148,9 +147,9 @@ list_t *list_delete_rand(list_t *l) {
  * @param l
  * @return
  */
-list_t *list_delete_rand_with_data_release(list_t *l, void (*data_release)(void*)) {
-    if (l = NULL) {
-        return(NULL);
+list_t *list_delete_rand_with_data_release(list_t *l, void (*data_release)(void *)) {
+    if (!l) {
+        return (NULL);
     }
 
     int i = rand() % list_size(l);
@@ -202,7 +201,7 @@ list_t *list_reverse(list_t *l) {
  * @param data_compar
  * @return
  */
-static list_t *list_move(list_t *l, int (*data_compar)(const void*, const void*))) {
+static list_t *list_move(list_t *l, int (*data_compar)(const void *, const void *)) {
     list_t *it_l;
     list_t *prev_l;
     list_t *new_l;
@@ -227,14 +226,14 @@ static list_t *list_move(list_t *l, int (*data_compar)(const void*, const void*)
  * @param l
  * @return
  */
-list_t *list_sort(list_t *l, int (*data_compar)(const void*, const void*)) {
-    if (l == NULL) {
+list_t *list_sort(list_t *l, int (*data_compar)(const void *, const void *)) {
+    if (!l) {
         return (NULL);
     }
 
     l->next = list_sort(l->next, data_compar);
     if (l->next && data_compar(l->data, l->next->data) > 0) {
-        l = list_move(l);
+        l = list_move(l, data_compar);
     }
 
     return (l);
@@ -246,8 +245,8 @@ list_t *list_sort(list_t *l, int (*data_compar)(const void*, const void*)) {
  * @param l2 sorted node list
  * @return
  */
-list_t *list_union(list_t *l1, list_t *l2) {
-    return list_union_with_data_alloc(l1, l2, NULL);
+list_t *list_union(list_t *l1, list_t *l2, int (*data_compar)(const void*, const void*)) {
+    return list_union_with_data_alloc(l1, l2, data_compar, NULL);
 }
 
 /**
@@ -257,7 +256,7 @@ list_t *list_union(list_t *l1, list_t *l2) {
  * @param data_alloc
  * @return
  */
-list_t *list_union_with_data_alloc(list_t *l1, list_t *l2, void* (*data_alloc)(void *)) {
+list_t *list_union_with_data_alloc(list_t *l1, list_t *l2, int (*data_compar)(const void*, const void*), void *(*data_alloc)(void *)) {
     list_t *l = NULL;
 
     while (l1 && l2) {
@@ -301,8 +300,8 @@ list_t *list_union_with_data_alloc(list_t *l1, list_t *l2, void* (*data_alloc)(v
  * @param l2 sorted node list
  * @return
  */
-list_t *list_intersection(list_t *l1, list_t *l2) {
-    return (list_intersection_with_data_alloc(l1, l2, NULL));
+list_t *list_intersection(list_t *l1, list_t *l2, int (*data_compar)(const void*, const void*)) {
+    return (list_intersection_with_data_alloc(l1, l2, data_compar, NULL));
 }
 
 /**
@@ -312,7 +311,7 @@ list_t *list_intersection(list_t *l1, list_t *l2) {
  * @param data_alloc
  * @return
  */
-list_t *list_intersection_with_data_alloc(list_t *l1, list_t *l2, void* (*data_alloc)(void *)) {
+list_t *list_intersection_with_data_alloc(list_t *l1, list_t *l2, int (*data_compar)(const void*, const void*), void *(*data_alloc)(void *)) {
 
     list_t *l = NULL;
 
@@ -341,8 +340,8 @@ list_t *list_intersection_with_data_alloc(list_t *l1, list_t *l2, void* (*data_a
  * @param l2
  * @return
  */
-list_t *list_difference(list_t *l1, list_t *l2) {
-    return (list_difference_with_data_alloc(l1, l2, NULL);)
+list_t *list_difference(list_t *l1, list_t *l2, int (*data_compar)(const void*, const void*)) {
+    return (list_difference_with_data_alloc(l1, l2, data_compar, NULL));
 }
 
 /**
@@ -352,7 +351,7 @@ list_t *list_difference(list_t *l1, list_t *l2) {
  * @param data_alloc
  * @return
  */
-list_t *list_difference_with_data_alloc(list_t *l1, list_t *l2, void* (*data_alloc)(void *)) {
+list_t *list_difference_with_data_alloc(list_t *l1, list_t *l2, int (*data_compar)(const void*, const void*), void *(*data_alloc)(void *)) {
     list_t *l = NULL;
 
     while (l1 && l2) {

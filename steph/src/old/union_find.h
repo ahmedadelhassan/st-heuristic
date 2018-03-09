@@ -1,7 +1,7 @@
 #ifndef ST_HEURISTIC_UNION_FIND_H
 #define ST_HEURISTIC_UNION_FIND_H
 
-#include "graph.h"
+#include "../graph.h"
 
 typedef struct union_find_t {
     node_t *parents;      /**< Node's parents.                                   */
