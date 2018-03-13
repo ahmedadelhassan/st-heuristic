@@ -4,7 +4,7 @@
 #include <time.h>
 #include <assert.h>
 
-#include "../graph.h"
+#include "graph.h"
 #include "union_find.h"
 
 /**

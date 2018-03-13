@@ -3,8 +3,7 @@
 
 #include "graph.h"
 
-int main (int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     FILE *file;
     file = fopen("instance001.gr", "r");
     if (file == NULL) {
@@ -16,5 +15,5 @@ int main (int argc, char *argv[])
     fprintf(stdout, "number of edges = %zu\n", g->n_edges);
     fprintf(stdout, "number of terminals = %zu\n", g->n_terminals);
 
-    return(0);
+    return (0);
 }

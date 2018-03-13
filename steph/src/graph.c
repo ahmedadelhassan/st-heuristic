@@ -6,7 +6,7 @@
 #include "color.h"
 #include "graph.h"
 #include "list.h"
-#include "old/union_find.h"
+#include "union_find.h"
 #include "random.h"
 
 /**
@@ -707,31 +707,65 @@ void graph_edge_random_shuffle(graph_t *g) {
  * @param g
  * @return
  */
-list_t *graph_kruskal_min_spanning_tree(graph_t *g) {
-    assert(g != NULL);
+list_t *graph_kruskal_min_spanning_tree_on_black_nodes(graph_t *p_g) {
+    assert(p_g);
 
-    graph_union_find_init(g);
+    graph_union_find_init(gp_);
 
-    list_t *l = NULL;
+    list_t *p_el = NULL;
     for (int i = 0; i < g->n_edges; i++) {
-        node_t n1 = g->edges_sorted_by_weight[i].n1;
-        node_t n2 = g->edges_sorted_by_weight[i].n2;
+        edge_t e = g->edges_sorted_by_weight[i];
+        node_t n1 = e.n1;
+        node_t n2 = e.n2;
 
-        if ((g->node_colors[src] == BLACK) && (g->node_colors[dest] == BLACK)) {
-            node_t root_n1 = graph_union_find_find(g, n1);
-            node_t root_n2 = graph_union_find_find(g, n2);
+        if ((p_g->node_colors[n1] == BLACK) && (p_g->node_colors[n2] == BLACK)) {
+            node_t root_n1 = graph_union_find_find(p_g, n1);
+            node_t root_n2 = graph_union_find_find(p_g, n2);
 
             if (root_n1 != root_n2) {
-                graph_union_find_union(g, root_n1, root_n2);
-                l = list_insert_front(l, &(g->edges_sorted_by_weight[i]));
+                graph_union_find_union(p_g, root_n1, root_n2);
+                edge_t *p_e = graph_search_edge_by_endpoints(p_g, e);
+                if (!p_e) {
+                    fprintf(stderr, "graph_kruskal_min_spanning_tree_on_black_nodes. cannot find edge (%u, %u, %u)\n", e.n1, e.n2, e.weight);
+                    exit(EXIT_FAILURE);
+                }
+                list_insert_front(p_el, p_e);
             }
         }
     }
 
-    return (l);
+    return (p_el);
 }
 
-ion_find_union(union_find_t
-*uf,
-node_t i, node_t
-j);
+/**
+ *
+ * @param p_g
+ * @param e
+ * @return
+ */
+edge_t *graph_search_edge_by_endpoints(graph_t *p_g, edge_t e) {
+    asert(p_g);
+
+    int start = 0;
+    int end = p_g->nb_edges - 1;
+    int middle;
+
+    if (p_g->edges_sorted_by_endpoints[0] == e) {
+        return (&(p_g->edges_sorted_by_endpoints[0]));
+    } else {
+        while (end - start > 1) {
+            middle = (start + end) / 2;
+            if (edge_compar(&(p_g->edges_sorted_by_endpoints[middle]) < &e) < 0) {
+                start = middle;
+            } else {
+                end = middle;
+            }
+        }
+    }
+
+    if (p_g->edges_sorted_by_endpoints[end] == e) {
+        return (&(p_g->edges_sorted_by_endpoints[end]));
+    } else {
+        return (NULL);
+    }
+}

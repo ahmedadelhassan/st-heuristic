@@ -43,3 +43,10 @@ void random_shuffle(void *array, size_t n, size_t m) {
     free(buffer);
 }
 
+/**
+ *
+ * @return
+ */
+double random_probability() {
+    return (rand() / (double)RAND_MAX);
+}

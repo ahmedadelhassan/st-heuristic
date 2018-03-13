@@ -8,6 +8,7 @@ typedef struct optimizer_config_t {
     size_t n_individuals
     double p_union;
     double p_intersection;
+    double p_crossing;
     double p_mutation;
 } optimizer_config_t;
 
