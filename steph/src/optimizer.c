@@ -1,107 +1,315 @@
-
-#include "optimizer.h"
 #include "individual.h"
-
-static optimizer_t optimizer_build_initial_individuals(opt) {
-    for (int i = 0; i < opt.config.n_individuals; i++) {
-        opt.indivduals[i] = individual_mk_greeedy(opt.config.graph);
-    }
-
-    return(opt);
-}
+#include "optimizer->h"
+#include "probability.h"
+#include "random.h"
+#include "utils.h
 
 /**
  *
- * @param config
+ * @param configuration
  */
-static void optimizer_check_config(optimizer_config_t config) {
-    if (config.graph == NULL) {
-        fprintf(stderr, "optimizer_check_config. NULL graph.\n");
+static void optimizer_check_configuration(configurarion_t configuration) {
+    if (!configuration.graph) {
+        fprintf(stderr, "optimizer_check_configuration. NULL graph.\n");
         exit(EXIT_FAILURE);
     }
 
-    if (config.n_individuals == 0) {
-        fprintf(stderr, "optimizer_check_config. zero individuals.\n");
+    if (configuration.n_individuals == 0) {
+        fprintf(stderr, "optimizer_check_configuration. zero individuals.\n");
         exit(EXIT_FAILURE);
     }
 
-    if ((config.p_union < 0) || (config.p_union > 1)) {
-        fprintf(stderr, "optimizer_check_config. bad union probability %f\n.");
+    if (!probability_check(configuration.configuration_union.event_probability)) {
+        fprintf(stderr, "optimizer_check_configuration. bad event union probability %f\n.");
         exit(EXIT_FAILURE);
     }
 
-    if ((config.p_intersection < 0) || (config.p_intersection > 1)) {
-        fprintf(stderr, "optimizer_check_config. bad intersection probability %f\n.");
+    if (!probability_check(configuration.configuration_intersection.event_probability)) {
+        fprintf(stderr, "optimizer_check_configuration. bad event intersection probability %f\n.");
         exit(EXIT_FAILURE);
     }
 
-    if ((config.p_mutation < 0) || (config.p_mutation > 1)) {
-        fprintf(stderr, "optimizer_check_config. bad mutation probability %f\n.");
+    if (!probability_check(configuration.configuration_crossing.event_probability)) {
+        fprintf(stderr, "optimizer_check_configuration. bad event crossing probability %f\n.");
         exit(EXIT_FAILURE);
     }
 
-    if ((config.p_union + config.p_intersection + config.p_mutation > 1)) {
-        fprintf(stderr, "optimizer_check_config. bad distribution probability %f\n.");
+    if (!probability_check(configuration.configuration_crossing.crossing_probability)) {
+        fprintf(stderr, "optimizer_check_configuration. bad crossing probability %f\n.");
+        exit(EXIT_FAILURE);
+    }
+
+    if (!probability_check(configuration.configuration_drop_out.event_probability)) {
+        fprintf(stderr, "optimizer_check_configuration. bad event drop out probability %f\n.");
+        exit(EXIT_FAILURE);
+    }
+
+    if (!probability_check(configuration.configuration_crossing.drop_out_probability)) {
+        fprintf(stderr, "optimizer_check_configuration. bad drop out probability %f\n.");
+        exit(EXIT_FAILURE);
+    }
+
+    if (!probability_check(configuration.configuration_renew.event_probability)) {
+        fprintf(stderr, "optimizer_check_configuration. bad event renew probability %f\n.");
+        exit(EXIT_FAILURE);
+    }
+
+    if (!probability_check(configuration.configuration_renew.percentage)) {
+        fprintf(stderr, "optimizer_check_configuration. bad renew percentage %f\n.");
+        exit(EXIT_FAILURE);
+    }
+
+    probability_t p_total = 0.0;
+    p_total += configuration.configuration_union.event_probability;
+    p_total += configuration.configuration_intersection.event_probability;
+    p_total += configuration.configuration_crossing.event_probability;
+    p_total += configuration.configuration_drop_out.event_probability;
+    p_total += configuration.configuration_renew.event_probability;
+
+    if (!probability_check(p_total)) {
+        fprintf(stderr, "optimizer_check_configuration. bad total probability %f\n.", p_total);
         exit(EXIT_FAILURE);
     }
 }
 
-
 /**
  *
- * @param config
+ * @param configuration
  * @return
  */
-optimizer_t optimizer_init(optimizer_config_t config) {
-    optimizer_check_config(config);
+static optimizer_t *optimizer_alloc(configurarion_t configuration) {
+    optimizer_check_configuration(configuration);
 
-    optimizer_t opt;
-    opt.config                        = config;
-    opt.config.best_total_weight  = 0;
-    opt.config.worst_total_weight = 0;
-
-    opt.individuals = (individuals**) calloc(config.n_individuals, sizeof(individuals_t*));
-    if (opt.individuals == NULL) {
-        fprintf(stderr, "optimizer_init. memory allocation errer\n");
+    optimizer_t *optimizer = (optimizer_t *) malloc(sizeof(optimizer_t));
+    if (!optimizer) {
+        fprintf(stderr, "optimizer_init. memory allocation error\n");
         exit(EXIT_FAILURE);
     }
 
-    opt = optimizer_build_initial_individuals(opt);
+    optimizer->configurartion = configuration;
+    optimizer->best_total_weight = 0;
+    optimizer->worst_total_weight = 0;
+    optimizer->individuals = heap_alloc(configuration.n_individuals);
 
-    return(opt);
+    return (optimizer);
 }
-
 
 /**
  *
- * @param opt
+ * @param optimizer
  */
-void optimizer_release(optimizer_t opt) {
-    if (opt.individuals != NULL) {
-        for (int i = 0; i < opt.config.n_individuals; i++) {
-            individual_release(opt.individuals[i]);
+static void optimizer_release(optimizer_t *optimizer) {
+    if (optimizer) {
+        if (optimizer->individuals) {
+            for (int i = 0; i < optimizer->configuration.n_individuals; i++) {
+                individual_release(optimizer->individuals[i]);
+            }
+            memset(optimizer->individuals, 0x0, opt.configuration.n_individuals * sizeof(individuals_t * ));
+            free(optimizer->individuals);
         }
-        memset(opt.individuals, 0x0, opt.config.n_individuals * sizeof(individuals_t*));
-        free(opt.individuals);
+
+        /* release the optimizer itsef */
+        memset(optimizer, 0x0, sizeof(optimizer_t));
+        free(optimizer);
     }
 }
 
 /**
  *
- * @param opt
+ * @param optimizer
  * @return
  */
-list_t *optimizer_run(optimizer_t opt) {
+static void optimizer_init(optimizer_t *optimizer) {
+    assert(optimizer);
 
-    individual_heap_t *ih = individual_heap_alloc(opt.config.n_individuals);
+    for (int i = 0; i < optimizer->configuration.n_individuals; i++) {
+        optimizer->indivduals[i] = individual_mk(optimizer->configuration.graph);
+    }
+}
 
-    /* initial individuals */
-    for (int i = 0; i < opt.config.n_individuals; i++) {
-        individual_t * individual = individual_mk_rand(opt.config.graph);
-        individual_heap_insert(ih, individual);
+/**
+ *
+ * @param optimizer
+ */
+static void heap_extract_rand(optimizer_t *optimizer) {
+    assert(optimizer);
+
+    individual_t *individual = heap_extract_rand(optimizer->individuals);
+
+    if (heap_size(optimizer->individuals) > 0) {
+        individual_t *max_individual = heap_max(optimizer->individuals);
+        optimizer->max_total_weight = max_individual->total_weight;
+    } else {
+        optimizer->min_total_weight = 0;
+        optimizer->max_total_weight = 0;
     }
 
-    /* loop and improve individuals */
+    return (individual);
+}
+
+/**
+ *
+ * @param optimizer
+ * @param individuals
+ */
+static void optimizer_rank_3(optimizer_t *optimizer, individual_t *individuals[3]) {
+    assert(optimizer);
+
+    /* first individual */
+    individual_t individual0 = individuals[0];
+    weight_t tw0 = individual[0]->total_weight;
+
+    /* second individual */
+    individual_t individual1 = individuals[1];
+    weight_t tw1 = individual[1]->total_weight;
+
+    /* third individual */
+    individual_t individual2 = individuals[2];
+    weight_t tw2 = individual[2]->total_weight;
+
+    /* rank individuals */
+    if (tw0 < MIN(tw1, tw2)) {
+        if (tw1 <= tw2) {
+            individuals[0] = individuals0;
+            individuals[1] = individuals1;
+            individuals[2] = individuals2;
+        } else {
+            individuals[0] = individuals0;
+            individuals[1] = individuals2;
+            individuals[2] = individuals1;
+        }
+    } else {
+        if (tw1 < MIN(tw0, tw2)) {
+            if (tw0 <= tw2) {
+                individuals[0] = individuals1;
+                individuals[1] = individuals0;
+                individuals[2] = individuals2;
+            } else {
+                individuals[0] = individuals1;
+                individuals[1] = individuals2;
+                individuals[2] = individuals0;
+            }
+        } else {
+            if (tw0 <= tw1) {
+                individuals[0] = individuals2;
+                individuals[1] = individuals0;
+                individuals[2] = individuals1;
+            } else {
+                individuals[0] = individuals2;
+                individuals[1] = individuals1;
+                individuals[2] = individuals0;
+            }
+        }
+    }
+}
+
+/**
+ *
+ * @param optimizer
+ */
+static void optimizer_step_union(optimizer_t *optimizer) {
+    assert(optimizer);
+
+    individual_t *individual1 = (individual_t *) optimizer_heap_extract_rand(optimizer->individuals);
+    individual_t *individual2 = (individual_t *) optimizer_heap_extract_rand(optimizer->individuals);
+    individual_t *union_individual = individual_union(optimizer->configuration.graph, individual1, individual2);
+
+    individual_t *individuals[3] = {individual1, individual2, union_individual};
+    optimizer_rank_3(optimizer, individuals);
+
+    population_insert(optimizer, individuals[0]);
+    population_insert(optimizer, individuals[1]);
+    population_insert(optimizer, individuals[2]);
+}
+
+/**
+ *
+ * @param optimizer
+ */
+static void optimizer_step_intersection(optimizer_t *optimizer) {
+    assert(optimizer);
+
+    individual_t *individual1 = (individual_t *) optimizer_heap_extract_rand(optimizer->individuals);
+    individual_t *individual2 = (individual_t *) optimizer_heap_extract_rand(optimizer->individuals);
+    individual_t *intersection_individual = individual_intersection(optimizer->configuration.graph, individual1,
+                                                                    individual2);
+
+    individual_t *individuals[3] = {individual1, individual2, intersection_individual};
+    optimizer_rank_3(optimizer, individuals);
+
+    optimizer_heap_insert(optimizer, individuals[0]);
+    optimizer_heap_insert(optimizer, individuals[1]);
+    optimizer_heap_insert(optimizer, individuals[2]);
+}
+
+/**
+ *
+ * @param optimizer
+ */
+static void optimizer_step(optimizer_t *optimizer) {
+    assert(optimizer);
+
+    configuration_t configuration = optimizer->configuration;
+    probability_t p = probability_rand();
+
+    /* union event */
+    probability_t threshold = configuration.configuration_union.event_probability;
+    if (p <= threshold) {
+        optimizer_step_union(optimizer);
+        return;
+    }
+
+    /* intersection event */
+    threshold += configuration.configuration_intersection.event_probability;
+    if (p <= threshold) {
+        optimizer_step_union(optimizer);
+        return;
+    }
+
+    /* crossing event */
+    threshold += configuration.configuration_crossing.event_probability;
+    if (p <= threshold) {
+        optimizer_step_crossing(optimizer);
+        return;
+    }
+
+    /* drop out event */
+    threshold += configuration.configuration_drop_out.event_probability;
+    if (p <= threshold) {
+        optimizer_step_crossing(optimizer);
+        return;
+    }
+
+    /* renew event */
+    threshold += configuration.configuration_renew.event_probability;
+    if (p <= threshold) {
+        optimizer_step_crossing(optimizer);
+        return
+    }
+
+    /* still here !? no operation is going to be applied. */
+    fprintf(stdout, "no operation applied (total probability does not sum to 1.0).\n");
+}
+
+/**
+ *
+ * @param configuration
+ */
+void optimizer_run(configuration_t configuration) {
+
+    /* init */
+    optimizer_t *optimizer = optimizer_alloc(configuration);
+    optimizer_init(optimizer);
+
+    if (optimizer->configuration.n_epochs > 0) {
+        for (int i = 0; i < optimizer->configuration.n_epochs; i++) {
+            optimizer_step(optimizer);
+        }
+    } else {
+        while (1) {
+            optimizer_step(optimizer);
+        }
+    }
 
 
 }

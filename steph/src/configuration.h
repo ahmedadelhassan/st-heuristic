@@ -5,25 +5,25 @@
 #include "random.h"
 
 typedef struct {
-    probability_t probability;
+    probability_t event_probability;
 } configuration_union_t;
 
 typedef struct {
-    probability_t probability;
+    probability_t event_probability;
 } configuration_intersection_t;
 
 typedef struct {
-    probability_t probability;
-    probability_t probability_crossing;
+    probability_t event_probability;
+    probability_t crossing_probability;
 } configuration_crossing_t;
 
 typedef struct {
-    probability_t probability;
-    probability_t probability_drop_out;
+    probability_t event_probability;
+    probability_t drop_out_probability;
 } configuration_drop_out_t;
 
 typedef struct {
-    probability_t probability;
+    probability_t event_probability;
     double percentage;
 } configuration_renew_t;
 

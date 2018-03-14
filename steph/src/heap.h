@@ -13,12 +13,12 @@ typedef struct {
 
 extern heap_t *heap_alloc(size_t capacity, int (*data_compar)(const void *, const void *));
 
-extern void individual_heap_release(individual_heap_t *h);
+extern void heap_release(heap_t *h);
 
-extern void individual_heap_insert(individual_heap_t *h, individual_t *ind);
+extern void heap_insert(heap_t *h, individual_t *ind);
 
-extern individual_t *individual_heap_extract_rand(individual_heap_t *h);
+extern void *heap_extract_rand(heap_t *h);
 
-extern individual_t *individual_heap_extract_max(individual_heap_t *h);
+extern void *heap_extract_max(heap_t *h);
 
 #endif /* ST_HEURISTIC_HEAP_H */

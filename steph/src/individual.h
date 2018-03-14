@@ -8,7 +8,7 @@
 typedef struct individual_t {
     size_t n_edges;
     edge_t *edges;
-    weight_t weight;
+    weight_t total_weight;
 } individual;
 
 extern individual_t *individual_alloc(list_t *edges);

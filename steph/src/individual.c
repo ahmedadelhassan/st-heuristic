@@ -24,14 +24,14 @@ static individual_t *individual_alloc(list_t *el) {
     } else {
         individual->n_edges = list_size(el);
         individual->edges = (edge_t *) calloc(individual->n_edges, sizeof(edge_t));
-        individual->weight = 0;
+        individual->total_weight = 0;
 
         /* copy edges and compute total weight */
         int i = 0;
         while (el) {
             individual->edges[i].n1 = el->n1;
             individual->edges[i].n2 = el->n2;
-            individual->edges[i].weight += el->weight;
+            individual->edges[i].total_weight += el->total_weight;
             el = el->next;
             i++;
         }
@@ -400,5 +400,5 @@ void individual_print_brief(graph_t *p_g, individual_t *individual) {
     /* reset graph node's color */
     graph_node_color_set_all(p_g, WHITE);
 
-    fprintf(stdout, "individual. weight=%u\t#edges=%u\t#non terminals\n", individual->weight, individual->n_edges, n_non_terminals);
+    fprintf(stdout, "individual. total weight=%u\t#edges=%u\t#non terminals\n", individual->total_weight, individual->n_edges, n_non_terminals);
 }
