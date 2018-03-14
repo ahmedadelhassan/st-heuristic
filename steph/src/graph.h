@@ -33,47 +33,57 @@ typedef struct graph_t {
 } graph_t;
 
 
-extern graph_t *graph_read(FILE *f);
+extern graph_t *p_graph_read(FILE *f);
 
-extern void graph_write(FILE *f, graph_t *g);
+extern void graph_write(FILE *f, graph_t *p_g);
 
-extern graph_t *graph_alloc();
+extern graph_t *p_graph_alloc();
 
-extern void graph_release(graph_t *g);
+extern void graph_release(graph_t *p_g);
 
-extern int graph_node_is_terminal(graph_t *g, node_t i);
+extern int graph_node_is_terminal(graph_t *p_g, node_t i);
 
-extern int graph_node_is_non_terminal(graph_t *g, node_t i);
+extern int graph_node_is_non_terminal(graph_t *p_g, node_t i);
 
-extern void graph_node_color_set_all(graph_t *g, color_t c);
+extern void graph_node_color_assert_all(graph_t *p_g, color_t c);
 
-extern void graph_node_color_set(graph_t *g, node_t i, color_t c);
+extern void graph_node_color_assert_all_white(graph_t *p_g);
 
-extern color_t graph_node_color_get(graph_t *g, node_t i);
+extern void graph_node_color_assert_all_black(graph_t *p_g);
 
-extern void graph_node_counter_set_all(graph_t *g, int counter);
+extern void graph_node_color_set_all(graph_t *p_g, color_t c);
 
-extern void graph_node_counter_set(graph_t *g, node_t i, int counter);
+extern void graph_node_color_set(graph_t *p_g, node_t i, color_t c);
 
-extern void graph_node_counter_reset_all(graph_t *g);
+extern color_t graph_node_color_get(graph_t *p_g, node_t i);
 
-extern void graph_node_counter_reset(graph_t *g, node_t i);
+extern void graph_node_counter_assert_all(graph_t *p_g, int counter_val);
 
-extern void graph_node_counter_increment_all(graph_t *g);
+extern void graph_node_counter_assert_all_zero(graph_t *p_g);
 
-extern void graph_node_counter_increment(graph_t *g, node_t i);
+extern void graph_node_counter_set_all(graph_t *p_g, int counter_val);
 
-extern color_t graph_node_counter_get(graph_t *g, node_t i);
+extern void graph_node_counter_set(graph_t *p_g, node_t i, int counter_val);
 
-extern void graph_edge_random_shuffle(graph_t *g);
+extern void graph_node_counter_reset_all(graph_t *p_g);
 
-extern edge_list_t *graph_kruskal_min_spanning_tree_on_black_nodes(graph_t *g);
+extern void graph_node_counter_reset(graph_t *p_g, node_t i);
 
-extern void graph_union_find_init(graph_t *g);
+extern void graph_node_counter_increment_all(graph_t *p_g);
 
-extern node_t graph_union_find_find(graph_t *g, node_t u);
+extern void graph_node_counter_increment(graph_t *p_g, node_t i);
 
-extern int graph_union_find_union(graph_t *g, node_t u, node_t v);
+extern color_t graph_node_counter_get(graph_t *p_g, node_t i);
+
+extern void graph_edge_random_shuffle(graph_t *p_g);
+
+extern edge_list_t *graph_kruskal_min_spanning_tree_on_black_nodes(graph_t *p_g);
+
+extern void graph_union_find_init(graph_t *p_g);
+
+extern node_t graph_union_find_find(graph_t *p_g, node_t u);
+
+extern int graph_union_find_union(graph_t *p_g, node_t u, node_t v);
 
 extern edge_t *graph_search_edge_by_endpoints(graph_t *p_g, edge_t e);
 

@@ -3,14 +3,6 @@
 
 #include "graph.h"
 
-typedef struct optimizer_config_t {
-    graph_t *graph;
-    size_t n_individuals
-    double p_union;
-    double p_intersection;
-    double p_crossing;
-    double p_mutation;
-} optimizer_config_t;
 
 typedef struct optimizer_t {
     optimizer_config_t config;

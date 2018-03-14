@@ -19,25 +19,25 @@
 
 /**
  *
- * @param g
+ * @param p_g
  */
-static void graph_union_find_alloc(graph_t *g) {
+static void graph_union_find_alloc(graph_t *p_g) {
     assert(g);
 
-    g->union_find.parents = (node_t *) calloc(g->n_nodes, sizeof(node_t));
-    if (!g->union_find.parents) {
+    p_g->union_find.parents = (node_t *) calloc(p_g->n_nodes, sizeof(node_t));
+    if (!p_g->union_find.parents) {
         fprintf(stderr, "%s\n", "graph_union_find_alloc. memory allocation error: cannot allocate parents' array.\n");
         exit(EXIT_FAILURE);
     }
 
-    g->union_find.ranks = (size_t *) calloc(g->n_nodes, sizeof(size_t));
-    if (!g->union_find.ranks) {
+    p_g->union_find.ranks = (size_t *) calloc(p_g->n_nodes, sizeof(size_t));
+    if (!p_g->union_find.ranks) {
         fprintf(stderr, "%s\n", "graph_union_find_alloc. memory allocation error: cannot allocate ranks' array.\n");
         exit(EXIT_FAILURE);
     }
 
-    g->union_find.n_terminals = (size_t *) calloc(g->n_nodes, sizeof(size_t));
-    if (!g->union_find.n_terminals) {
+    p_g->union_find.n_terminals = (size_t *) calloc(p_g->n_nodes, sizeof(size_t));
+    if (!p_g->union_find.n_terminals) {
         fprintf(stderr, "%s\n",
                 "graph_union_find_alloc. memory allocation error: cannot allocate n_terminals' array.\n");
         exit(EXIT_FAILURE);
@@ -48,84 +48,84 @@ static void graph_union_find_alloc(graph_t *g) {
 
 /**
  *
- * @param g
+ * @param p_g
  * @return
  */
-void graph_union_find_init(graph_t *g) {
+void graph_union_find_init(graph_t *p_g) {
     assert(g);
-    assert(g->n_nodes == 0 || g->union_find.parents);
-    assert(g->n_nodes == 0 || g->union_find.ranks);
-    assert(g->n_nodes == 0 || g->union_find.n_terminals);
+    assert(p_g->n_nodes == 0 || p_g->union_find.parents);
+    assert(p_g->n_nodes == 0 || p_g->union_find.ranks);
+    assert(p_g->n_nodes == 0 || p_g->union_find.n_terminals);
 
-    g->union_find.count = g->n_nodes;
-    g->max_n_terminals_in_part = 1;
-    for (node_t u = 0; u < g->n_nodes; u++) {
-        g->union_find.parents[u] = u;
-        g->union_find.ranks[u] = 0;
-        g->union_find.n_terminals[u] = graph_node_is_terminal(g, u) ? 1 : 0;
+    p_g->union_find.count = p_g->n_nodes;
+    p_g->max_n_terminals_in_part = 1;
+    for (node_t u = 0; u < p_g->n_nodes; u++) {
+        p_g->union_find.parents[u] = u;
+        p_g->union_find.ranks[u] = 0;
+        p_g->union_find.n_terminals[u] = graph_node_is_terminal(g, u) ? 1 : 0;
     }
 }
 
 /**
  *
- * @param g
+ * @param p_g
  */
-static void graph_union_find_release(graph_t *g) {
+static void graph_union_find_release(graph_t *p_g) {
     assert(g);
-    assert(g->n_nodes == 0 || g->union_find.parents);
-    assert(g->n_nodes == 0 || g->union_find.ranks);
-    assert(g->n_nodes == 0 || g->union_find.n_terminals);
+    assert(p_g->n_nodes == 0 || p_g->union_find.parents);
+    assert(p_g->n_nodes == 0 || p_g->union_find.ranks);
+    assert(p_g->n_nodes == 0 || p_g->union_find.n_terminals);
 
-    memset(g->union_find.parents, 0x0, g->n_nodes * sizeof(node_t));
-    free(g->union_find.parents);
+    memset(p_g->union_find.parents, 0x0, p_g->n_nodes * sizeof(node_t));
+    free(p_g->union_find.parents);
 
-    memset(g->union_find.ranks, 0x0, g->union_find.n_nodes * sizeof(size_t));
-    free(g->union_find.ranks);
+    memset(p_g->union_find.ranks, 0x0, p_g->union_find.n_nodes * sizeof(size_t));
+    free(p_g->union_find.ranks);
 
-    memset(g->union_find.n_terminals, 0x0, g->union_find.size * sizeof(size_t));
-    free(g->union_find.n_terminals);
+    memset(p_g->union_find.n_terminals, 0x0, p_g->union_find.size * sizeof(size_t));
+    free(p_g->union_find.n_terminals);
 
-    memset(&(g->union_find), 0x0, sizeof(union_find_t));
+    memset(&(p_g->union_find), 0x0, sizeof(union_find_t));
 }
 
 /**
  *
- * @param g
+ * @param p_g
  * @param u
  * @return
  */
-static node_t graph_union_find_find_recursive_compression(graph_t *g, node_t u) {
+static node_t graph_union_find_find_recursive_compression(graph_t *p_g, node_t u) {
     assert(g);
-    assert(g->n_nodes == 0 || g->union_find.parents);
-    assert(g->n_nodes == 0 || g->union_find.ranks);
-    assert(g->n_nodes == 0 || g->union_find.n_terminals);
-    assert(u < g->union_find.n_nodes);
+    assert(p_g->n_nodes == 0 || p_g->union_find.parents);
+    assert(p_g->n_nodes == 0 || p_g->union_find.ranks);
+    assert(p_g->n_nodes == 0 || p_g->union_find.n_terminals);
+    assert(u < p_g->union_find.n_nodes);
 
-    if (g->union_find.[u] != g->union_find.parents[g->union_find.parents[u]]) {
-        g->union_find.parents[u] = union_find_find_recursive_compression(g, g->union_find.parents[u]);
+    if (p_g->union_find.[u] != p_g->union_find.parents[p_g->union_find.parents[u]]) {
+        p_g->union_find.parents[u] = union_find_find_recursive_compression(g, p_g->union_find.parents[u]);
     }
 
-    return (g->union_find.parents[u]);
+    return (p_g->union_find.parents[u]);
 }
 
 /**
  *
- * @param g
+ * @param p_g
  * @param u
  * @return
  */
-static node_t graph_union_find_find_iterative_splitting(graph_t *g, node_t u) {
+static node_t graph_union_find_find_iterative_splitting(graph_t *p_g, node_t u) {
     assert(g);
-    assert(g->n_nodes == 0 || g->union_find.parents);
-    assert(g->n_nodes == 0 || g->union_find.ranks);
-    assert(g->n_nodes == 0 || g->union_find.n_terminals);
-    assert(u < g->union_find.n_nodes);
+    assert(p_g->n_nodes == 0 || p_g->union_find.parents);
+    assert(p_g->n_nodes == 0 || p_g->union_find.ranks);
+    assert(p_g->n_nodes == 0 || p_g->union_find.n_terminals);
+    assert(u < p_g->union_find.n_nodes);
 
-    node_t v = g->union_find.parents[u];
-    while (v != g->union_find.parents[v]) {
-        g->union_find.parents[u] = g->union_find.parents[v];
+    node_t v = p_g->union_find.parents[u];
+    while (v != p_g->union_find.parents[v]) {
+        p_g->union_find.parents[u] = p_g->union_find.parents[v];
         u = v;
-        v = g->union_find.parents[v];
+        v = p_g->union_find.parents[v];
     }
 
     return (v);
@@ -133,51 +133,51 @@ static node_t graph_union_find_find_iterative_splitting(graph_t *g, node_t u) {
 
 /**
  *
- * @param g
+ * @param p_g
  * @param u
  * @return
  */
-static node_t graph_union_find_find_iterative_halving(graph_t *g, node_t u) {
+static node_t graph_union_find_find_iterative_halving(graph_t *p_g, node_t u) {
     assert(g);
-    assert(g->n_nodes == 0 || g->union_find.parents);
-    assert(g->n_nodes == 0 || g->union_find.ranks);
-    assert(g->n_nodes == 0 || g->union_find.n_terminals);
-    assert(u < g->union_find.n_nodes);
+    assert(p_g->n_nodes == 0 || p_g->union_find.parents);
+    assert(p_g->n_nodes == 0 || p_g->union_find.ranks);
+    assert(p_g->n_nodes == 0 || p_g->union_find.n_terminals);
+    assert(u < p_g->union_find.n_nodes);
 
-    while (g->union_find.parents[u] != g->union_find.parents[g->union_find.parents[u]]) {
-        g->union_find.parents[u] = g->union_find.parents[g->union_find.parents[u]];
-        i = g->union_find.parents[u];
+    while (p_g->union_find.parents[u] != p_g->union_find.parents[p_g->union_find.parents[u]]) {
+        p_g->union_find.parents[u] = p_g->union_find.parents[p_g->union_find.parents[u]];
+        i = p_g->union_find.parents[u];
     }
 
-    return (g->union_find.parents[u]);
+    return (p_g->union_find.parents[u]);
 }
 
 /**
  *
- * @param g
+ * @param p_g
  * @param u
  * @return
  */
-static node_t graph_union_find_find_iterative_compression(graph_t *g, node_t u) {
+static node_t graph_union_find_find_iterative_compression(graph_t *p_g, node_t u) {
     assert(g);
-    assert(g->n_nodes == 0 || g->union_find.parents);
-    assert(g->n_nodes == 0 || g->union_find.ranks);
-    assert(g->n_nodes == 0 || g->union_find.n_terminals);
-    assert(u < g->union_find.n_nodes);
+    assert(p_g->n_nodes == 0 || p_g->union_find.parents);
+    assert(p_g->n_nodes == 0 || p_g->union_find.ranks);
+    assert(p_g->n_nodes == 0 || p_g->union_find.n_terminals);
+    assert(u < p_g->union_find.n_nodes);
 
-    node_t p = g->union_find.parents[u];
+    node_t p = p_g->union_find.parents[u];
     node_t v = u;
 
     /* pass 1 */
-    while (p != g->union_find.parents[p]) {
-        p = g->union_find.parents[p];
+    while (p != p_g->union_find.parents[p]) {
+        p = p_g->union_find.parents[p];
     }
 
     /* pass 2 */
     while (v != p) {
-        g->union_find.parents[u] = p;
+        p_g->union_find.parents[u] = p;
         u = v;
-        v = g->union_find.parents[u];
+        v = p_g->union_find.parents[u];
     }
 
     return (p);
@@ -185,26 +185,26 @@ static node_t graph_union_find_find_iterative_compression(graph_t *g, node_t u) 
 
 /**
  *
- * @param g
+ * @param p_g
  * @param u
  * @return
  */
-node_t graph_union_find_find(graph_t *g, node_t u) {
+node_t graph_union_find_find(graph_t *p_g, node_t u) {
     return (GRAPH_UNION_FIND_FIND(g, u));
 }
 
 /**
  *
- * @param g
+ * @param p_g
  * @return
  */
-int graph_union_find_terminals_are_connected(graph_t *g) {
+int graph_union_find_terminals_are_connected(graph_t *p_g) {
     assert(g);
-    assert(g->n_nodes == 0 || g->union_find.parents);
-    assert(g->n_nodes == 0 || g->union_find.ranks);
-    assert(g->n_nodes == 0 || g->union_find.n_terminals);
+    assert(p_g->n_nodes == 0 || p_g->union_find.parents);
+    assert(p_g->n_nodes == 0 || p_g->union_find.ranks);
+    assert(p_g->n_nodes == 0 || p_g->union_find.n_terminals);
 
-    return (g->union_find.max_n_terminals_in_part == g->n_terminals);
+    return (p_g->union_find.max_n_terminals_in_part == p_g->n_terminals);
 }
 
 /**
@@ -213,13 +213,13 @@ int graph_union_find_terminals_are_connected(graph_t *g) {
  * @param i
  * @param j
  */
-int graph_union_find_union(graph_t *g, node_t u, node_t v) {
+int graph_union_find_union(graph_t *p_g, node_t u, node_t v) {
     assert(g);
-    assert(g->n_nodes == 0 || g->union_find.parents);
-    assert(g->n_nodes == 0 || g->union_find.ranks);
-    assert(g->n_nodes == 0 || g->union_find.n_terminals);
-    assert(u < g->union_find.n_nodes);
-    assert(v < g->union_find.n_nodes);
+    assert(p_g->n_nodes == 0 || p_g->union_find.parents);
+    assert(p_g->n_nodes == 0 || p_g->union_find.ranks);
+    assert(p_g->n_nodes == 0 || p_g->union_find.n_terminals);
+    assert(u < p_g->union_find.n_nodes);
+    assert(v < p_g->union_find.n_nodes);
 
     if (u == v) {
         /* no merge */
@@ -235,28 +235,28 @@ int graph_union_find_union(graph_t *g, node_t u, node_t v) {
     }
 
     /* merging two parts */
-    g->union_find.count--;
+    p_g->union_find.count--;
 
-    if (g->union_find.ranks[u_root] == g->union_find.ranks[v_root]) {
-        g->union_find.parents[v_root] = u_root;
-        g->union_find.n_terminals[u_root] += g->union_find.n_terminals[v_root];
-        if (g->union_find.n_terminals[u_root] > g->union_find.max_n_terminals_in_part) {
-            g->union_find.max_n_terminals_in_part = g->union_find.n_terminals[u_root];
+    if (p_g->union_find.ranks[u_root] == p_g->union_find.ranks[v_root]) {
+        p_g->union_find.parents[v_root] = u_root;
+        p_g->union_find.n_terminals[u_root] += p_g->union_find.n_terminals[v_root];
+        if (p_g->union_find.n_terminals[u_root] > p_g->union_find.max_n_terminals_in_part) {
+            p_g->union_find.max_n_terminals_in_part = p_g->union_find.n_terminals[u_root];
         }
-        g->union_find.ranks[u_root]++;
+        p_g->union_find.ranks[u_root]++;
     } else {
-        if (g->union_find.ranks[u_root] < g->union_find.ranks[v_root]) {
-            g->union_find.parents[u_root] = v_root;
-            g->union_find.n_terminals[v_root] += g->union_find.n_terminals[u_root];
-            if (g->union_find.n_terminals[v_root] > g->union_find.max_n_terminals_in_part) {
-                g->union_find.max_n_terminals_in_part = g->union_find.n_terminals[v_root];
+        if (p_g->union_find.ranks[u_root] < p_g->union_find.ranks[v_root]) {
+            p_g->union_find.parents[u_root] = v_root;
+            p_g->union_find.n_terminals[v_root] += p_g->union_find.n_terminals[u_root];
+            if (p_g->union_find.n_terminals[v_root] > p_g->union_find.max_n_terminals_in_part) {
+                p_g->union_find.max_n_terminals_in_part = p_g->union_find.n_terminals[v_root];
             }
         } else {
-            /* g->union_find.ranks[u_root] > g->union_find.ranks[v_root] */
-            g->union_find.parents[u_root] = u_root;
-            g->union_find.n_terminals[u_root] += g->union_find.n_terminals[v_root];
-            if (g->union_find.n_terminals[u_root] > g->union_find.max_n_terminals_in_part) {
-                g->union_find.max_n_terminals_in_part = g->union_find.n_terminals[u_root];
+            /* p_g->union_find.ranks[u_root] > p_g->union_find.ranks[v_root] */
+            p_g->union_find.parents[u_root] = u_root;
+            p_g->union_find.n_terminals[u_root] += p_g->union_find.n_terminals[v_root];
+            if (p_g->union_find.n_terminals[u_root] > p_g->union_find.max_n_terminals_in_part) {
+                p_g->union_find.max_n_terminals_in_part = p_g->union_find.n_terminals[u_root];
             }
         };
     };
@@ -271,7 +271,7 @@ int graph_union_find_union(graph_t *g, node_t u, node_t v) {
  * @param stream
  * @return
  */
-graph_t *graph_read(FILE *stream) {
+graph_t *p_graph_read(FILE *stream) {
     char buffer[64];
     int n_nodes;
     int n_edges;
@@ -306,52 +306,52 @@ graph_t *graph_read(FILE *stream) {
         exit(EXIT_FAILURE);
     }
 
-    graph_t *g = graph_alloc();
+    graph_t *p_g = graph_alloc();
 
     /* nodes init */
-    g->node_colors = (color_t *) calloc(n_nodes, sizeof(color_t));
-    if (!g->node_colors) {
+    p_g->node_colors = (color_t *) calloc(n_nodes, sizeof(color_t));
+    if (!p_g->node_colors) {
         fprintf(stderr, "graph_read. memory allocation error: could not alloc \"node_colors\" array.\n");
         exit(EXIT_FAILURE);
     }
     for (int u = 0; u < n_nodes; u++) {
-        g->node_colors[u] = WHITE;
+        p_g->node_colors[u] = WHITE;
     }
 
-    g->node_counters = (int *) calloc(n_nodes, sizeof(int));
-    if (!g->node_counters) {
+    p_g->node_counters = (int *) calloc(n_nodes, sizeof(int));
+    if (!p_g->node_counters) {
         fprintf(stderr, "graph_read. memory allocation error: could not alloc \"node_counters\" array.\n");
         exit(EXIT_FAILURE);
     }
     for (int u = 0; u < n_nodes; u++) {
-        g->node_counters[u] = 0;
+        p_g->node_counters[u] = 0;
     }
 
-    g->node_terminals = (int *) calloc(n_nodes, sizeof(color_t));
-    if (g->node_terminals == NULL) {
+    p_g->node_terminals = (int *) calloc(n_nodes, sizeof(color_t));
+    if (p_g->node_terminals == NULL) {
         fprintf(stderr, "graph_read. memory allocation error: could not alloc \"node_terminals\" array.\n");
         exit(EXIT_FAILURE);
     }
     for (int u = 0; u < n_nodes; u++) {
         /* init all nodes as non-terminal */
-        g->node_terminals[u] = 0;
+        p_g->node_terminals[u] = 0;
     }
 
     /* edges init */
-    g->edges_sorted_by_endpoints = (edge_t *) calloc(n_edges, sizeof(edge_t));
-    if (!g->edges_sorted_by_endpoints) {
+    p_g->edges_sorted_by_endpoints = (edge_t *) calloc(n_edges, sizeof(edge_t));
+    if (!p_g->edges_sorted_by_endpoints) {
         fprintf(stderr, "memory allocation error: could not alloc \"edges_sorted_by_endpoints\" array\n");
         exit(EXIT_FAILURE);
     }
 
-    g->edges_sorted_by_weight = (edge_t *) calloc(n_edges, sizeof(edge_t));
-    if (!g->edges_sorted_by_weight) {
+    p_g->edges_sorted_by_weight = (edge_t *) calloc(n_edges, sizeof(edge_t));
+    if (!p_g->edges_sorted_by_weight) {
         fprintf(stderr, "memory allocation error: could not alloc \"edges_sorted_by_weight\" array\n");
         exit(EXIT_FAILURE);
     }
 
-    g->edges_no_order_guaranteed = (edge_t *) calloc(n_edges, sizeof(edge_t));
-    if (!g->edges_no_order_guaranteed) {
+    p_g->edges_no_order_guaranteed = (edge_t *) calloc(n_edges, sizeof(edge_t));
+    if (!p_g->edges_no_order_guaranteed) {
         fprintf(stderr, "memory allocation error: could not alloc \"edges_no_order_guaranteed\" array\n");
         exit(EXIT_FAILURE);
     }
@@ -367,26 +367,26 @@ graph_t *graph_read(FILE *stream) {
         }
 
         /* edges_sorted_by_endpoints */
-        g->edges_sorted_by_endpoints[i].n1 = src;
-        g->edges_sorted_by_endpoints[i].n2 = dest;
-        g->edges_sorted_by_endpoints[i].weight = w;
+        p_g->edges_sorted_by_endpoints[i].n1 = src;
+        p_g->edges_sorted_by_endpoints[i].n2 = dest;
+        p_g->edges_sorted_by_endpoints[i].weight = w;
 
         /* edges_sorted_by_weight */
-        g->edges_sorted_by_weight[i].n1 = src;
-        g->edges_sorted_by_weight[i].n2 = dest;
-        g->edges_sorted_by_weight[i].weight = w;
+        p_g->edges_sorted_by_weight[i].n1 = src;
+        p_g->edges_sorted_by_weight[i].n2 = dest;
+        p_g->edges_sorted_by_weight[i].weight = w;
 
         /* edges_no_order_guaranteed */
-        g->edges_no_order_guaranteed[i].n1 = src;
-        g->edges_no_order_guaranteed[i].n2 = dest;
-        g->edges_no_order_guaranteed[i].weight = w;
+        p_g->edges_no_order_guaranteed[i].n1 = src;
+        p_g->edges_no_order_guaranteed[i].n2 = dest;
+        p_g->edges_no_order_guaranteed[i].weight = w;
     }
 
     /* order guarantee for edges_sorted_by_endpoints */
-    qsort(g->edges_sorted_by_endpoints, n_edges, sizeof(edge_t), edge_compar);
+    qsort(p_g->edges_sorted_by_endpoints, n_edges, sizeof(edge_t), edge_compar);
 
     /* order guarantee for edges_sorted_by_weight */
-    qsort(g->edges_sorted_by_endpoints, n_edges, sizeof(edge_t), edge_weight_compar);
+    qsort(p_g->edges_sorted_by_endpoints, n_edges, sizeof(edge_t), edge_weight_compar);
 
 
     if ((fscanf(stream, "%s", buffer) != 1) || strcmp(buffer, "END")) {
@@ -415,18 +415,18 @@ graph_t *graph_read(FILE *stream) {
         exit(EXIT_FAILURE);
     }
 
-    g->n_terminals = n_terminals;
-    g->n_non_terminals = g->n_nodes - n_terminals;
+    p_g->n_terminals = n_terminals;
+    p_g->n_non_terminals = p_g->n_nodes - n_terminals;
 
     /* Read the terminals */
-    for (int i = 0; i < g->n_terminals; i++) {
+    for (int i = 0; i < p_g->n_terminals; i++) {
         node_t u;
         if (fscanf(stream, "%*s %d", &u) != 1) {
             fprintf(stderr, "graph_read. parse error: could not read %d-th terminal\n", i);
             exit(EXIT_FAILURE);
         }
-        g->node_terminals[u] = 1;
-        g->terminals[i] = u;
+        p_g->node_terminals[u] = 1;
+        p_g->terminals[i] = u;
     }
 
     /**
@@ -437,15 +437,15 @@ graph_t *graph_read(FILE *stream) {
     for (int i = 0, j = 0, k = 0; i < n_nodes; i++) {
         if (j == n_terminals) {
             /* we are done with terminals, keep on adding non-terminals */
-            g->non_terminals[k] = i;
+            p_g->non_terminals[k] = i;
             k++;
         } else {
-            while (g->terminals[j] < i) {
+            while (p_g->terminals[j] < i) {
                 j++;
             }
-            if (g->terminals[j] != i) {
+            if (p_g->terminals[j] != i) {
                 /* node i is not a terminal */
-                g->non_terminals[k] = i;
+                p_g->non_terminals[k] = i;
                 k++;
             }
         }
@@ -468,71 +468,71 @@ graph_t *graph_read(FILE *stream) {
  *
  * @return an empty graph.
  */
-graph_t *graph_alloc() {
-    graph_t *g = (graph_t *) malloc(sizeof(graph_t));
+graph_t *p_graph_alloc() {
+    graph_t *p_g = (graph_t *) malloc(sizeof(graph_t));
     if (!g) {
         fprintf(stderr, "graph_alloc. memory allocation error.\n");
         exit(EXIT_FAILURE);
     }
 
     /* nodes init */
-    g->n_node = 0;
-    g->n_terminals = 0;
-    g->terminals = NULL;
-    g->n_non_terminals = 0;
-    g->non_terminals = NULL;
-    g->node_colors = NULL;
-    g->node_counters = NULL;
+    p_g->n_node = 0;
+    p_g->n_terminals = 0;
+    p_g->terminals = NULL;
+    p_g->n_non_terminals = 0;
+    p_g->non_terminals = NULL;
+    p_g->node_colors = NULL;
+    p_g->node_counters = NULL;
 
     /* edges init */
-    g->n_edges = 0;
-    g->edges_sorted_by_endpoints = NULL;
-    g->edges_sorted_by_weight = NULL;
-    g->edges_no_order_guaranteed = NULL;
+    p_g->n_edges = 0;
+    p_g->edges_sorted_by_endpoints = NULL;
+    p_g->edges_sorted_by_weight = NULL;
+    p_g->edges_no_order_guaranteed = NULL;
 
     /* union find init */
-    g->union_find.parents = NULL;
-    g->union_find.ranks = NULL;
-    g->union_find.n_terminals = NULL;
-    g->union_find.count = 0;
-    g->union_find.max_n_terminals_in_part = 0;
+    p_g->union_find.parents = NULL;
+    p_g->union_find.ranks = NULL;
+    p_g->union_find.n_terminals = NULL;
+    p_g->union_find.count = 0;
+    p_g->union_find.max_n_terminals_in_part = 0;
 
     return (g);
 }
 
 /**
  *
- * @param g
+ * @param p_g
  */
-void graph_release(graph_t *g) {
+void graph_release(graph_t *p_g) {
     if (g) {
         /* release nodes arrays */
-        assert(g->n_nodes == 0 || g->node_colors);
-        assert(g->n_nodes == 0 || g->node_counters);
-        assert(g->n_nodes == 0 || g->node_terminals);
+        assert(p_g->n_nodes == 0 || p_g->node_colors);
+        assert(p_g->n_nodes == 0 || p_g->node_counters);
+        assert(p_g->n_nodes == 0 || p_g->node_terminals);
 
-        memset(g->node_colors, 0X0, g->n_nodes * sizeof(color_t));
-        free(g->node_colors);
+        memset(p_g->node_colors, 0X0, p_g->n_nodes * sizeof(color_t));
+        free(p_g->node_colors);
 
-        memset(g->node_counters, 0x0, g->n_nodes * sizeof(int));
-        free(g->node_counters);
+        memset(p_g->node_counters, 0x0, p_g->n_nodes * sizeof(int));
+        free(p_g->node_counters);
 
-        memset(g->node_terminals, 0x0, g->n_nodes * sizeof(int));
-        free(g->node_terminals);
+        memset(p_g->node_terminals, 0x0, p_g->n_nodes * sizeof(int));
+        free(p_g->node_terminals);
 
         /* release edges arrays */
-        assert(g->n_edges == 0 || g->edges_sorted_by_endpoints);
-        assert(g->n_edges == 0 || g->edges_sorted_by_weight);
-        assert(g->n_edges == 0 || g->edges_no_order_guaranteed);
+        assert(p_g->n_edges == 0 || p_g->edges_sorted_by_endpoints);
+        assert(p_g->n_edges == 0 || p_g->edges_sorted_by_weight);
+        assert(p_g->n_edges == 0 || p_g->edges_no_order_guaranteed);
 
-        memset(g->edges_sorted_by_endpoints, 0x0, g->n_edges * sizeof(edge_t));
-        free(g->edges);
+        memset(p_g->edges_sorted_by_endpoints, 0x0, p_g->n_edges * sizeof(edge_t));
+        free(p_g->edges);
 
-        memset(g->edges_sorted_by_weight, 0x0, g->n_edges * sizeof(edge_t));
-        free(g->edges);
+        memset(p_g->edges_sorted_by_weight, 0x0, p_g->n_edges * sizeof(edge_t));
+        free(p_g->edges);
 
-        memset(g->edges_no_order_guaranteed, 0x0, g->n_edges * sizeof(edge_t));
-        free(g->edges);
+        memset(p_g->edges_no_order_guaranteed, 0x0, p_g->n_edges * sizeof(edge_t));
+        free(p_g->edges);
 
         /* release union find facility */
         graph_union_find_release(g);
@@ -545,180 +545,229 @@ void graph_release(graph_t *g) {
 
 /**
  *
- * @param g
+ * @param p_g
  * @param u
  * @return
  */
-int graph_node_is_terminal(graph_t *g, node_t u) {
+int graph_node_is_terminal(graph_t *p_g, node_t u) {
     assert(g);
-    assert(g->node_terminals);
-    assert(u < g->n_nodes);
+    assert(p_g->node_terminals);
+    assert(u < p_g->n_nodes);
 
-    return (g->node_terminals[u]);
+    return (p_g->node_terminals[u]);
 }
 
 /**
  *
- * @param g
+ * @param p_g
  * @param i
  * @return
  */
-int graph_node_is_non_terminal(graph_t *g, node_t u) {
+int graph_node_is_non_terminal(graph_t *p_g, node_t u) {
     assert(g);
-    assert(g->node_terminals);
-    assert(u < g->n_nodes);
+    assert(p_g->node_terminals);
+    assert(u < p_g->n_nodes);
 
-    return (g->node_terminals[u] == 0);
+    return (p_g->node_terminals[u] == 0);
 }
 
 /**
  *
- * @param g
+ * @param p_g
  * @param c
  */
-void graph_color_set_all(graph_t *g, color_t c) {
-    assert(g != NULL);
+void graph_color_assert_all(graph_t *p_g, color_t c) {
+    assert(p_g);
 
-    for (node_t u = 0; u < g->n_nodes; u++) {
-        g->node_colors[u] = c;
+    for (node_t u = 0; u < p_g->n_nodes; u++) {
+        assert(p_g->node_colors[u] == c);
     }
 }
 
 /**
  *
- * @param g
- * @param u
- * @param c
+ * @param p_g
  */
-void graph_color_set(graph_t *g, node_t u, color_t c) {
-    assert(g != NULL);
-    assert(i < g->n_nodes);
-
-    g->node_colors[u] = c;
+void graph_color_assert_all_white(graph_t *p_g) {
+    graph_color_assert_all(p_g, WHITE);
 }
 
 /**
  *
- * @param g
+ * @param p_g
+ */
+void graph_color_assert_all_black(graph_t *p_g) {
+    graph_color_assert_all(p_g, BLACK);
+}
+
+/**
+ *
+ * @param p_g
+ * @param c
+ */
+void graph_color_set_all(graph_t *p_g, color_t c) {
+    assert(p_g);
+
+    for (node_t u = 0; u < p_g->n_nodes; u++) {
+        if (p_g->node_colors[u] != c;
+    }
+}
+
+/**
+ *
+ * @param p_g
+ * @param u
+ * @param c
+ */
+void graph_color_set(graph_t *p_g, node_t u, color_t c) {
+    assert(p_g);
+    assert(i < p_g->n_nodes);
+
+    p_g->node_colors[u] = c;
+}
+
+/**
+ *
+ * @param p_g
  * @param u
  * @return the color of node i
  */
-color_t graph_node_color_get(graph_t *g, node_t u) {
-    assert(g != NULL);
-    assert(u < g->n_nodes);
+color_t graph_node_color_get(graph_t *p_g, node_t u) {
+    assert(p_g);
+    assert(u < p_g->n_nodes);
 
-    return (g->node_colors[u]);
+    return (p_g->node_colors[u]);
 }
 
 /**
- *
- * @param g
- * @param c
+ * 
+ * @param p_g
+ * @param counter
  */
-void graph_node_counter_set_all(graph_t *g, int counter) {
-    assert(g != NULL);
-    assert((g->n_nodes == 0) || (g->node_counters != NULL));
+void graph_node_counter_assert_all(graph_t *p_g, int counter_val) {
+    assert(p_g);
 
-    for (node_t u = 0; u < g->n_nodes; u++) {
-        g->node_counters[u] = counter;
+    for (node_t u = 0; u < p_g->n_nodes; u++) {
+        assert(p_g->node_counters[u] == counter_val);
     }
 }
 
 /**
  *
- * @param g
+ * @param p_g
  */
-void graph_node_counter_reset_all(graph_t *g) {
+void graph_node_counter_assert_all_zero(graph_t *p_g) {
+    graph_node_counter_assert_all(p_g, 0);
+}
+
+/**
+ *
+ * @param p_g
+ * @param c
+ */
+void graph_node_counter_set_all(graph_t *p_g, int counter_val) {
+    assert(p_g);
+
+    for (node_t u = 0; u < p_g->n_nodes; u++) {
+        p_g->node_counters[u] = counter_val;
+    }
+}
+
+/**
+ *
+ * @param p_g
+ */
+void graph_node_counter_reset_all(graph_t *p_g) {
     graph_node_counter_set_all(g, 0);
 }
 
 /**
  *
- * @param g
+ * @param p_g
  */
-void graph_node_counter_increment_all(graph_t *g) {
-    assert(g != NULL);
+void graph_node_counter_increment_all(graph_t *p_g) {
+    assert(p_g);
 
-    for (node_t u = 0; u < g->n_nodes; u++) {
-        g->node_counters[u]++;
+    for (node_t u = 0; u < p_g->n_nodes; u++) {
+        p_g->node_counters[u]++;
     }
 }
 
 /**
  *
- * @param g
+ * @param p_g
  * @param u
  * @param c
  */
-void graph_node_counter_set(graph_t *g, node_t u, int counter) {
-    assert(g != NULL);
-    assert(u < g->n_nodes);
+void graph_node_counter_set(graph_t *p_g, node_t u, int counter) {
+    assert(p_g);
+    assert(u < p_g->n_nodes);
 
-    g->node_counters[u] = counter;
+    p_g->node_counters[u] = counter;
 }
 
 /**
  *
- * @param g
+ * @param p_g
  * @param u
  */
-void graph_node_counter_reset(graph_t *g, node_t u) {
+void graph_node_counter_reset(graph_t *p_g, node_t u) {
     graph_node_counter_set(g, u, 0);
 }
 
 /**
  *
- * @param g
+ * @param p_g
  * @param u
  */
-void graph_node_counter_increment(graph_t *g, node_t u) {
-    assert(g != NULL);
-    assert(u < g->n_nodes);
+void graph_node_counter_increment(graph_t *p_g, node_t u) {
+    assert(p_g);
+    assert(u < p_g->n_nodes);
 
-    g->node_counters[u]++;
+    p_g->node_counters[u]++;
 }
 
 /**
  *
- * @param g
+ * @param p_g
  * @param u
  * @return the counter associated to node u
  */
-int graph_node_counter_get(graph_t *g, node_t u) {
-    assert(g != NULL);
-    assert(i < g->n_nodes);
+int graph_node_counter_get(graph_t *p_g, node_t u) {
+    assert(p_g);
+    assert(u < p_g->n_nodes);
 
-    return (g->node_counters[u]);
+    return (p_g->node_counters[u]);
 }
 
 /**
  *
- * @param g
+ * @param p_g
  */
-void graph_edge_random_shuffle(graph_t *g) {
-    assert(g != NULL);
+void graph_edge_random_shuffle(graph_t *p_g) {
+    assert(p_g);
 
-    random_shuffle(g->edges, g->n_edges, sizeof(edge_t));
+    random_shuffle(p_g->edges, p_g->n_edges, sizeof(edge_t));
 }
 
 /**
  *
  *
- * @param g
+ * @param p_g
  * @return
  */
-list_t *graph_kruskal_min_spanning_tree_on_black_nodes(graph_t *p_g) {
+list_t *p_graph_kruskal_min_spanning_tree_on_black_nodes(graph_t *p_g) {
     assert(p_g);
 
     graph_union_find_init(gp_);
 
     list_t *p_el = NULL;
-    for (int i = 0; i < g->n_edges; i++) {
-        edge_t e = g->edges_sorted_by_weight[i];
+    for (int i = 0; i < p_g->n_edges; i++) {
+        edge_t e = p_g->edges_sorted_by_weight[i];
         node_t n1 = e.n1;
         node_t n2 = e.n2;
 
-        if ((p_g->node_colors[n1] == BLACK) && (p_g->node_colors[n2] == BLACK)) {
+        if ((p_p_g->node_colors[n1] == BLACK) && (p_p_g->node_colors[n2] == BLACK)) {
             node_t root_n1 = graph_union_find_find(p_g, n1);
             node_t root_n2 = graph_union_find_find(p_g, n2);
 
@@ -743,19 +792,19 @@ list_t *graph_kruskal_min_spanning_tree_on_black_nodes(graph_t *p_g) {
  * @param e
  * @return
  */
-edge_t *graph_search_edge_by_endpoints(graph_t *p_g, edge_t e) {
+edge_t *p_graph_search_edge_by_endpoints(graph_t *p_g, edge_t e) {
     asert(p_g);
 
     int start = 0;
-    int end = p_g->nb_edges - 1;
+    int end = p_p_g->nb_edges - 1;
     int middle;
 
-    if (p_g->edges_sorted_by_endpoints[0] == e) {
-        return (&(p_g->edges_sorted_by_endpoints[0]));
+    if (p_p_g->edges_sorted_by_endpoints[0] == e) {
+        return (&(p_p_g->edges_sorted_by_endpoints[0]));
     } else {
         while (end - start > 1) {
             middle = (start + end) / 2;
-            if (edge_compar(&(p_g->edges_sorted_by_endpoints[middle]) < &e) < 0) {
+            if (edge_compar(&(p_p_g->edges_sorted_by_endpoints[middle]) < &e) < 0) {
                 start = middle;
             } else {
                 end = middle;
@@ -763,8 +812,8 @@ edge_t *graph_search_edge_by_endpoints(graph_t *p_g, edge_t e) {
         }
     }
 
-    if (p_g->edges_sorted_by_endpoints[end] == e) {
-        return (&(p_g->edges_sorted_by_endpoints[end]));
+    if (p_p_g->edges_sorted_by_endpoints[end] == e) {
+        return (&(p_p_g->edges_sorted_by_endpoints[end]));
     } else {
         return (NULL);
     }
