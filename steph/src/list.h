@@ -10,11 +10,7 @@ extern list_t *list_alloc(void *data);
 
 extern void list_release(list_t *l);
 
-extern void list_release_with_data_release(list_t *l, void (*data_release)(void *));
-
 extern list_t *list_copy(const list_t *l);
-
-extern list_t *list_copy_with_data_copy(const list_t *l, void *(*data_copy)(const void *));
 
 extern size_t list_size(list_t *l);
 

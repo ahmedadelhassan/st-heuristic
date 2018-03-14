@@ -6,7 +6,7 @@
 #include "edge.h"
 
 /**
- *
+ * \brief Allocate a new edge.
  * @param n1 First node of the edge
  * @param n2 Second node of the edge
  * @param w Weight of the edge
@@ -29,7 +29,7 @@ edge_t *edge_alloc(node_t n1, node_t n2, weight w) {
 }
 
 /**
- * Release an edge.
+ * \brief Release an edge.
  * @param e Pointer to the edge
  */
 void edge_release(edge_t *p_e) {
@@ -40,7 +40,7 @@ void edge_release(edge_t *p_e) {
 }
 
 /**
- * Compare two edges according to their first node and next their second node.
+ * \brief Compare two edges according to their first node and next their second node.
  * @param p1 Pointer to the first edge
  * @param p2 Pointer to the second edge
  * @return An integer less than, equal to, or greater than zero if the first edge is
@@ -48,8 +48,8 @@ void edge_release(edge_t *p_e) {
  * Edges are sorted on the first node, and next on the second node.
  */
 int edge_compar(const void *p1, const void *p2) {
-    assert(p1 != NULL);
-    assert(p2 != NULL);
+    assert(p1);
+    assert(p2);
 
     const edge_t *p_e1 = (const edge_t *) p1;
     const edge_t *p-e2 = (const edge_t *) p2;
@@ -63,15 +63,15 @@ int edge_compar(const void *p1, const void *p2) {
 }
 
 /**
- * Compare two edges according to their weight.
+ * \brief Compare two edges according to their weight.
  * @param p1 Pointer to the first edge
  * @param p2 Pointer to the second edge
  * @return An integer less than, equal to, or greater than zero if the first edge's weight is
  * considered to be respectively less than, equal to, or greater than the second.
  */
 int edge_weight_compar(const void *p1, const void *p2) {
-    assert(p1 != NULL);
-    assert(p2 != NULL);
+    assert(p1);
+    assert(p2);
 
     const edge_t *p_e1 = (const edge_t *) p1;
     const edge_t *p_e2 = (const edge_t *) p2;

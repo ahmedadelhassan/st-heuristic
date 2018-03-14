@@ -47,6 +47,6 @@ void random_shuffle(void *array, size_t n, size_t m) {
  *
  * @return
  */
-double random_probability() {
-    return (rand() / (double)RAND_MAX);
+probability_t random_probability() {
+    return (rand() / (double) RAND_MAX);
 }

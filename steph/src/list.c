@@ -5,17 +5,18 @@
 #include "list.h"
 
 /**
- *
- * @param e
- * @return
+ * \brief Allocate a new list.
+ * @param data The data associated to the list
+ * @return a new singleton list.
  */
 list_t *list_alloc(void *data) {
     list_t *l = (list_t *) malloc(sizeof(list_t));
-    if (! l) {
+    if (!l) {
         fprintf(stderr, "list_alloc. memory allocation error.\n");
         exit(EXIT_FAILURE);
     }
 
+    /* singleton list */
     l->next = NULL;
     l->data = data;
 
@@ -23,59 +24,37 @@ list_t *list_alloc(void *data) {
 }
 
 /**
- *
- * @param l
+ * \brief Recursively release a list.
+ * @param l A list
+ * The associated data is not released.
  */
 void list_release(list_t *l) {
-    list_release_with_data_release(l, NULL);
-}
-
-/**
- *
- * @param l
- * @param data_release
- */
-void list_release_with_data_release(list_t *l, void (*data_release)(void *)) {
-    if (l != NULL) {
-        list_release_with_data_release(l->next, data_release);
-        if (data_release) {
-            data_release(l->data);
-        }
+    if (l) {
+        list_release_(l->next);
         memset(l, 0x0, sizeof(list_t));
         free(l);
     }
 }
 
 /**
- *
- * @param l
- * @return
+ * \brief recursively copy a list.
+ * @param l A list
+ * @return a new list holding the same data.
  */
 list_t *list_copy(const list_t *l) {
-    return (list_copy_with_data_copy(l, NULL));
-}
-
-/**
- *
- * @param l
- * @param data_copy
- * @return
- */
-list_t *list_copy_with_data_copy(const list_t *l, void *(*data_copy)(const void *)) {
-    if (! l) {
+    if (!l) {
         return (NULL);
-    } else {
-        void *data = data_copy ? data_copy(l->data) : l->data;
-        list_t *copy_l = list_alloc(data);
-        copy_l->next = list_copy(l->next);
-        return (copy_l);
     }
+
+    list_t *copy_l = list_alloc(data);
+    copy_l->next = list_copy(l->next);
+    return (copy_l);
 }
 
 /**
- *
- * @param l
- * @return
+ * \brief Number of elements in a list
+ * @param l A list
+ * @return the number of elements in the list \a l.
  */
 size_t list_size(list_t *l) {
     size_t size = 0;
@@ -87,23 +66,12 @@ size_t list_size(list_t *l) {
 }
 
 /**
- *
- * @param l
- * @param i
- * @return
+ * \brief Delete an element in a list.
+ * @param l A list
+ * @param i The index of the element to be deleted.
+ * @return the list \a l without its \a i-th element.
  */
 list_t *list_delete_ith(list_t *l, unsigned int i) {
-    return(list_delete_ith_with_data_release(l, i, NULL));
-}
-
-/**
- *
- * @param l
- * @param i
- * @param data_release
- * @return
- */
-list_t *list_delete_ith_with_data_release(list_t *l, unsigned int i, void (*data_release)(void *)) {
     list_t *prev_l = NULL;
     list_t *it_l = l;
 
@@ -113,54 +81,45 @@ list_t *list_delete_ith_with_data_release(list_t *l, unsigned int i, void (*data
         i--;
     }
 
-    if (! it_l) {
+    if (!it_l) {
         return (NULL);
     }
 
     /* l != NULL */
-    if (! prev_l) {
+    if (!prev_l) {
         /* delete first item of l */
         list_t *next_l = l->next;
         it_l->next = NULL;
-        list_release_with_data_release(it_l, data_release);
+        list_release(it_l);
         return (next_l);
     }
 
     /* l != NULL && prev_l != NULL */
     prev_l->next = it_l->next;
     it_l->next = NULL;
-    list_release_with_data_release(it_l, data_release);
+    list_release(it_l);
     return (l);
 }
 
 /**
- *
- * @param l
- * @return
+ * \brief Delete a random element in a list.
+ * @param l A list
+ * @return the list \a l without one of its element.
  */
 list_t *list_delete_rand(list_t *l) {
-    return (list_delete_rand_with_data_release(l, NULL));
-}
-
-/**
- *
- * @param l
- * @return
- */
-list_t *list_delete_rand_with_data_release(list_t *l, void (*data_release)(void *)) {
     if (!l) {
         return (NULL);
     }
 
     int i = rand() % list_size(l);
-    return list_delete_ith_with_data_release(l, i, data_release);
+    return list_delete_ith(l, i);
 }
 
 /**
- *
- * @param l
- * @param n
- * @return
+ * \brief Insert a new element at the beginning of a list.
+ * @param l A list
+ * @param data A pointer to the hold data
+ * @return a new list where \a data is inserted at the front of \a l.
  */
 list_t *list_insert_front(list_t *l, void *data) {
     list_t *new_l = list_alloc(data);
@@ -169,14 +128,14 @@ list_t *list_insert_front(list_t *l, void *data) {
 }
 
 /**
- *
- * @param l
- * @return
+ * \brief Reverse a list.
+ * @param l A list
+ * @return the list \a l reversed.
  */
 list_t *list_reverse(list_t *l) {
     list_t *rev_l = NULL;
 
-    while (l != NULL) {
+    while (l) {
         list_t *tmp_l = l->next;
         l->next = rev_l;
         rev_l = l;
@@ -221,10 +180,12 @@ static list_t *list_move(list_t *l, int (*data_compar)(const void *, const void 
     return (new_l);
 }
 
+
 /**
- *
- * @param l
- * @return
+ * \brief Sort a list.
+ * @param l A list
+ * @param data_compar Data comparing function
+ * @return the list \a l sorted according to \a data_compar comparing function.
  */
 list_t *list_sort(list_t *l, int (*data_compar)(const void *, const void *)) {
     if (!l) {
@@ -237,142 +198,4 @@ list_t *list_sort(list_t *l, int (*data_compar)(const void *, const void *)) {
     }
 
     return (l);
-}
-
-/**
- *
- * @param l1 sorted node list
- * @param l2 sorted node list
- * @return
- */
-list_t *list_union(list_t *l1, list_t *l2, int (*data_compar)(const void*, const void*)) {
-    return list_union_with_data_alloc(l1, l2, data_compar, NULL);
-}
-
-/**
- *
- * @param l1
- * @param l2
- * @param data_alloc
- * @return
- */
-list_t *list_union_with_data_alloc(list_t *l1, list_t *l2, int (*data_compar)(const void*, const void*), void *(*data_alloc)(void *)) {
-    list_t *l = NULL;
-
-    while (l1 && l2) {
-        if (data_compar(l1->data, l2->data) < 0) {
-            void *data = data_alloc ? data_alloc(l1->data) : l1->data;
-            l = list_insert_front(l, data);
-            l1 = l1->next;
-        } else {
-            if (data_compar(l1->data, l2->data) > 0) {
-                void *data = data_alloc ? data_alloc(l2->data) : l2->data;
-                l = list_insert_front(l, data);
-                l2 = l2->next;
-            } else {
-                /* data_compar(l1->data, l2->data) == 0 */
-                void *data = data_alloc ? data_alloc(l1->data) : l1->data;
-                l = list_insert_front(l, data);
-                l1 = l1->next;
-                l2 = l2->next;
-            }
-        }
-    }
-
-    while (l1) {
-        void *data = data_alloc ? data_alloc(l1->data) : l1->data;
-        l = list_insert_front(l, data);
-        l1 = l1->next;
-    }
-
-    while (l2) {
-        void *data = data_alloc ? data_alloc(l2->data) : l2->data;
-        l = list_insert_front(l, data);
-        l2 = l2->next;
-    }
-
-    return (list_reverse(l));
-}
-
-/**
- *
- * @param l1 sorted node list
- * @param l2 sorted node list
- * @return
- */
-list_t *list_intersection(list_t *l1, list_t *l2, int (*data_compar)(const void*, const void*)) {
-    return (list_intersection_with_data_alloc(l1, l2, data_compar, NULL));
-}
-
-/**
- *
- * @param l1
- * @param l2
- * @param data_alloc
- * @return
- */
-list_t *list_intersection_with_data_alloc(list_t *l1, list_t *l2, int (*data_compar)(const void*, const void*), void *(*data_alloc)(void *)) {
-
-    list_t *l = NULL;
-
-    while (l1 && l2) {
-        if (data_compar(l1->data, l2->data) < 0) {
-            l1 = l1->next;
-        } else {
-            if (data_compar(l1->data, l2->data) > 0) {
-                l2 = l2->next;
-            } else {
-                /* data_compar(l1->data, l2->data) == 0 */
-                void *data = data_alloc ? data_alloc(l1->data) : l1->data;
-                l = list_insert_front(l, data);
-                l1 = l1->next;
-                l2 = l2->next;
-            }
-        }
-    }
-
-    return (list_reverse(l));
-}
-
-/**
- *
- * @param l1
- * @param l2
- * @return
- */
-list_t *list_difference(list_t *l1, list_t *l2, int (*data_compar)(const void*, const void*)) {
-    return (list_difference_with_data_alloc(l1, l2, data_compar, NULL));
-}
-
-/**
- * 
- * @param l1
- * @param l2
- * @param data_alloc
- * @return
- */
-list_t *list_difference_with_data_alloc(list_t *l1, list_t *l2, int (*data_compar)(const void*, const void*), void *(*data_alloc)(void *)) {
-    list_t *l = NULL;
-
-    while (l1 && l2) {
-        if (data_compar(l1->data, l2->data) < 0) {
-            l = list_insert_front(l, l1->data);
-            l1 = l1->next;
-        } else {
-            if (l1->data > l1->data) {
-                l2 = l2->next;
-            } else {
-                /* data_compar(l1->data, l2->data) == 0 */
-                l1 = l1->next;
-                l2 = l2->next;
-            }
-        }
-    }
-
-    while (l1) {
-        l = list_insert_front(l, l1->data);
-        l1 = l1->next;
-    }
-
-    return (list_reverse(l));
 }
