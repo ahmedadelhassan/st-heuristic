@@ -1,17 +1,17 @@
 #ifndef ST_HEURISTIC_OPTIMIZER_H
 #define ST_HEURISTIC_OPTIMIZER_H
 
+#include "configuration.h
 #include "graph.h"
 
-
 typedef struct optimizer_t {
-    optimizer_config_t config;
+    configurations_t configuration;
     individual_t **individuals;
     weight_t best_total_weight;
     weight_t worst_total_weight;
 } optimizer_t;
 
-extern optimizer_t optimizer_init(optimizer_config_t config);
+extern optimizer_t optimizer_init(configuration_t configuration);
 
 extern void optimizer_release(optimizer_t opt);
 

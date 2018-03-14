@@ -61,7 +61,7 @@ void individual_release(individual_t *individual) {
  * @param g
  * @return
  */
-individual_t *individual_mk(graph_t *g) {
+individual_t *individual_mk(graph_t *p_g) {
     individual_mk_rand_from_individual(g, NULL);
 }
 
@@ -195,7 +195,7 @@ individual_t *individual_mk_with_init_edges(graph_t *p_g, list_t *p_init_el) {
  * @param individual2
  * @return
  */
-individual_t *individual_union(graph_t *g, individual_t *individual1, individual_t *individual2) {
+individual_t *individual_union(graph_t *p_g, individual_t *individual1, individual_t *individual2) {
     assert(g);
     assert(individual1);
     assert(individual2);
@@ -251,7 +251,7 @@ individual_t *individual_union(graph_t *g, individual_t *individual1, individual
  * @param individual2
  * @return
  */
-individual_t *individual_intersection(graph_t *g, individual_t *individual1, individual_t *individual2) {
+individual_t *individual_intersection(graph_t *p_g, individual_t *individual1, individual_t *individual2) {
     assert(g);
     assert(individual1);
     assert(individual2);
@@ -294,7 +294,7 @@ individual_t *individual_intersection(graph_t *g, individual_t *individual1, ind
  * @param p
  * @return
  */
-pair_t individual_crossing(graph_t *g, individual_t *individual1, individual_t *individual2, double p) {
+pair_t individual_crossing(graph_t *p_g, individual_t *individual1, individual_t *individual2, double p) {
     assert(g);
     assert(individual1);
     assert(individual2);
@@ -347,7 +347,7 @@ pair_t individual_crossing(graph_t *g, individual_t *individual1, individual_t *
  * @param p
  * @return
  */
-individual_t *individual_mutate(graph_t *g, individual_t *individual, double p) {
+individual_t *individual_mutate(graph_t *p_g, individual_t *individual, double p) {
     assert(g);
     assert(individual);
 
@@ -372,4 +372,33 @@ individual_t *individual_mutate(graph_t *g, individual_t *individual, double p) 
     return (mutate_individual);
 }
 
+/**
+ *
+ * @param p_g
+ * @param individual
+ */
+void individual_print_brief(graph_t *p_g, individual_t *individual) {
+    assert(individual);
+
+    graph_node_color_assert_all_white(p_g);
+    graph_node_color_set_all(p_g, WHITE);
+
+    /* count the number of non-terminal nodes */
+    for (int i = 0; i < individual->n_edges; i++) {
+        node_t n1 = individual->edges[i].n1;
+        node_t n2 = individual->edges[i].n2;
+        graph_node_color_set(p_g, n1, BLACK);
+        graph_node_color_set(p_g, n2, BLACK);
+    }
+    size_t n_non_terminals = 0;
+    for (node_t u = 0; u < p_g->n_nodes; u++) {
+        if (graph_node_is_non_terminal(p_g, u) && graph_node_color_get(p_g, u) == BLACK) {
+            n_non_terminals++;
+        }
+    }
+
+    /* reset graph node's color */
+    graph_node_color_set_all(p_g, WHITE);
+
+    fprintf(stdout, "individual. weight=%u\t#edges=%u\t#non terminals\n", individual->weight, individual->n_edges, n_non_terminals);
 }
