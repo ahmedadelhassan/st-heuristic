@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 
-#include "individual.h"
+#include "../individual.h"
 
 typedef struct {
     size_t capacity;

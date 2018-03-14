@@ -8,3 +8,4 @@ extern probability_t probability_rand();
 extern int check_probability(double p);
 
 #endif /* ST_HEURISTIC_PROBABILITY_H */
+
