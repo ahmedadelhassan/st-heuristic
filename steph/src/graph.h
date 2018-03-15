@@ -10,9 +10,9 @@
 #include "weight.h"
 
 typedef struct {
-    node_t *parents;     /**< Node's parents.                                   */
-    size_t *ranks;       /**< Node's ranks.                                     */
-    size_t *n_terminals; /**< Number of terminals in the part rooted at a node. */
+    node_t *p_parents;     /**< Node's parents.                                   */
+    size_t *p_ranks;       /**< Node's ranks.                                     */
+    size_t *p_n_terminals; /**< Number of terminals in the part rooted at a node. */
     size_t count;        /**< The number of parts.                              */
 } union_find_t;
 
@@ -20,15 +20,15 @@ typedef struct {
 typedef struct graph_t {
     size_t n_nodes;          /**< Number of nodes.             */
     size_t n_terminals;      /**< Number of terminal nodes     */
-    node_t *terminals;       /**< Terminal nodes               */
+    node_t *p_terminals;       /**< Terminal nodes               */
     size_t n_non_terminals;  /**< Number of non-terminal nodes */
-    node_t *non_terminals;   /**< Non-terminal nodes           */
-    color_t *node_colors;    /**< Nodes' colors                */
+    node_t *p_non_terminals;   /**< Non-terminal nodes           */
+    color_t *p_node_colors;    /**< Nodes' colors                */
     int *node_counters;      /**< nodes' counters              */
     size_t n_edges;          /**< Number of edges.             */
-    edge_t *edges_sorted_by_endpoints;           /**< Edges' array. (edges are sorted on n1 and next n2). */
-    edge_t *edges_sorted_by_weight;    /**< Edges' array. (edges are sorted on weight).         */
-    edge_t *edges_no_order_guaranteed;      /**< Edges' array. (no order is guaranteed)             */
+    edge_t *p_edges_sorted_by_endpoints;           /**< Edges' array. (edges are sorted on n1 and next n2). */
+    edge_t *p_edges_sorted_by_weight;    /**< Edges' array. (edges are sorted on weight).         */
+    edge_t *p_edges_no_order_guaranteed;      /**< Edges' array. (no order is guaranteed)             */
     union_find_t union_find; /**< Union find facility.     **/
 } graph_t;
 

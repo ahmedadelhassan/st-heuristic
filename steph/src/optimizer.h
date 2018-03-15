@@ -6,9 +6,9 @@
 
 typedef struct optimizer_t {
     configurations_t configuration;
-    heap *individuals;
-    weight_t best_total_weight;
-    weight_t worst_total_weight;
+    population_t *p_population;
+    weight_t min_total_weight;
+    weight_t max_total_weight;
 } optimizer_t;
 
 extern void optimizer_run(void optimizer_run(configuration_t configuration));

@@ -25,8 +25,10 @@ extern individual_t *individual_intersection(graph_t *p_g, individual_t *ind1, i
 
 extern pair_t individual_crossing(graph_t *p_g, individual_t *individual1, individual_t *individual2, double p);
 
-extern individual_t *individual_mutate(graph_t *p_g, individual_t *individual, double p);
+extern individual_t *p_individual_drop_out(graph_t *p_g, individual_t *p_individual, double p);
 
-extern void individual_print_brief(graph_t *p_g, individual_t *individual);
+extern void individual_print(graph_t *p_g, individual_t *individual);
+
+extern int individual_compar(const void* p1, const void *p2);
 
 #endif /* ST_HEURISTIC_INDIVIDUAL_H */

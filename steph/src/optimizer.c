@@ -96,34 +96,34 @@ static optimizer_t *optimizer_alloc(configurarion_t configuration) {
 
 /**
  *
- * @param optimizer
+ * @param p_optimizer
  */
-static void optimizer_release(optimizer_t *optimizer) {
-    if (optimizer) {
-        if (optimizer->individuals) {
-            for (int i = 0; i < optimizer->configuration.n_individuals; i++) {
-                individual_release(optimizer->individuals[i]);
+static void optimizer_release(optimizer_t *p_optimizer) {
+    if (p_optimizer) {
+        if (p_optimizer->individuals) {
+            for (int i = 0; i < p_optimizer->configuration.n_individuals; i++) {
+                individual_release(p_optimizer->individuals[i]);
             }
-            memset(optimizer->individuals, 0x0, opt.configuration.n_individuals * sizeof(individuals_t * ));
-            free(optimizer->individuals);
+            memset(p_optimizer->individuals, 0x0, opt.configuration.n_individuals * sizeof(individuals_t *));
+            free(p_optimizer->individuals);
         }
 
         /* release the optimizer itsef */
-        memset(optimizer, 0x0, sizeof(optimizer_t));
-        free(optimizer);
+        memset(p_optimizer, 0x0, sizeof(optimizer_t));
+        free(p_optimizer);
     }
 }
 
 /**
  *
- * @param optimizer
+ * @param p_optimizer
  * @return
  */
-static void optimizer_init(optimizer_t *optimizer) {
-    assert(optimizer);
+static void optimizer_init(optimizer_t *p_optimizer) {
+    assert(p_optimizer);
 
-    for (int i = 0; i < optimizer->configuration.n_individuals; i++) {
-        optimizer->indivduals[i] = individual_mk(optimizer->configuration.graph);
+    for (int i = 0; i < p_optimizer->configuration.n_individuals; i++) {
+        p_optimizer->indivduals[i] = individual_mk(p_optimizer->configuration.graph);
     }
 }
 
@@ -131,164 +131,166 @@ static void optimizer_init(optimizer_t *optimizer) {
  *
  * @param optimizer
  */
-static void heap_extract_rand(optimizer_t *optimizer) {
-    assert(optimizer);
+static void optimizer_step_union(optimizer_t *p_optimizer, int epoch) {
+    assert(p_optimizer);
 
-    individual_t *individual = heap_extract_rand(optimizer->individuals);
+    fprintf(stdout, "#%05d union.\n", epoch);
 
-    if (heap_size(optimizer->individuals) > 0) {
-        individual_t *max_individual = heap_max(optimizer->individuals);
-        optimizer->max_total_weight = max_individual->total_weight;
-    } else {
-        optimizer->min_total_weight = 0;
-        optimizer->max_total_weight = 0;
+    graph_t *pg = optimizer->configuration.graph;
+    individual_t *p_individual1 = (individual_t *) population_extract_rand(p_optimizer->individuals);
+    individual_t *p_individual2 = (individual_t *) population_extract_rand(p_optimizer->individuals);
+    individual_t *p_union_individual = individual_union(p_g, p_individual1, p_individual2);
+
+    population_insert(p_optimizer, p_individual1);
+    population_insert(p_optimizer, p_individual2);
+    population_insert(p_optimizer, p_union_individual);
+
+    population_statistics_print(p_optimizer->p_population);
+}
+
+/**
+ *
+ * @param optimizer
+ */
+static void optimizer_step_intersection(optimizer_t *p_optimizer, int epoch) {
+    assert(p_optimizer);
+
+    fprintf(stdout, "#%05d intersection.\n", epoch);
+
+    graph_t *pg = p_optimizer->configuration.graph;
+    individual_t *p_individual1 = (individual_t *) population_extract_rand(p_optimizer->individuals);
+    individual_t *p_individual2 = (individual_t *) population_extract_rand(p_optimizer->individuals);
+    individual_t *p_union_individual = individual_intersection(p_g, p_individual1, p_individual2);
+
+    population_insert(optimizer, p_individual1);
+    population_insert(optimizer, p_individual2);
+    population_insert(optimizer, p_union_individual);
+
+    population_statistics_print(p_optimizer->p_population);
+}
+
+/**
+ *
+ * @param p_optimizer
+ * @param epoch
+ */
+static void optimizer_step_crossing(optimizer_t *p_optimizer, int epoch) {
+    assert(p_optimizer);
+
+    fprintf(stdout, "#%05d crossing.\n", epoch);
+
+    graph_t *pg = optimizer->configuration.graph;
+    individual_t *p_individual1 = (individual_t *) population_extract_rand(optimizer->individuals);
+    individual_t *p_individual2 = (individual_t *) population_extract_rand(optimizer->individuals);
+    probability_t p = p_optimizer->configuration.configuration_crossing.drop_out_probability;
+    pair_t crossed_individuals = individual_crossing(p_g, p_individual1, p_individual2, p);
+
+    population_insert(p_optimizer, p_individual1);
+    population_insert(p_optimizer, p_individual2);
+    population_insert(p_optimizer, (individual_t *) (crossed_individuals.data1));
+    population_insert(p_optimizer, (individual_t *) (crossed_individuals.data2));
+
+    optimizer_statistics_print(p_optimizer);
+}
+
+/**
+ *
+ * @param optimizer
+ */
+static void optimizer_step_drop_out(optimizer_t *p_optimizer, int epoch) {
+    assert(p_optimizer);
+
+    fprintf(stdout, "#%05d drop out.\n", epoch);
+
+    graph_t *pg = p_optimizer->configuration.graph;
+    individual_t *p_individual1 = (individual_t *) population_extract_rand(p_optimizer->individuals);
+    individual_t *p_individual2 = (individual_t *) population_extract_rand(p_optimizer->individuals);
+    individual_t *p_dropped_out_individual = individual_intersection(p_g, p_individual1, p_individual2);
+
+    population_insert(optimizer, p_individual1);
+    population_insert(optimizer, p_individual2);
+    population_insert(optimizer, p_dropped_out_individual);
+
+    population_statistics_print(p_optimizer->p_population);
+}
+
+/**
+ *
+ * @param p_optimizer
+ * @param epoch
+ */
+static void optimizer_step_renew(optimizer_t *p_optimizer, int epoch) {
+    assert(p_optimizer);
+
+    double percentage = p_optimizer->configuration.configuration_renew.percentage;
+    size_t n_renewed_individuals = (size_t) (percentage * p_optimizer->p_population->n_individuals);
+
+    fprintf(stdout, "#%05d renew %u individuals.\n", epoch, n_renewed_individuals);
+
+    graph_t *pg = p_optimizer->configuration.graph;
+    /* remove n_renewed_individuals */
+    for (int i = 0; i < n_renewed_individuals; i++) {
+        individual_t *p_individual = population_extract_max(p_optimizer->population);
+        individual_release(p_individual);
     }
 
-    return (individual);
-}
-
-/**
- *
- * @param optimizer
- * @param individuals
- */
-static void optimizer_rank_3(optimizer_t *optimizer, individual_t *individuals[3]) {
-    assert(optimizer);
-
-    /* first individual */
-    individual_t individual0 = individuals[0];
-    weight_t tw0 = individual[0]->total_weight;
-
-    /* second individual */
-    individual_t individual1 = individuals[1];
-    weight_t tw1 = individual[1]->total_weight;
-
-    /* third individual */
-    individual_t individual2 = individuals[2];
-    weight_t tw2 = individual[2]->total_weight;
-
-    /* rank individuals */
-    if (tw0 < MIN(tw1, tw2)) {
-        if (tw1 <= tw2) {
-            individuals[0] = individuals0;
-            individuals[1] = individuals1;
-            individuals[2] = individuals2;
-        } else {
-            individuals[0] = individuals0;
-            individuals[1] = individuals2;
-            individuals[2] = individuals1;
-        }
-    } else {
-        if (tw1 < MIN(tw0, tw2)) {
-            if (tw0 <= tw2) {
-                individuals[0] = individuals1;
-                individuals[1] = individuals0;
-                individuals[2] = individuals2;
-            } else {
-                individuals[0] = individuals1;
-                individuals[1] = individuals2;
-                individuals[2] = individuals0;
-            }
-        } else {
-            if (tw0 <= tw1) {
-                individuals[0] = individuals2;
-                individuals[1] = individuals0;
-                individuals[2] = individuals1;
-            } else {
-                individuals[0] = individuals2;
-                individuals[1] = individuals1;
-                individuals[2] = individuals0;
-            }
-        }
+    /* insert n_renewed_individuals new individuals */
+    for (int i = 0; i < n_renewed_individuals; i++) {
+        individual_t *p_individual = individual_mk(p_g);
+        population_insert(p_optimizer->population, p_individual);
     }
+
+    population_statistics_print(p_optimizer->p_population);
 }
 
 /**
  *
  * @param optimizer
  */
-static void optimizer_step_union(optimizer_t *optimizer) {
-    assert(optimizer);
+static void optimizer_step(optimizer_t *p_optimizer, int epoch) {
+    assert(p_optimizer);
 
-    individual_t *individual1 = (individual_t *) optimizer_heap_extract_rand(optimizer->individuals);
-    individual_t *individual2 = (individual_t *) optimizer_heap_extract_rand(optimizer->individuals);
-    individual_t *union_individual = individual_union(optimizer->configuration.graph, individual1, individual2);
-
-    individual_t *individuals[3] = {individual1, individual2, union_individual};
-    optimizer_rank_3(optimizer, individuals);
-
-    population_insert(optimizer, individuals[0]);
-    population_insert(optimizer, individuals[1]);
-    population_insert(optimizer, individuals[2]);
-}
-
-/**
- *
- * @param optimizer
- */
-static void optimizer_step_intersection(optimizer_t *optimizer) {
-    assert(optimizer);
-
-    individual_t *individual1 = (individual_t *) optimizer_heap_extract_rand(optimizer->individuals);
-    individual_t *individual2 = (individual_t *) optimizer_heap_extract_rand(optimizer->individuals);
-    individual_t *intersection_individual = individual_intersection(optimizer->configuration.graph, individual1,
-                                                                    individual2);
-
-    individual_t *individuals[3] = {individual1, individual2, intersection_individual};
-    optimizer_rank_3(optimizer, individuals);
-
-    optimizer_heap_insert(optimizer, individuals[0]);
-    optimizer_heap_insert(optimizer, individuals[1]);
-    optimizer_heap_insert(optimizer, individuals[2]);
-}
-
-/**
- *
- * @param optimizer
- */
-static void optimizer_step(optimizer_t *optimizer) {
-    assert(optimizer);
-
-    configuration_t configuration = optimizer->configuration;
+    configuration_t configuration = p_optimizer->configuration;
     probability_t p = probability_rand();
 
     /* union event */
     probability_t threshold = configuration.configuration_union.event_probability;
     if (p <= threshold) {
-        optimizer_step_union(optimizer);
+        optimizer_step_union(p_optimizer, epoch);
         return;
     }
 
     /* intersection event */
     threshold += configuration.configuration_intersection.event_probability;
     if (p <= threshold) {
-        optimizer_step_union(optimizer);
+        optimizer_step_union(p_optimizer, epoch);
         return;
     }
 
     /* crossing event */
     threshold += configuration.configuration_crossing.event_probability;
     if (p <= threshold) {
-        optimizer_step_crossing(optimizer);
+        optimizer_step_crossing(p_optimizer, epoch);
         return;
     }
 
     /* drop out event */
     threshold += configuration.configuration_drop_out.event_probability;
     if (p <= threshold) {
-        optimizer_step_crossing(optimizer);
+        optimizer_step_crossing(p_optimizer, epoch);
         return;
     }
 
     /* renew event */
     threshold += configuration.configuration_renew.event_probability;
     if (p <= threshold) {
-        optimizer_step_crossing(optimizer);
-        return
+        optimizer_step_renew(p_optimizer, epoch);
+        return;
     }
 
     /* still here !? no operation is going to be applied. */
     fprintf(stdout, "no operation applied (total probability does not sum to 1.0).\n");
+    fprintf(stdout, "unexpected event, this is probably a bug.\n");
 }
 
 /**
@@ -298,18 +300,20 @@ static void optimizer_step(optimizer_t *optimizer) {
 void optimizer_run(configuration_t configuration) {
 
     /* init */
-    optimizer_t *optimizer = optimizer_alloc(configuration);
-    optimizer_init(optimizer);
+    optimizer_t *p_optimizer = optimizer_alloc(configuration);
+    optimizer_init(p_optimizer);
 
-    if (optimizer->configuration.n_epochs > 0) {
-        for (int i = 0; i < optimizer->configuration.n_epochs; i++) {
-            optimizer_step(optimizer);
+    if (p_optimizer->configuration.n_epochs > 0) {
+        for (int i = 0; i < p_optimizer->configuration.n_epochs; i++) {
+            optimizer_step(p_optimizer, i);
         }
     } else {
+        int i = 1;
         while (1) {
-            optimizer_step(optimizer);
+            optimizer_step(p_optimizer, i);
+            i++;
         }
     }
 
-
+    optimizer_release(p_optimizer);
 }
