@@ -111,7 +111,8 @@ individual_t *individual_mk_with_init_edges(graph_t *p_g, list_t *p_init_el) {
     graph_edges_random_shuffle(p_g);
 
     /* add edges one by one until all terminal nodes are part of the same connected component */
-    for (int i = 0; !graph_union_find_terminals_are_connected(p_g) && i < p_g->n_edges; i++) {
+    int i = 0;
+    while (graph_union_find_terminals_are_connected(p_g) < p_g->n_terminal_nodes && i < p_g->n_edges) {
         edge_t e = p_g->p_edges_no_order_guaranteed[i];
         if (graph_union_find_union(p_g, e.n1, e.n2)) {
             edge_t *p_e = graph_search_edge_by_endpoints(p_g, e);
@@ -121,6 +122,7 @@ individual_t *individual_mk_with_init_edges(graph_t *p_g, list_t *p_init_el) {
             }
             list_insert_front(p_el, p_e);
         }
+        i++;
     }
 
     /*

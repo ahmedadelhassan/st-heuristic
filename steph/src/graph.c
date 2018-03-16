@@ -47,7 +47,7 @@ void graph_union_find_init(graph_t *p_g) {
     assert(p_g->n_nodes == 0 || p_g->union_find.p_n_terminal_nodes);
 
     p_g->union_find.count = p_g->n_nodes;
-    p_g->union_find.max_n_terminal_nodes_in_part = 1;
+    p_g->union_find.max_connected_terminal_nodes = 1;
     for (node_t n = 1; n < p_g->n_nodes; n++) {
         p_g->union_find.p_parents[n] = n;
         p_g->union_find.p_ranks[n] = 0;
@@ -113,13 +113,13 @@ node_t graph_union_find_find(graph_t *p_g, node_t n) {
  * @param p_g
  * @return
  */
-int graph_union_find_terminals_are_connected(graph_t *p_g) {
+size_t graph_union_get_max_connected_terminal_nodes(graph_t *p_g) {
     assert(p_g);
     assert(p_g->n_nodes == 0 || p_g->union_find.p_parents);
     assert(p_g->n_nodes == 0 || p_g->union_find.p_ranks);
     assert(p_g->n_nodes == 0 || p_g->union_find.p_n_terminal_nodes);
 
-    return (p_g->union_find.max_n_terminal_nodes_in_part == p_g->n_terminal_nodes);
+    return (p_g->union_find.max_connected_terminal_nodes);
 }
 
 /**
@@ -156,23 +156,23 @@ int graph_union_find_union(graph_t *p_g, node_t n1, node_t n2) {
     if (p_g->union_find.p_ranks[n1_root] == p_g->union_find.p_ranks[n2_root]) {
         p_g->union_find.p_parents[n2_root] = n1_root;
         p_g->union_find.p_n_terminal_nodes[n1_root] += p_g->union_find.p_n_terminal_nodes[n2_root];
-        if (p_g->union_find.p_n_terminal_nodes[n1_root] > p_g->union_find.max_n_terminal_nodes_in_part) {
-            p_g->union_find.max_n_terminal_nodes_in_part = p_g->union_find.p_n_terminal_nodes[n1_root];
+        if (p_g->union_find.p_n_terminal_nodes[n1_root] > p_g->union_find.max_connected_terminal_nodes) {
+            p_g->union_find.max_connected_terminal_nodes = p_g->union_find.p_n_terminal_nodes[n1_root];
         }
         p_g->union_find.p_ranks[n1_root]++;
     } else {
         if (p_g->union_find.p_ranks[n1_root] < p_g->union_find.p_ranks[n2_root]) {
             p_g->union_find.p_parents[n1_root] = n2_root;
             p_g->union_find.p_n_terminal_nodes[n2_root] += p_g->union_find.p_n_terminal_nodes[n1_root];
-            if (p_g->union_find.p_n_terminal_nodes[n2_root] > p_g->union_find.max_n_terminal_nodes_in_part) {
-                p_g->union_find.max_n_terminal_nodes_in_part = p_g->union_find.p_n_terminal_nodes[n2_root];
+            if (p_g->union_find.p_n_terminal_nodes[n2_root] > p_g->union_find.max_connected_terminal_nodes) {
+                p_g->union_find.max_connected_terminal_nodes = p_g->union_find.p_n_terminal_nodes[n2_root];
             }
         } else {
             /* p_g->union_find.p_ranks[n1_root] > p_g->union_find.p_ranks[n2_root] */
             p_g->union_find.p_parents[n1_root] = n1_root;
             p_g->union_find.p_n_terminal_nodes[n1_root] += p_g->union_find.p_n_terminal_nodes[n2_root];
-            if (p_g->union_find.p_n_terminal_nodes[n1_root] > p_g->union_find.max_n_terminal_nodes_in_part) {
-                p_g->union_find.max_n_terminal_nodes_in_part = p_g->union_find.p_n_terminal_nodes[n1_root];
+            if (p_g->union_find.p_n_terminal_nodes[n1_root] > p_g->union_find.max_connected_terminal_nodes) {
+                p_g->union_find.max_connected_terminal_nodes = p_g->union_find.p_n_terminal_nodes[n1_root];
             }
         }
     }
@@ -402,7 +402,7 @@ graph_t *graph_alloc() {
     p_g->union_find.p_ranks = NULL;
     p_g->union_find.p_n_terminal_nodes = NULL;
     p_g->union_find.count = 0;
-    p_g->union_find.max_n_terminal_nodes_in_part = 0;
+    p_g->union_find.max_connected_terminal_nodes = 0;
 
     return (p_g);
 }

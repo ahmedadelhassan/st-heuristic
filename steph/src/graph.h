@@ -15,7 +15,7 @@ typedef struct {
     size_t *p_ranks;       /**< Node's ranks.                                     */
     size_t *p_n_terminal_nodes; /**< Number of terminals in the part rooted at a node. */
     size_t count;          /**< The number of parts.                              */
-    size_t max_n_terminal_nodes_in_part;
+    size_t max_connected_terminal_nodes;
 } union_find_t;
 
 
@@ -87,7 +87,7 @@ extern void graph_union_find_init(graph_t *p_g);
 
 extern node_t graph_union_find_find(graph_t *p_g, node_t u);
 
-extern int graph_union_find_terminals_are_connected(graph_t *p_g);
+extern size_t graph_union_get_max_connected_terminal_nodes(graph_t *p_g);
 
 extern int graph_union_find_union(graph_t *p_g, node_t u, node_t v);
 
