@@ -5,6 +5,7 @@
 
 #include "individual.h"
 #include "population.h"
+#include "statistics.h"
 
 #define POPULATION_PARENT(i) (((i) - 1) >> 1)
 #define POPULATION_LEFT(i)   (((i) << 1) + 1)
@@ -26,7 +27,7 @@ population_t *population_alloc(size_t capacity) {
     /* allocate individuals */
     p_population->p_individuals = (individual_t **) calloc(capacity, sizeof(individual_t *));
     if (!p_population->p_individuals) {
-        fprintf(stderr, "population_alloc. memory allocation error %u individuals.\n", capacity);
+        fprintf(stderr, "population_alloc. memory allocation error %lu individuals.\n", capacity);
         exit(EXIT_FAILURE);
     }
 
@@ -45,9 +46,9 @@ void population_release(population_t *p_population) {
     if (p_population) {
         /* release all individuals */
         for (int i = 0; i < p_population->n_individuals; i++) {
-            individual_release(p_population->n_individuals[i]);
+            individual_release(p_population->p_individuals[i]);
         }
-        memset(p_population->p_individuals, 0x0, p_population * sizeof(individual_t *));
+        memset(p_population->p_individuals, 0x0, p_population->n_individuals * sizeof(individual_t *));
         free(p_population->p_individuals);
 
         /* release the population itself */
@@ -85,7 +86,7 @@ static void population_bubble_up(population_t *p_population, int i) {
     assert(p_population);
 
     int parent_i = POPULATION_PARENT(i);
-    if (individual_compar_compar(p_population->p_individuals[i], p_population->p_individuals[parent_i]) < 0) {
+    if (individual_compar_p(p_population->p_individuals[i], p_population->p_individuals[parent_i]) < 0) {
         individual_t *p_tmp_individual = p_population->p_individuals[i];
         p_population->p_individuals[i] = p_population->p_individuals[parent_i];
         p_population->p_individuals[parent_i] = p_tmp_individual;
@@ -225,12 +226,13 @@ individual_t *population_extract_min(population_t *p_population) {
     assert(p_population);
     assert(p_population->n_individuals > 0);
 
-    size_t min_i = p_population->n_individuals - 1;
-    weight_t min_w = p_population->p_individuals[min_i]->total_weight;
+    int min_i = p_population->n_individuals - 1;
+    int i = min_i;
+    weight_t min_weight = p_population->p_individuals[min_i]->total_weight;
     while (POPULATION_LEFT(i) > p_population->n_individuals && POPULATION_RIGHT(i) > p_population->n_individuals) {
-        if (p_population->p_individuals[min_i]->total_weight < min_w) {
+        if (p_population->p_individuals[min_i]->total_weight < min_weight) {
             min_i = i;
-            min_w = p_population->p_individuals[min_i]->total_weight;
+            min_weight = p_population->p_individuals[min_i]->total_weight;
         }
         i--;
     }
@@ -243,7 +245,7 @@ individual_t *population_extract_min(population_t *p_population) {
  * @param p_population
  * @return
  */
-void *population_get_max_weight(const population_t *p_population) {
+weight_t population_get_max_weight(const population_t *p_population) {
     assert(p_population);
     assert(p_population->n_individuals > 0);
 
@@ -259,16 +261,16 @@ weight_t population_get_min_weight(const population_t *p_population) {
     assert(p_population);
     assert(p_population->n_individuals > 0);
 
-    size_t min_i = p_population->n_individuals - 1;
-    weight_t min_w = p_population->p_individuals[min_i]->total_weight;
+    int i = p_population->n_individuals - 1;
+    weight_t min_weight = p_population->p_individuals[i]->total_weight;
     while (POPULATION_LEFT(i) > p_population->n_individuals && POPULATION_RIGHT(i) > p_population->n_individuals) {
-        if (p_population->p_individuals[min_i]->total_weight < min_w) {
-            min_i = i;
-            min_w = p_population->p_individuals[min_i]->total_weight;
+        if (p_population->p_individuals[i]->total_weight < min_weight) {
+            min_weight = p_population->p_individuals[i]->total_weight;
         }
+        i--;
     }
 
-    return (p_population->p_individuals[min_i]);
+    return (min_weight);
 }
 
 /**
@@ -278,12 +280,12 @@ weight_t population_get_min_weight(const population_t *p_population) {
 void population_statistics_print(const population_t *p_population) {
     assert(p_population);
 
-    size_t n_individuals = p_population.n_individuals;
+    size_t n_individuals = p_population->n_individuals;
 
     /* allocate the statistics array */
     weight_t *p_weight = (weight_t*) calloc(n_individuals, sizeof(weight_t));
     if (!p_weight) {
-        fprintf(stderr, "population_statistics_print. memory alloc for %u individuals.\n", n_individuals);
+        fprintf(stderr, "population_statistics_print. memory alloc for %lu individuals.\n", n_individuals);
         exit(EXIT_FAILURE);
     }
 
@@ -293,7 +295,8 @@ void population_statistics_print(const population_t *p_population) {
     }
 
     /* reporting */
-    statistics_print(p_weight, n_individuals);
+    statistics_t statistics = statistics_mk(p_weight, n_individuals);
+    statistics_print(statistics);
     for (int i = 0; i < n_individuals; i++) {
         if (i % 5 == 0) {
             fprintf(stdout, "\n");
@@ -305,6 +308,6 @@ void population_statistics_print(const population_t *p_population) {
     fprintf(stdout, "\n");
 
     /* clean and release the statistics array */
-    memset(p_weight, n_individuals * sizeof(weight_t));
+    memset(p_weight, 0x0, n_individuals * sizeof(weight_t));
     free(p_weight);
 }

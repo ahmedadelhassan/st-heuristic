@@ -1,6 +1,6 @@
 #include <math.h>
 #include <stdio.h>
-#include <stdlib.h>>
+#include <stdlib.h>
 
 #include "statistics.h"
 #include "weight.h"
@@ -55,7 +55,7 @@ statistics_t statistics_mk(weight_t *array, size_t n) {
  * @param statistics
  */
 void statistics_print(statistics_t statistics) {
-    fprintf(stdout, "n=%u", statistics.n_samples);
+    fprintf(stdout, "n=%lu", statistics.n_samples);
     fprintf(stdout, "\t");
     fprintf(stdout, "mean=%f", statistics.mean);
     fprintf(stdout, "\t");

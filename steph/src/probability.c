@@ -2,7 +2,6 @@
 
 #include "probability.h"
 
-
 /**
  *
  * @return
@@ -17,5 +16,5 @@ probability_t probability_rand() {
  * @return
  */
 int probability_check(double p) {
-    return (p >= 0.0 && p <= 1.0)
+    return (p >= 0.0 && p <= 1.0);
 }

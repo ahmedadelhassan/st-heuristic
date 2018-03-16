@@ -13,23 +13,24 @@ typedef struct {
     node_t *p_parents;     /**< Node's parents.                                   */
     size_t *p_ranks;       /**< Node's ranks.                                     */
     size_t *p_n_terminals; /**< Number of terminals in the part rooted at a node. */
-    size_t count;        /**< The number of parts.                              */
+    size_t count;          /**< The number of parts.                              */
 } union_find_t;
 
 
 typedef struct graph_t {
-    size_t n_nodes;          /**< Number of nodes.             */
-    size_t n_terminals;      /**< Number of terminal nodes     */
-    node_t *p_terminals;       /**< Terminal nodes               */
-    size_t n_non_terminals;  /**< Number of non-terminal nodes */
-    node_t *p_non_terminals;   /**< Non-terminal nodes           */
-    color_t *p_node_colors;    /**< Nodes' colors                */
-    int *node_counters;      /**< nodes' counters              */
-    size_t n_edges;          /**< Number of edges.             */
-    edge_t *p_edges_sorted_by_endpoints;           /**< Edges' array. (edges are sorted on n1 and next n2). */
+    size_t n_nodes;                      /**< Number of nodes.                                    */
+    size_t n_terminal_nodes;             /**< Number of terminal nodes                            */
+    size_t n_non_terminal_nodes;         /**< Number of non-terminal nodes                        */
+    int *p_node_is_terminal;             /**< p_node_is_terminal[n] != 0 if node n is terminal    */
+    node_t *p_terminal_nodes;            /**< Array of non-terminal nodes                         */
+    node_t *p_non_terminal_nodes;        /**< Array of non-terminal nodes                         */
+    color_t *p_node_colors;              /**< A color for each node                               */
+    int *node_counters;                  /**< A counter for each node                             */
+    size_t n_edges;                      /**< Number of edges.                                    */
+    edge_t *p_edges_sorted_by_endpoints; /**< Edges' array. (edges are sorted on n1 and next n2). */
     edge_t *p_edges_sorted_by_weight;    /**< Edges' array. (edges are sorted on weight).         */
-    edge_t *p_edges_no_order_guaranteed;      /**< Edges' array. (no order is guaranteed)             */
-    union_find_t union_find; /**< Union find facility.     **/
+    edge_t *p_edges_no_order_guaranteed; /**< Edges' array. (no order is guaranteed)              */
+    union_find_t union_find;             /**< Union find facility.                                */
 } graph_t;
 
 
@@ -75,13 +76,15 @@ extern void graph_node_counter_increment(graph_t *p_g, node_t i);
 
 extern color_t graph_node_counter_get(graph_t *p_g, node_t i);
 
-extern void graph_edge_random_shuffle(graph_t *p_g);
+extern void graph_edges_random_shuffle(graph_t *p_g);
 
-extern edge_list_t *graph_kruskal_min_spanning_tree_on_black_nodes(graph_t *p_g);
+extern list_t *graph_kruskal_min_spanning_tree_on_black_nodes(graph_t *p_g);
 
 extern void graph_union_find_init(graph_t *p_g);
 
 extern node_t graph_union_find_find(graph_t *p_g, node_t u);
+
+extern int graph_union_find_terminals_are_connected(graph_t *p_g);
 
 extern int graph_union_find_union(graph_t *p_g, node_t u, node_t v);
 

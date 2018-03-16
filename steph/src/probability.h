@@ -5,7 +5,7 @@ typedef double probability_t;
 
 extern probability_t probability_rand();
 
-extern int check_probability(double p);
+extern int probability_check(double p);
 
 #endif /* ST_HEURISTIC_PROBABILITY_H */
 

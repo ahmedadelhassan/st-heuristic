@@ -6,7 +6,7 @@
 #include "color.h"
 #include "graph.h"
 #include "list.h"
-#include "union_find.h"
+#include "old/union_find.h"
 #include "random.h"
 
 /**
@@ -188,7 +188,7 @@ int graph_union_find_union(graph_t *p_g, node_t n1, node_t n2) {
  * @param stream
  * @return
  */
-graph_t *p_graph_read(FILE *stream) {
+graph_t *graph_read(FILE *stream) {
     char buffer[64];
     int n_nodes;
     int n_edges;
@@ -224,6 +224,9 @@ graph_t *p_graph_read(FILE *stream) {
     }
 
     graph_t *p_g = graph_alloc();
+    p_g->n_nodes = n_nodes;
+    p_g->n_edges = n_edges;
+    graph_union_find_alloc(p_g);
 
     /* nodes init */
     p_g->p_node_colors = (color_t *) calloc(n_nodes, sizeof(color_t));
@@ -231,8 +234,9 @@ graph_t *p_graph_read(FILE *stream) {
         fprintf(stderr, "graph_read. memory allocation error: could not alloc \"node_colors\" array.\n");
         exit(EXIT_FAILURE);
     }
-    for (int u = 0; u < n_nodes; u++) {
-        p_g->p_node_colors[u] = WHITE;
+    for (int n = 0; n < n_nodes; n++) {
+        /* init all nodes as WHITE nodes */
+        p_g->p_node_colors[n] = WHITE;
     }
 
     p_g->p_node_counters = (int *) calloc(n_nodes, sizeof(int));
@@ -240,18 +244,19 @@ graph_t *p_graph_read(FILE *stream) {
         fprintf(stderr, "graph_read. memory allocation error: could not alloc \"node_counters\" array.\n");
         exit(EXIT_FAILURE);
     }
-    for (int u = 0; u < n_nodes; u++) {
-        p_g->p_node_counters[u] = 0;
+    for (int n = 0; n < n_nodes; n++) {
+        /* init all nods with zero counter */
+        p_g->p_node_counters[n] = 0;
     }
 
-    p_g->p_node_terminals = (int *) calloc(n_nodes, sizeof(color_t));
-    if (p_g->p_node_terminals == NULL) {
-        fprintf(stderr, "graph_read. memory allocation error: could not alloc \"node_terminals\" array.\n");
+    p_g->p_node_is_terminal = (int *) calloc(n_nodes, sizeof(int));
+    if (!p_g->p_node_is_termina) {
+        fprintf(stderr, "graph_read. memory allocation error: could not alloc \"p_node_is_terminal\" array.\n");
         exit(EXIT_FAILURE);
     }
-    for (int u = 0; u < n_nodes; u++) {
+    for (int n = 0; n < n_nodes; n++) {
         /* init all nodes as non-terminal */
-        p_g->p_node_terminals[u] = 0;
+        p_g->p_node_is_terminal[n] = 0;
     }
 
     /* edges init */
@@ -333,17 +338,28 @@ graph_t *p_graph_read(FILE *stream) {
     }
 
     p_g->n_terminals = n_terminals;
+    p_g->p_terminal_nodes = (node_t*) calloc(n_terminals, sizeof(node_t));
+    if (!p_g->terminal_nodes) {
+        fprintf(stderr, "memory allocation error: could not alloc \"p_terminal_nodes\" array\n");
+        exit(EXIT_FAILURE);
+    }
+
     p_g->n_non_terminals = p_g->n_nodes - n_terminals;
+    p_g->p_non_terminal_nodes = (node_t*) calloc(p_g->n_non_terminals, sizeof(node_t));
+    if (!p_g->p_non_terminal_nodes) {
+        fprintf(stderr, "memory allocation error: could not alloc \"p_non_terminal_nodes\" array\n");
+        exit(EXIT_FAILURE);
+    }
 
     /* Read the terminals */
     for (int i = 0; i < p_g->n_terminals; i++) {
-        node_t u;
-        if (fscanf(stream, "%*s %d", &u) != 1) {
+        node_t n;
+        if (fscanf(stream, "%*s %d", &n) != 1) {
             fprintf(stderr, "graph_read. parse error: could not read %d-th terminal\n", i);
             exit(EXIT_FAILURE);
         }
-        p_g->p_node_terminals[u] = 1;
-        p_g->terminals[i] = u;
+        p_g->p_node_is_terminal[n] = 1;
+        p_g->p_terminal_nodes[i] = n;
     }
 
     /**
@@ -354,15 +370,15 @@ graph_t *p_graph_read(FILE *stream) {
     for (int i = 0, j = 0, k = 0; i < n_nodes; i++) {
         if (j == n_terminals) {
             /* we are done with terminals, keep on adding non-terminals */
-            p_g->p_non_terminals[k] = i;
+            p_g->p_non_terminal_nodes[k] = i;
             k++;
         } else {
-            while (p_g->terminals[j] < i) {
+            while (p_g->p_terminal_nodes[j] < i) {
                 j++;
             }
-            if (p_g->terminals[j] != i) {
+            if (p_g->p_terminal_nodes[j] != i) {
                 /* node i is not a terminal */
-                p_g->p_non_terminals[k] = i;
+                p_g->p_non_terminal_nodes[k] = i;
                 k++;
             }
         }
@@ -378,14 +394,14 @@ graph_t *p_graph_read(FILE *stream) {
         exit(EXIT_FAILURE);
     }
 
-    return (g);
+    return (p_g);
 }
 
 /**
  *
  * @return an empty graph.
  */
-graph_t *p_graph_alloc() {
+graph_t *graph_alloc() {
     graph_t *p_g = (graph_t *) malloc(sizeof(graph_t));
     if (!p_g) {
         fprintf(stderr, "graph_alloc. memory allocation error.\n");
@@ -394,10 +410,11 @@ graph_t *p_graph_alloc() {
 
     /* nodes init */
     p_g->n_node = 0;
-    p_g->n_terminals = 0;
-    p_g->terminals = NULL;
-    p_g->n_non_terminals = 0;
-    p_g->p_non_terminals = NULL;
+    p_g->n_terminal_nodes = 0;
+    p_g->n_non_terminal_nodes = 0;
+    p_g->p_node_is_terminal = NULL;
+    p_g->p_terminal_nodes = NULL;
+    p_g->p_non_terminal_nodes = NULL;
     p_g->p_node_colors = NULL;
     p_g->p_node_counters = NULL;
 
@@ -428,15 +445,21 @@ void graph_release(graph_t *p_g) {
         assert(p_g->n_nodes == 0 || p_g->p_node_counters);
         assert(p_g->n_nodes == 0 || p_g->p_node_terminals);
 
-        memset(p_g->p_node_colors, 0X0, p_g->n_nodes * sizeof(color_t));
+        memset(p_g->p_node_is_terminal, 0X0, p_g->n_nodes * sizeof(int));
+        free(p_g->p_node_is_terminal);
+
+        memset(p_g->p_terminal_nodes, 0x0, p_g->n_terminal_nodes * sizeof(node_t));
+        free(p_g->p_terminal_nodes);
+
+        memset(p_g->p_non_terminal_nodes, 0x0, p_g->n_non_terminal_nodes * sizeof(node_t));
+        free(p_g->p_non_terminal_nodes);
+
+        memset(p_g->p_node_colors, 0x0, p_g->n_nodes * sizeof(color_t));
         free(p_g->p_node_colors);
 
         memset(p_g->p_node_counters, 0x0, p_g->n_nodes * sizeof(int));
         free(p_g->p_node_counters);
-
-        memset(p_g->p_node_terminals, 0x0, p_g->n_nodes * sizeof(int));
-        free(p_g->p_node_terminals);
-
+        
         /* release edges arrays */
         assert(p_g->n_edges == 0 || p_g->p_edges_sorted_by_endpoints);
         assert(p_g->n_edges == 0 || p_g->p_edges_sorted_by_weight);
@@ -661,7 +684,7 @@ int graph_node_counter_get(graph_t *p_g, node_t n) {
  *
  * @param p_g
  */
-void graph_edge_random_shuffle(graph_t *p_g) {
+void graph_edges_random_shuffle(graph_t *p_g) {
     assert(p_g);
 
     random_shuffle(p_g->p_edges_no_order_guaranteed, p_g->n_edges, sizeof(edge_t));
@@ -673,7 +696,7 @@ void graph_edge_random_shuffle(graph_t *p_g) {
  * @param p_g
  * @return
  */
-list_t *p_graph_kruskal_min_spanning_tree_on_black_nodes(graph_t *p_g) {
+list_t *graph_kruskal_min_spanning_tree_on_black_nodes(graph_t *p_g) {
     assert(p_g);
 
     graph_union_find_init(p_g);
@@ -709,19 +732,23 @@ list_t *p_graph_kruskal_min_spanning_tree_on_black_nodes(graph_t *p_g) {
  * @param p_e
  * @return
  */
-edge_t *p_graph_search_edge_by_endpoints(graph_t *p_g, edge_t p_e) {
+edge_t *graph_search_edge_by_endpoints(graph_t *p_g, edge_t e) {
     asert(p_g);
 
     int start = 0;
-    int end = p_g->nb_edges - 1;
+    int end = p_g->n_edges - 1;
     int middle;
 
-    if (p_g->p_edges_sorted_by_endpoints[0] == p_e) {
+    if (edge_compar(&(p_g->p_edges_sorted_by_endpoints[0]), &e) == 0) {
         return (&(p_g->p_edges_sorted_by_endpoints[0]));
     } else {
         while (end - start > 1) {
             middle = (start + end) / 2;
-            if (edge_compar(&(p_g->p_edges_sorted_by_endpoints[middle]), &p_e) < 0) {
+            if (edge_compar(&(p_g->p_edges_sorted_by_endpoints[middle]), &e) == 0) {
+                return (&(p_g->p_edges_sorted_by_endpoints[middle]));
+            }
+
+            if (edge_compar(&(p_g->p_edges_sorted_by_endpoints[middle]), &e) < 0) {
                 start = middle;
             } else {
                 end = middle;
@@ -729,9 +756,10 @@ edge_t *p_graph_search_edge_by_endpoints(graph_t *p_g, edge_t p_e) {
         }
     }
 
-    if (p_g->p_edges_sorted_by_endpoints[end] == p_e) {
+    if (edge_compar(&(p_g->p_edges_sorted_by_endpoints[end]), &e) == 0) {
         return (&(p_g->p_edges_sorted_by_endpoints[end]));
-    } else {
-        return (NULL);
     }
+
+    /* not found */
+    return (NULL);
 }
