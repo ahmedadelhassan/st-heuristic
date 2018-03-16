@@ -2,6 +2,7 @@
 #define ST_HEURISTIC_GRAPH_H
 
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "color.h"
 #include "edge.h"
@@ -12,8 +13,9 @@
 typedef struct {
     node_t *p_parents;     /**< Node's parents.                                   */
     size_t *p_ranks;       /**< Node's ranks.                                     */
-    size_t *p_n_terminals; /**< Number of terminals in the part rooted at a node. */
+    size_t *p_n_terminal_nodes; /**< Number of terminals in the part rooted at a node. */
     size_t count;          /**< The number of parts.                              */
+    size_t max_n_terminal_nodes_in_part;
 } union_find_t;
 
 
@@ -25,7 +27,7 @@ typedef struct graph_t {
     node_t *p_terminal_nodes;            /**< Array of non-terminal nodes                         */
     node_t *p_non_terminal_nodes;        /**< Array of non-terminal nodes                         */
     color_t *p_node_colors;              /**< A color for each node                               */
-    int *node_counters;                  /**< A counter for each node                             */
+    int *p_node_counters;                /**< A counter for each node                             */
     size_t n_edges;                      /**< Number of edges.                                    */
     edge_t *p_edges_sorted_by_endpoints; /**< Edges' array. (edges are sorted on n1 and next n2). */
     edge_t *p_edges_sorted_by_weight;    /**< Edges' array. (edges are sorted on weight).         */
@@ -34,11 +36,11 @@ typedef struct graph_t {
 } graph_t;
 
 
-extern graph_t *p_graph_read(FILE *f);
+extern graph_t *graph_read(FILE *f);
 
 extern void graph_write(FILE *f, graph_t *p_g);
 
-extern graph_t *p_graph_alloc();
+extern graph_t *graph_alloc();
 
 extern void graph_release(graph_t *p_g);
 
@@ -74,7 +76,7 @@ extern void graph_node_counter_increment_all(graph_t *p_g);
 
 extern void graph_node_counter_increment(graph_t *p_g, node_t i);
 
-extern color_t graph_node_counter_get(graph_t *p_g, node_t i);
+extern int graph_node_counter_get(graph_t *p_g, node_t i);
 
 extern void graph_edges_random_shuffle(graph_t *p_g);
 

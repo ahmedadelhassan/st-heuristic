@@ -6,4 +6,4 @@
 #define MAX(x, y) ((x) >= (y) ? (x) : (y))
 
 
-#endif //ST_HEURISTIC_UTILS_H
+#endif /* ST_HEURISTIC_UTILS_H */

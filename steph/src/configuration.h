@@ -3,6 +3,7 @@
 
 #include "graph.h"
 #include "random.h"
+#include "probability.h"
 
 typedef struct {
     probability_t event_probability;

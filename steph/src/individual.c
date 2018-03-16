@@ -123,7 +123,7 @@ individual_t *individual_mk_with_init_edges(graph_t *p_g, list_t *p_init_el) {
 
     /* color BLACK all nodes that are part of the terminal connected component, all other nodes are colored WHITE  */
     graph_node_color_set_all(p_g, WHITE);
-    node_t fst_non_terminal = p_g->p_non_terminals[0];
+    node_t fst_non_terminal = p_g->p_non_terminal_nodes[0];
     node_t fst_non_terminal_root = graph_union_find_find(p_g, fst_non_terminal);
     for (node_t n = 0; n < p_g->n_nodes; n++) {
         if (graph_union_find_find(p_g, n) == fst_non_terminal_root) {

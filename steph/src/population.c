@@ -99,24 +99,29 @@ static void population_bubble_up(population_t *p_population, int i) {
  * @param p_population
  * @param p_individual
  */
-void population_insert(population_t *p_population, individual_t *p_individual) {
+int population_insert_individual(population_t *p_population, individual_t *p_individual) {
     assert(p_population);
     assert(p_individual);
 
-    /*  */
     if (p_population->n_individuals == p_population->capacity) {
-        weight_t w = population_get_max_weight(p_population);
-        if (w > p_individual->total_weight) {
-            individual_t *p_individual_max = population_extract_max_individual(p_population);
+        individual_t *max_weight_individual = population_get_max_total_weight_individual(p_population);
+        weight_t max_weight = max_weight_individual->total_weight;
+        if (max_weight > p_individual->total_weight) {
+            /* the new individual is inserted and a max weight individual is released to make room */
+            individual_t *p_individual_max = population_extract_max_total_weight_individual(p_population);
             individual_release(p_individual_max);
         } else {
+            /* the new individual is not inserted */
             individual_release(p_individual);
+            return (0);
         }
     }
 
     /* insert the new individual */
     p_population->p_individuals[p_population->n_individuals++] = p_individual;
     population_bubble_up(p_population, p_population->n_individuals - 1);
+
+    return (1);
 }
 
 /**
@@ -162,7 +167,7 @@ static void population_bubble_down(population_t *p_population, size_t i) {
  * @param i
  * @return
  */
-static individual_t *population_extract(population_t *p_population, size_t i) {
+static individual_t *population_extract_individual(population_t *p_population, size_t i) {
     assert(p_population);
     assert(i < p_population->n_individuals);
 
@@ -176,7 +181,8 @@ static individual_t *population_extract(population_t *p_population, size_t i) {
     /* update min total weight if needed */
     if (p_individual->total_weight == p_population->min_total_weight) {
         if (p_population->n_individuals > 0) {
-            p_population->min_total_weight = population_get_min_weight(p_population);
+            individual_t *p_min_total_weight_individual = population_get_min_total_weight_individual(p_population);
+            p_population->min_total_weight = p_min_total_weight_individual->total_weight;
         } else {
             p_population->min_total_weight = 0;
         }
@@ -184,7 +190,8 @@ static individual_t *population_extract(population_t *p_population, size_t i) {
 
     /* update max total weight if needed */
     if (p_population->n_individuals > 0) {
-        p_population->max_total_weight = population_get_max_weight(p_population);
+        individual_t *p_max_total_weight_individual = population_get_max_total_weight_individual(p_population);
+        p_population->max_total_weight = p_max_total_weight_individual->total_weight;
     } else {
         p_population->max_total_weight = 0;
     }
@@ -197,12 +204,12 @@ static individual_t *population_extract(population_t *p_population, size_t i) {
  * @param p_population
  * @return
  */
-individual_t *population_extract_rand(population_t *p_population) {
+individual_t *population_extract_rand_individual(population_t *p_population) {
     assert(p_population);
     assert(p_population->n_individuals > 0);
 
     size_t i = rand() % p_population->n_individuals;
-    return (population_extract(p_population, i));
+    return (population_extract_individual(p_population, i));
 }
 
 /**
@@ -210,11 +217,11 @@ individual_t *population_extract_rand(population_t *p_population) {
  * @param p_population
  * @return
  */
-individual_t *population_extract_max(population_t *p_population) {
+individual_t *population_extract_max_total_weight_individual(population_t *p_population) {
     assert(p_population);
     assert(p_population->n_individuals > 0);
 
-    return (population_extract(p_population, 0));
+    return (population_extract_individual(p_population, 0));
 }
 
 /**
@@ -222,7 +229,7 @@ individual_t *population_extract_max(population_t *p_population) {
  * @param p_population
  * @return
  */
-individual_t *population_extract_min(population_t *p_population) {
+individual_t *population_extract_min_total_weight_individual(population_t *p_population) {
     assert(p_population);
     assert(p_population->n_individuals > 0);
 
@@ -237,7 +244,7 @@ individual_t *population_extract_min(population_t *p_population) {
         i--;
     }
 
-    return (population_extract(p_population, min_i));
+    return (population_extract_individual(p_population, min_i));
 }
 
 /**
@@ -245,11 +252,11 @@ individual_t *population_extract_min(population_t *p_population) {
  * @param p_population
  * @return
  */
-weight_t population_get_max_weight(const population_t *p_population) {
+individual_t* population_get_max_total_weight_individual(const population_t *p_population) {
     assert(p_population);
     assert(p_population->n_individuals > 0);
 
-    return (p_population->p_individuals[0]->total_weight);
+    return (p_population->p_individuals[0]);
 }
 
 /**
@@ -257,20 +264,23 @@ weight_t population_get_max_weight(const population_t *p_population) {
  * @param p_population
  * @return
  */
-weight_t population_get_min_weight(const population_t *p_population) {
+individual_t* population_get_min_total_weight_individual(const population_t *p_population) {
     assert(p_population);
     assert(p_population->n_individuals > 0);
 
     int i = p_population->n_individuals - 1;
-    weight_t min_weight = p_population->p_individuals[i]->total_weight;
+    individual_t *p_min_weight_individual = p_population->p_individuals[i];
+    weight_t min_weight = p_min_weight_individual->total_weight;
     while (POPULATION_LEFT(i) > p_population->n_individuals && POPULATION_RIGHT(i) > p_population->n_individuals) {
-        if (p_population->p_individuals[i]->total_weight < min_weight) {
-            min_weight = p_population->p_individuals[i]->total_weight;
+        individual_t *p_individual = p_population->p_individuals[i];
+        if (p_individual->total_weight < min_weight) {
+            p_min_weight_individual = p_individual;
+            min_weight = p_min_weight_individual->total_weight;
         }
         i--;
     }
 
-    return (min_weight);
+    return (p_min_weight_individual);
 }
 
 /**
