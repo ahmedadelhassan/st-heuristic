@@ -1,6 +1,6 @@
 #include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>>
+#include <stdlib.h>
 #include <string.h>
 
 #include "edge.h"
@@ -12,18 +12,18 @@
  * @param w Weight of the edge
  * @return a new edge with first node \a n1, second node \a n2 and weight \a w.
  */
-edge_t *edge_alloc(node_t n1, node_t n2, weight w) {
+edge_t *edge_alloc(node_t n1, node_t n2, weight_t w) {
     assert(n1 != n2);
 
     edge_t *p_e = (edge_t *) malloc(sizeof(edge_t));
     if (!p_e) {
         fprintf(stderr, "edge_alloc. memory allocation error for (%u, %u, %u).\n", n1, n2, w);
-        exit(EXIST_FAILURE);
+        exit(EXIT_FAILURE);
     }
 
     p_e->n1 = (n1 < n2) ? n1 : n2;
     p_e->n2 = (n1 < n2) ? n2 : n1;
-    p_e->w = w;
+    p_e->weight = w;
 
     return (p_e);
 }
@@ -52,7 +52,7 @@ int edge_compar(const void *p1, const void *p2) {
     assert(p2);
 
     const edge_t *p_e1 = (const edge_t *) p1;
-    const edge_t *p-e2 = (const edge_t *) p2;
+    const edge_t *p_e2 = (const edge_t *) p2;
 
     int cmp = p_e1->n1 - p_e2->n1;
     if (cmp) {

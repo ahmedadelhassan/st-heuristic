@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -9,7 +10,7 @@
  * @param data The data associated to the list
  * @return a new singleton list.
  */
-list_t *p_list_alloc(void *data) {
+list_t *list_alloc(void *data) {
     list_t *p_l = (list_t *) malloc(sizeof(list_t));
     if (!p_l) {
         fprintf(stderr, "list_alloc. memory allocation error.\n");
@@ -24,15 +25,26 @@ list_t *p_list_alloc(void *data) {
 }
 
 /**
+ *
+ * @param p_l
+ */
+static void list_release_single(list_t *p_l) {
+    if (p_l) {
+        memset(p_l, 0x0, sizeof(list_t));
+        free(p_l);
+    }
+}
+
+/**
  * \brief Recursively release a list.
  * @param p_l A list
  * The associated data is not released.
  */
 void list_release(list_t *p_l) {
-    if (p_l) {
-        list_release_(p_l->p_next);
-        memset(p_l, 0x0, sizeof(list_t));
-        free(p_l);
+    while (p_l) {
+        list_t *p_next_l = p_l->p_next;
+        list_release_single(p_l);
+        p_l = p_next_l;
     }
 }
 
@@ -41,7 +53,7 @@ void list_release(list_t *p_l) {
  * @param p_l A list
  * @return a new list holding the same data.
  */
-list_t *p_list_copy(const list_t *p_l) {
+list_t *list_copy(const list_t *p_l) {
     if (!p_l) {
         return (NULL);
     }
@@ -71,34 +83,19 @@ size_t list_size(list_t *p_l) {
  * @param i The index of the element to be deleted.
  * @return the list \a l without its \a i-th element.
  */
-list_t *p_list_delete_ith(list_t *p_l, int i) {
-    list_t *p_prev_l = NULL;
-    list_t *p_it_l = l;
+list_t *list_delete_ith(list_t *p_l, int i) {
+    assert(p_l);
+    assert(i >= 0);
 
-    while (p_it_l && i > 0) {
-        p_prev_l = l;
-        p_it_l = p_it_l->p_next;
-        i--;
+    if (i == 0) {
+        list_t *p_fst_l = p_l;
+        p_l = p_l->p_next;
+        list_release_single(p_fst_l);
+    } else {
+        p_l->p_next = list_delete_ith(p_l->p_next, i-1);
     }
 
-    if (!p_it_l) {
-        return (NULL);
-    }
-
-    /* p_l != NULL */
-    if (!p_prev_l) {
-        /* delete first item of l */
-        list_t *p_next_l = p_l->p_next;
-        p_it_l->p_next = NULL;
-        list_release(p_it_l);
-        return (p_next_l);
-    }
-
-    /* l != NULL && p_prev_l != NULL */
-    prev_p_l->p_next = p_it_l->p_next;
-    p_it_l->p_next = NULL;
-    list_release(p_it_l);
-    return (p_l);
+    return(p_l);
 }
 
 /**
@@ -106,7 +103,7 @@ list_t *p_list_delete_ith(list_t *p_l, int i) {
  * @param p_l A list
  * @return the list \a l without one of its element.
  */
-list_t *p_list_delete_rand(list_t *p_l) {
+list_t *list_delete_rand(list_t *p_l) {
     if (!p_l) {
         return (NULL);
     }
@@ -121,9 +118,9 @@ list_t *p_list_delete_rand(list_t *p_l) {
  * @param data A pointer to the hold data
  * @return a new list where \a data is inserted at the front of \a l.
  */
-list_t *p_list_insert_front(list_t *p_l, void *data) {
+list_t *list_insert_front(list_t *p_l, void *data) {
     list_t *p_new_l = list_alloc(data);
-    new_p_l->p_next = l;
+    p_new_l->p_next = p_l;
     return (p_new_l);
 }
 
@@ -132,13 +129,13 @@ list_t *p_list_insert_front(list_t *p_l, void *data) {
  * @param p_l A list
  * @return the list \a l reversed.
  */
-list_t *p_list_reverse(list_t *p_l) {
+list_t *list_reverse(list_t *p_l) {
     list_t *p_rev_l = NULL;
 
     while (p_l) {
         list_t *p_tmp_l = p_l->p_next;
         p_l->p_next = p_rev_l;
-        p_rev_l = l;
+        p_rev_l = p_l;
         p_l = p_tmp_l;
     }
 
@@ -160,12 +157,12 @@ list_t *p_list_reverse(list_t *p_l) {
  * @param data_compar
  * @return
  */
-static list_t *p_list_move(list_t *p_l, int (*data_compar)(const void *, const void *)) {
+static list_t *list_move(list_t *p_l, int (*data_compar)(const void *, const void *)) {
     list_t *p_it_l;
     list_t *p_prev_l;
     list_t *p_new_l;
 
-    p_prev_l = l;
+    p_prev_l = p_l;
     p_it_l = p_l->p_next;
     p_new_l = p_it_l;
     while (p_it_l && data_compar(p_l->data, p_it_l->data) > 0) {
@@ -174,7 +171,7 @@ static list_t *p_list_move(list_t *p_l, int (*data_compar)(const void *, const v
     }
 
     /* move the top item between p and n */
-    prev_p_l->p_next = l;
+    p_prev_l->p_next = p_l;
     p_it_l->p_next = p_it_l;
 
     return (p_new_l);
@@ -187,7 +184,7 @@ static list_t *p_list_move(list_t *p_l, int (*data_compar)(const void *, const v
  * @param data_compar Data comparing function
  * @return the list \a l sorted according to \a data_compar comparing function.
  */
-list_t *p_list_sort(list_t *p_l, int (*data_compar)(const void *, const void *)) {
+list_t *list_sort(list_t *p_l, int (*data_compar)(const void *, const void *)) {
     if (!p_l) {
         return (NULL);
     }
