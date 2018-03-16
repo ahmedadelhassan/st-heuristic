@@ -48,7 +48,7 @@ void graph_union_find_init(graph_t *p_g) {
 
     p_g->union_find.count = p_g->n_nodes;
     p_g->union_find.max_n_terminal_nodes_in_part = 1;
-    for (node_t n = 0; n < p_g->n_nodes; n++) {
+    for (node_t n = 1; n < p_g->n_nodes; n++) {
         p_g->union_find.p_parents[n] = n;
         p_g->union_find.p_ranks[n] = 0;
         p_g->union_find.p_n_terminal_nodes[n] = graph_node_is_terminal(p_g, n) ? 1 : 0;
@@ -222,6 +222,9 @@ graph_t *graph_read(FILE *stream) {
         exit(EXIT_FAILURE);
     }
 
+    /* nodes ranges from 1 to n_nodes*/
+    ++n_nodes;
+
     graph_t *p_g = graph_alloc();
     p_g->n_nodes = n_nodes;
     p_g->n_edges = n_edges;
@@ -293,6 +296,10 @@ graph_t *graph_read(FILE *stream) {
         e.n2 = (n1 < n2) ? n2 : n1,
         e.weight = weight;
 
+        /* sanity check */
+        assert(n1 < n_nodes);
+        assert(n2 < n_nodes);
+
         /* edges_sorted_by_endpoints */
         p_g->p_edges_sorted_by_endpoints[i] = e;
 
@@ -337,49 +344,18 @@ graph_t *graph_read(FILE *stream) {
     }
 
     p_g->n_terminal_nodes = n_terminal_nodes;
-    p_g->p_terminal_nodes = (node_t *) calloc(n_terminal_nodes, sizeof(node_t));
-    if (!p_g->p_terminal_nodes) {
-        fprintf(stderr, "memory allocation error: could not alloc \"p_terminal_nodes\" array\n");
-        exit(EXIT_FAILURE);
-    }
-
     p_g->n_non_terminal_nodes = p_g->n_nodes - n_terminal_nodes;
-    p_g->p_non_terminal_nodes = (node_t *) calloc(p_g->n_non_terminal_nodes, sizeof(node_t));
-    if (!p_g->p_non_terminal_nodes) {
-        fprintf(stderr, "memory allocation error: could not alloc \"p_non_terminal_nodes\" array\n");
-        exit(EXIT_FAILURE);
-    }
 
     /* Read the terminals */
     for (int i = 0; i < p_g->n_terminal_nodes; i++) {
         node_t n;
         if (fscanf(stream, "%*s %d", &n) != 1) {
-            fprintf(stderr, "graph_read. parse error: could not read %d-th terminal\n", i);
+            fprintf(stderr, "graph_read. parse error: could not read %d-th terminal node\n", i);
             exit(EXIT_FAILURE);
         }
         p_g->p_node_is_terminal[n] = 1;
-        p_g->p_terminal_nodes[i] = n;
-    }
-
-    /**
-     * i : current node.
-     * j : terminal index.
-     * k : non-terminal index.
-     */
-    for (int i = 0, j = 0, k = 0; i < n_nodes; i++) {
-        if (j == n_terminal_nodes) {
-            /* we are done with terminals, keep on adding non-terminals */
-            p_g->p_non_terminal_nodes[k] = i;
-            k++;
-        } else {
-            while (p_g->p_terminal_nodes[j] < i) {
-                j++;
-            }
-            if (p_g->p_terminal_nodes[j] != i) {
-                /* node i is not a terminal */
-                p_g->p_non_terminal_nodes[k] = i;
-                k++;
-            }
+        if (i == 0) {
+            p_g->fst_terminal_node = n;
         }
     }
 
@@ -412,8 +388,6 @@ graph_t *graph_alloc() {
     p_g->n_terminal_nodes = 0;
     p_g->n_non_terminal_nodes = 0;
     p_g->p_node_is_terminal = NULL;
-    p_g->p_terminal_nodes = NULL;
-    p_g->p_non_terminal_nodes = NULL;
     p_g->p_node_colors = NULL;
     p_g->p_node_counters = NULL;
 
@@ -440,18 +414,12 @@ graph_t *graph_alloc() {
 void graph_release(graph_t *p_g) {
     if (p_g) {
         /* release nodes arrays */
+        assert(p_g->n_nodes == 0 || p_g->p_node_is_terminal);
         assert(p_g->n_nodes == 0 || p_g->p_node_colors);
         assert(p_g->n_nodes == 0 || p_g->p_node_counters);
-        assert(p_g->n_nodes == 0 || p_g->p_terminal_nodes);
 
         memset(p_g->p_node_is_terminal, 0X0, p_g->n_nodes * sizeof(int));
         free(p_g->p_node_is_terminal);
-
-        memset(p_g->p_terminal_nodes, 0x0, p_g->n_terminal_nodes * sizeof(node_t));
-        free(p_g->p_terminal_nodes);
-
-        memset(p_g->p_non_terminal_nodes, 0x0, p_g->n_non_terminal_nodes * sizeof(node_t));
-        free(p_g->p_non_terminal_nodes);
 
         memset(p_g->p_node_colors, 0x0, p_g->n_nodes * sizeof(color_t));
         free(p_g->p_node_colors);
@@ -490,10 +458,10 @@ void graph_release(graph_t *p_g) {
  */
 int graph_node_is_terminal(graph_t *p_g, node_t n) {
     assert(p_g);
-    assert(p_g->p_terminal_nodes);
+    assert(p_g->p_node_is_terminal);
     assert(n < p_g->n_nodes);
 
-    return (p_g->p_terminal_nodes[n]);
+    return (p_g->p_node_is_terminal[n]);
 }
 
 /**
@@ -504,10 +472,17 @@ int graph_node_is_terminal(graph_t *p_g, node_t n) {
  */
 int graph_node_is_non_terminal(graph_t *p_g, node_t n) {
     assert(p_g);
-    assert(p_g->p_terminal_nodes);
+    assert(p_g->p_node_is_terminal);
     assert(n < p_g->n_nodes);
 
-    return (p_g->p_terminal_nodes[n] == 0);
+    return (p_g->p_node_is_terminal[n] == 0);
+}
+
+void graph_node_color_assert(graph_t *p_g, node_t n, color_t c) {
+    assert(p_g);
+    assert(n < p_g->n_nodes);
+
+    assert(p_g->p_node_colors[n] == c);
 }
 
 /**
@@ -518,7 +493,7 @@ int graph_node_is_non_terminal(graph_t *p_g, node_t n) {
 void graph_node_color_assert_all(graph_t *p_g, color_t c) {
     assert(p_g);
 
-    for (node_t n = 0; n < p_g->n_nodes; n++) {
+    for (node_t n = 1; n < p_g->n_nodes; n++) {
         assert(p_g->p_node_colors[n] == c);
     }
 }
@@ -547,7 +522,7 @@ void graph_node_color_assert_all_black(graph_t *p_g) {
 void graph_node_color_set_all(graph_t *p_g, color_t c) {
     assert(p_g);
 
-    for (node_t n = 0; n < p_g->n_nodes; n++) {
+    for (node_t n = 1; n < p_g->n_nodes; n++) {
         p_g->p_node_colors[n] = c;
     }
 }
@@ -586,7 +561,7 @@ color_t graph_node_color_get(graph_t *p_g, node_t n) {
 void graph_node_counter_assert_all(graph_t *p_g, int counter_val) {
     assert(p_g);
 
-    for (node_t n = 0; n < p_g->n_nodes; n++) {
+    for (node_t n = 1; n < p_g->n_nodes; n++) {
         assert(p_g->p_node_counters[n] == counter_val);
     }
 }
@@ -607,7 +582,7 @@ void graph_node_counter_assert_all_zero(graph_t *p_g) {
 void graph_node_counter_set_all(graph_t *p_g, int counter_val) {
     assert(p_g);
 
-    for (node_t n = 0; n < p_g->n_nodes; n++) {
+    for (node_t n = 1; n < p_g->n_nodes; n++) {
         p_g->p_node_counters[n] = counter_val;
     }
 }
@@ -627,7 +602,7 @@ void graph_node_counter_reset_all(graph_t *p_g) {
 void graph_node_counter_increment_all(graph_t *p_g) {
     assert(p_g);
 
-    for (node_t n = 0; n < p_g->n_nodes; n++) {
+    for (node_t n = 1; n < p_g->n_nodes; n++) {
         p_g->p_node_counters[n]++;
     }
 }

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "edge.h"
 #include "individual.h"
 #include "list.h"
 #include "random.h"
@@ -20,6 +21,9 @@ static individual_t *individual_alloc(list_t *p_el) {
         exit(EXIT_FAILURE);
     }
 
+    fprintf(stdout, "individual_alloc. p_el=%p\n", p_el),
+    fflush(stdout);
+
     if (!p_el) {
         p_individual->n_edges = 0;
         p_individual->p_edges = NULL;
@@ -28,10 +32,17 @@ static individual_t *individual_alloc(list_t *p_el) {
         p_individual->p_edges = (edge_t **) calloc(p_individual->n_edges, sizeof(edge_t*));
         p_individual->total_weight = 0;
 
+        fprintf(stdout, "n_edges=%lu\n", p_individual->n_edges);
+        fflush(stdout);
+
         /* copy edges and compute total weight */
         int i = 0;
         while (p_el) {
             edge_t *p_e = (edge_t*) p_el->data;
+
+            edge_print(*p_e);
+            fflush(stdout);
+
             p_individual->p_edges[i] = p_e;
             p_individual->total_weight += p_e->weight;
             p_el = p_el->p_next;
@@ -77,17 +88,11 @@ individual_t *individual_mk(graph_t *p_g) {
 individual_t *individual_mk_with_init_edges(graph_t *p_g, list_t *p_init_el) {
     assert(p_g);
 
-    fprintf(stdout, "union find init\n");
-    fflush(stdout);
-
     /* new union find */
     graph_union_find_init(p_g);
 
     /* list of kept edges */
     list_t *p_el = NULL;
-
-    fprintf(stdout, "add initializing edges (if any)\n");
-    fflush(stdout);
 
     /* add initializing edges (if any) */
     while (p_init_el) {
@@ -102,21 +107,13 @@ individual_t *individual_mk_with_init_edges(graph_t *p_g, list_t *p_init_el) {
         p_init_el = p_init_el->p_next;
     }
 
-    fprintf(stdout, "random shuffle the edges of the reference graph\n");
-    fflush(stdout);
-
     /* random shuffle the edges of the reference graph */
     graph_edges_random_shuffle(p_g);
-
-    fprintf(stdout, "add edges until cc\n");
-    fflush(stdout);
 
     /* add edges one by one until all terminal nodes are part of the same connected component */
     for (int i = 0; !graph_union_find_terminals_are_connected(p_g) && i < p_g->n_edges; i++) {
         edge_t e = p_g->p_edges_no_order_guaranteed[i];
-        node_t n1 = e.n1;
-        node_t n2 = e.n2;
-        if (graph_union_find_union(p_g, n1, n2)) {
+        if (graph_union_find_union(p_g, e.n1, e.n2)) {
             edge_t *p_e = graph_search_edge_by_endpoints(p_g, e);
             if (!p_e) {
                 fprintf(stderr, "individual_mk_with_init_edges. cannot find edge (%u, %u, %u)\n", e.n1, e.n2, e.weight);
@@ -130,16 +127,24 @@ individual_t *individual_mk_with_init_edges(graph_t *p_g, list_t *p_init_el) {
      * inv: terminals nodes are part of the same connected component.
      */
 
-    fprintf(stdout, "color BLACK all nodes that are part of the terminal connected component\n");
-    fflush(stdout);
-
     /* color BLACK all nodes that are part of the terminal connected component, all other nodes are colored WHITE  */
+    graph_node_color_assert_all(p_g, WHITE);
     graph_node_color_set_all(p_g, WHITE);
-    node_t fst_non_terminal = p_g->p_non_terminal_nodes[0];
-    node_t fst_non_terminal_root = graph_union_find_find(p_g, fst_non_terminal);
-    for (node_t n = 0; n < p_g->n_nodes; n++) {
-        if (graph_union_find_find(p_g, n) == fst_non_terminal_root) {
+    node_t fst_terminal_node = p_g->fst_terminal_node;
+    node_t fst_terminal_node_root = graph_union_find_find(p_g, fst_terminal_node);
+    fprintf(stdout, "fst_terminal_node=%u, fst_terminal_node_root=%u\n", fst_terminal_node, fst_terminal_node_root);
+    for (node_t n = 1; n < p_g->n_nodes; n++) {
+        if (graph_union_find_find(p_g, n) == fst_terminal_node_root) {
             graph_node_color_set(p_g, n, BLACK);
+        }
+    }
+
+    fprintf(stdout, "p_g->union_find.max_n_terminal_nodes_in_part=%lu\n", p_g->union_find.max_n_terminal_nodes_in_part);
+    fflush(stdout);
+    for (node_t n = 1; n < p_g->n_terminal_nodes; n++) {
+        if (graph_node_is_terminal(p_g, n)) {
+            fprintf(stdout, "terminal node=%u with color=%d\n", n, graph_node_color_get(p_g, n));
+            graph_node_color_assert(p_g, n, BLACK);
         }
     }
 

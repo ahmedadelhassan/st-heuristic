@@ -24,8 +24,7 @@ typedef struct graph_t {
     size_t n_terminal_nodes;             /**< Number of terminal nodes                            */
     size_t n_non_terminal_nodes;         /**< Number of non-terminal nodes                        */
     int *p_node_is_terminal;             /**< p_node_is_terminal[n] != 0 if node n is terminal    */
-    node_t *p_terminal_nodes;            /**< Array of non-terminal nodes                         */
-    node_t *p_non_terminal_nodes;        /**< Array of non-terminal nodes                         */
+    node_t fst_terminal_node;
     color_t *p_node_colors;              /**< A color for each node                               */
     int *p_node_counters;                /**< A counter for each node                             */
     size_t n_edges;                      /**< Number of edges.                                    */
@@ -47,6 +46,8 @@ extern void graph_release(graph_t *p_g);
 extern int graph_node_is_terminal(graph_t *p_g, node_t i);
 
 extern int graph_node_is_non_terminal(graph_t *p_g, node_t i);
+
+extern void graph_node_color_assert(graph_t *p_g, node_t node, color_t c);
 
 extern void graph_node_color_assert_all(graph_t *p_g, color_t c);
 

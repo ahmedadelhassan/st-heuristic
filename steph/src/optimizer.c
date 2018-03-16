@@ -141,7 +141,7 @@ static void optimizer_init(optimizer_t *p_optimizer) {
 
     for (int i = 0; i < p_optimizer->configuration.n_individuals; i++) {
         individual_t *p_individual = individual_mk(p_optimizer->configuration.graph);
-        fprintf(stdout, "%u ", p_individual->total_weight);
+        fprintf(stdout, "p_individual=%p. %u ", p_individual, p_individual->total_weight);
         fflush(stdout);
         population_insert_individual(p_optimizer->p_population, p_individual);
     }
