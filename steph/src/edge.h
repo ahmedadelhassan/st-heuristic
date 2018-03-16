@@ -22,4 +22,6 @@ extern int edge_weight_compar(const void *p1, const void *p2);
 
 extern int edge_weight_compar_p(const void *p1, const void *p2);
 
+extern void edge_print(edge_t e);
+
 #endif /* ST_HEURISTIC_EDGE_H */

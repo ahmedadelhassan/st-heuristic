@@ -23,7 +23,7 @@ extern individual_t *individual_intersection(graph_t *p_g, individual_t *p_indiv
 
 extern pair_t individual_crossing(graph_t *p_g, individual_t *p_individual1, individual_t *p_individual2, double p);
 
-extern individual_t *p_individual_drop_out(graph_t *p_g, individual_t *p_individual, double p);
+extern individual_t *individual_drop_out(graph_t *p_g, individual_t *p_individual, double p);
 
 extern void individual_print(graph_t *p_g, individual_t *p_individual);
 

@@ -25,7 +25,7 @@ typedef struct {
 
 typedef struct {
     probability_t event_probability;
-    double percentage;
+    double probability;
 } configuration_renew_t;
 
 typedef struct {
@@ -38,5 +38,7 @@ typedef struct {
     configuration_drop_out_t configuration_drop_out;
     configuration_renew_t configuration_renew;
 } configuration_t;
+
+extern void configuration_print(configuration_t configuration);
 
 #endif /* ST_HEURISTIC_CONFIGURATION_H */

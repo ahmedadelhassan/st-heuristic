@@ -281,33 +281,33 @@ graph_t *graph_read(FILE *stream) {
     for (int i = 0; i < n_edges; i++) {
         node_t n1;
         node_t n2;
-        weight_t w;
-        if (fscanf(stream, "%*s %d %d %d", &n1, &n2, &w) != 3) {
+        weight_t weight;
+        if (fscanf(stream, "%*s %d %d %d", &n1, &n2, &weight) != 3) {
             fprintf(stderr, "graph_read. parse error: could not read %d-th edge\n.", i);
             exit(EXIT_FAILURE);
         }
 
+        /* store edges with minimum node as n1 */
+        edge_t e;
+        e.n1 = (n1 < n2) ? n1 : n2;
+        e.n2 = (n1 < n2) ? n2 : n1,
+        e.weight = weight;
+
         /* edges_sorted_by_endpoints */
-        p_g->p_edges_sorted_by_endpoints[i].n1 = n1;
-        p_g->p_edges_sorted_by_endpoints[i].n2 = n2;
-        p_g->p_edges_sorted_by_endpoints[i].weight = w;
+        p_g->p_edges_sorted_by_endpoints[i] = e;
 
         /* edges_sorted_by_weight */
-        p_g->p_edges_sorted_by_weight[i].n1 = n1;
-        p_g->p_edges_sorted_by_weight[i].n2 = n2;
-        p_g->p_edges_sorted_by_weight[i].weight = w;
+        p_g->p_edges_sorted_by_weight[i] = e;
 
         /* edges_no_order_guaranteed */
-        p_g->p_edges_no_order_guaranteed[i].n1 = n1;
-        p_g->p_edges_no_order_guaranteed[i].n2 = n2;
-        p_g->p_edges_no_order_guaranteed[i].weight = w;
+        p_g->p_edges_no_order_guaranteed[i] = e;
     }
 
     /* order guarantee for edges_sorted_by_endpoints */
     qsort(p_g->p_edges_sorted_by_endpoints, n_edges, sizeof(edge_t), edge_compar);
 
     /* order guarantee for edges_sorted_by_weight */
-    qsort(p_g->p_edges_sorted_by_endpoints, n_edges, sizeof(edge_t), edge_weight_compar);
+    qsort(p_g->p_edges_sorted_by_weight, n_edges, sizeof(edge_t), edge_weight_compar);
 
 
     if ((fscanf(stream, "%s", buffer) != 1) || strcmp(buffer, "END")) {
@@ -337,14 +337,14 @@ graph_t *graph_read(FILE *stream) {
     }
 
     p_g->n_terminal_nodes = n_terminal_nodes;
-    p_g->p_terminal_nodes = (node_t*) calloc(n_terminal_nodes, sizeof(node_t));
+    p_g->p_terminal_nodes = (node_t *) calloc(n_terminal_nodes, sizeof(node_t));
     if (!p_g->p_terminal_nodes) {
         fprintf(stderr, "memory allocation error: could not alloc \"p_terminal_nodes\" array\n");
         exit(EXIT_FAILURE);
     }
 
     p_g->n_non_terminal_nodes = p_g->n_nodes - n_terminal_nodes;
-    p_g->p_non_terminal_nodes = (node_t*) calloc(p_g->n_non_terminal_nodes, sizeof(node_t));
+    p_g->p_non_terminal_nodes = (node_t *) calloc(p_g->n_non_terminal_nodes, sizeof(node_t));
     if (!p_g->p_non_terminal_nodes) {
         fprintf(stderr, "memory allocation error: could not alloc \"p_non_terminal_nodes\" array\n");
         exit(EXIT_FAILURE);
@@ -686,7 +686,14 @@ int graph_node_counter_get(graph_t *p_g, node_t n) {
 void graph_edges_random_shuffle(graph_t *p_g) {
     assert(p_g);
 
-    random_shuffle(p_g->p_edges_no_order_guaranteed, p_g->n_edges, sizeof(edge_t));
+    for (int i = p_g->n_edges - 1; i > 0; i--) {
+        int j = rand() % (i + 1);
+        if (i != j) {
+            edge_t tmp_e = p_g->p_edges_no_order_guaranteed[i];
+            p_g->p_edges_no_order_guaranteed[i] = p_g->p_edges_no_order_guaranteed[j];
+            p_g->p_edges_no_order_guaranteed[j] = tmp_e;
+        }
+    }
 }
 
 /**
@@ -714,7 +721,8 @@ list_t *graph_kruskal_min_spanning_tree_on_black_nodes(graph_t *p_g) {
                 graph_union_find_union(p_g, root_n1, root_n2);
                 edge_t *p_e = graph_search_edge_by_endpoints(p_g, e);
                 if (!p_e) {
-                    fprintf(stderr, "graph_kruskal_min_spanning_tree_on_black_nodes. cannot find edge (%u, %u, %u)\n", e.n1, e.n2, e.weight);
+                    fprintf(stderr, "graph_kruskal_min_spanning_tree_on_black_nodes. cannot find edge (%u, %u, %u)\n",
+                            e.n1, e.n2, e.weight);
                     exit(EXIT_FAILURE);
                 }
                 list_insert_front(p_el, p_e);
@@ -734,29 +742,27 @@ list_t *graph_kruskal_min_spanning_tree_on_black_nodes(graph_t *p_g) {
 edge_t *graph_search_edge_by_endpoints(graph_t *p_g, edge_t e) {
     assert(p_g);
 
-    int start = 0;
-    int end = p_g->n_edges - 1;
-    int middle;
-
-    if (edge_compar(&(p_g->p_edges_sorted_by_endpoints[0]), &e) == 0) {
-        return (&(p_g->p_edges_sorted_by_endpoints[0]));
-    } else {
-        while (end - start > 1) {
-            middle = (start + end) / 2;
-            if (edge_compar(&(p_g->p_edges_sorted_by_endpoints[middle]), &e) == 0) {
-                return (&(p_g->p_edges_sorted_by_endpoints[middle]));
-            }
-
-            if (edge_compar(&(p_g->p_edges_sorted_by_endpoints[middle]), &e) < 0) {
-                start = middle;
-            } else {
-                end = middle;
-            }
-        }
+    if (p_g->n_edges == 0) {
+        return (NULL);
     }
 
-    if (edge_compar(&(p_g->p_edges_sorted_by_endpoints[end]), &e) == 0) {
-        return (&(p_g->p_edges_sorted_by_endpoints[end]));
+    int left = 0;
+    int right = p_g->n_edges - 1;
+    while (right >= left) {
+        int middle = left + (right - left) / 2;
+        edge_t middle_e = p_g->p_edges_sorted_by_endpoints[middle];
+
+        /* if the edge is present at the middle itself */
+        if (middle_e.n1 == e.n1 && middle_e.n2 == e.n2) {
+            return (&(p_g->p_edges_sorted_by_endpoints[middle]));
+        } else {
+            /* if the edge is smaller than middle, then it can only be present in left subarray */
+            if (e.n1 < middle_e.n1 || (e.n1 == middle_e.n1 && e.n2 < middle_e.n2)) {
+                right = middle - 1;
+            } else {
+                left = middle + 1;
+            }
+        }
     }
 
     /* not found */

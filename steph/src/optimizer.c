@@ -70,9 +70,9 @@ static void optimizer_check_configuration(configuration_t configuration) {
         exit(EXIT_FAILURE);
     }
 
-    probability = configuration.configuration_renew.percentage;
+    probability = configuration.configuration_renew.probability;
     if (!probability_check(probability)) {
-        fprintf(stderr, "optimizer_check_configuration. bad renew percentage %f\n.", probability);
+        fprintf(stderr, "optimizer_check_configuration. bad renew probability %f\n.", probability);
         exit(EXIT_FAILURE);
     }
 
@@ -134,10 +134,22 @@ static void optimizer_release(optimizer_t *p_optimizer) {
 static void optimizer_init(optimizer_t *p_optimizer) {
     assert(p_optimizer);
 
+#ifndef ST_HEURISTIC_RELEASE
+    fprintf(stdout, "optimizer init: creating %lu individuals ...", p_optimizer->configuration.n_individuals);
+    fflush(stdout);
+#endif /* ST_HEURISTIC_RELEASE */
+
     for (int i = 0; i < p_optimizer->configuration.n_individuals; i++) {
         individual_t *p_individual = individual_mk(p_optimizer->configuration.graph);
+        fprintf(stdout, "%u ", p_individual->total_weight);
+        fflush(stdout);
         population_insert_individual(p_optimizer->p_population, p_individual);
     }
+
+#ifndef ST_HEURISTIC_RELEASE
+    fprintf(stdout, "done\n");
+    fflush(stdout);
+#endif /* ST_HEURISTIC_RELEASE */
 }
 
 /**
@@ -149,6 +161,7 @@ static void optimizer_step_union(optimizer_t *p_optimizer, int epoch) {
 
 #ifndef ST_HEURISTIC_RELEASE
     fprintf(stdout, "#%05d union.\n", epoch);
+    fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 
     /* extract at random two individuals and construct the union individual */
@@ -164,6 +177,7 @@ static void optimizer_step_union(optimizer_t *p_optimizer, int epoch) {
 
 #ifndef ST_HEURISTIC_RELEASE
     population_statistics_print(p_optimizer->p_population);
+    fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 }
 
@@ -176,6 +190,7 @@ static void optimizer_step_intersection(optimizer_t *p_optimizer, int epoch) {
 
 #ifndef ST_HEURISTIC_RELEASE
     fprintf(stdout, "#%05d intersection.\n", epoch);
+    fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 
     /* extract at random two individuals and construct the intersection individual */
@@ -191,6 +206,7 @@ static void optimizer_step_intersection(optimizer_t *p_optimizer, int epoch) {
 
 #ifndef ST_HEURISTIC_RELEASE
     population_statistics_print(p_optimizer->p_population);
+    fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 }
 
@@ -204,6 +220,7 @@ static void optimizer_step_crossing(optimizer_t *p_optimizer, int epoch) {
 
 #ifndef ST_HEURISTIC_RELEASE
     fprintf(stdout, "#%05d crossing.\n", epoch);
+    fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 
     /* extract at random two individuals and construct the two crossing individuals */
@@ -222,6 +239,7 @@ static void optimizer_step_crossing(optimizer_t *p_optimizer, int epoch) {
 
 #ifndef ST_HEURISTIC_RELEASE
     population_statistics_print(p_optimizer->p_population);
+    fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 }
 
@@ -234,6 +252,7 @@ static void optimizer_step_drop_out(optimizer_t *p_optimizer, int epoch) {
 
 #ifndef ST_HEURISTIC_RELEASE
     fprintf(stdout, "#%05d drop out.\n", epoch);
+    fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 
     /* extract at random one individual and construct the two dropped out individuals */
@@ -249,6 +268,7 @@ static void optimizer_step_drop_out(optimizer_t *p_optimizer, int epoch) {
 
 #ifndef ST_HEURISTIC_RELEASE
     population_statistics_print(p_optimizer->p_population);
+    fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 }
 
@@ -260,11 +280,12 @@ static void optimizer_step_drop_out(optimizer_t *p_optimizer, int epoch) {
 static void optimizer_step_renew(optimizer_t *p_optimizer, int epoch) {
     assert(p_optimizer);
 
-    double percentage = p_optimizer->configuration.configuration_renew.percentage;
-    size_t n_renewed_individuals = (size_t)(percentage * p_optimizer->p_population->n_individuals);
+    double probability = p_optimizer->configuration.configuration_renew.probability;
+    size_t n_renewed_individuals = (size_t)(probability * p_optimizer->p_population->n_individuals);
 
 #ifndef ST_HEURISTIC_RELEASE
     fprintf(stdout, "#%05d renew %lu individuals.\n", epoch, n_renewed_individuals);
+    fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 
     graph_t *p_g = p_optimizer->configuration.graph;
@@ -283,6 +304,7 @@ static void optimizer_step_renew(optimizer_t *p_optimizer, int epoch) {
 
 #ifndef ST_HEURISTIC_RELEASE
     population_statistics_print(p_optimizer->p_population);
+    fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 }
 
@@ -332,8 +354,10 @@ static void optimizer_step(optimizer_t *p_optimizer, int epoch) {
     }
 
     /* still here !? no operation is going to be applied. */
+#ifndef ST_HEURISTIC_RELEASE
     fprintf(stdout, "no operation applied (total probability does not sum to 1.0).\n");
     fprintf(stdout, "unexpected event, this is probably a bug.\n");
+#endif /* ST_HEURISTIC_RELEASE */
 }
 
 /**

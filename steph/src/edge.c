@@ -68,13 +68,7 @@ int edge_compar_p(const void *p1, const void *p2) {
 
     const edge_t *p_e1 = *((const edge_t **) p1);
     const edge_t *p_e2 = *((const edge_t **) p2);
-
-    int cmp = p_e1->n1 - p_e2->n1;
-    if (cmp) {
-        return (cmp);
-    } else {
-        return (p_e1->n2 - p_e2->n2);
-    }
+    return (edge_compar(p_e1, p_e2));
 }
 
 /**
@@ -90,16 +84,28 @@ int edge_weight_compar(const void *p1, const void *p2) {
 
     const edge_t *p_e1 = (const edge_t *) p1;
     const edge_t *p_e2 = (const edge_t *) p2;
-
     return (p_e1->weight - p_e2->weight);
 }
 
+/**
+ *
+ * @param p1
+ * @param p2
+ * @return
+ */
 int edge_weight_compar_p(const void *p1, const void *p2) {
     assert(p1);
     assert(p2);
 
     const edge_t *p_e1 = *((const edge_t **) p1);
     const edge_t *p_e2 = *((const edge_t **) p2);
+    return (edge_weight_compar(p_e1, p_e2));
+}
 
-    return (p_e1->weight - p_e2->weight);
+/**
+ *
+ * @param e
+ */
+void edge_print(edge_t e) {
+    fprintf(stdout, "(%u, %u, %u)", e.n1, e.n2, e.weight);
 }

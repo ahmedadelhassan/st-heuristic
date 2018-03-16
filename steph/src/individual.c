@@ -77,14 +77,17 @@ individual_t *individual_mk(graph_t *p_g) {
 individual_t *individual_mk_with_init_edges(graph_t *p_g, list_t *p_init_el) {
     assert(p_g);
 
-    /* random shuffle the edges of the reference graph */
-    graph_edges_random_shuffle(p_g);
+    fprintf(stdout, "union find init\n");
+    fflush(stdout);
 
     /* new union find */
     graph_union_find_init(p_g);
 
     /* list of kept edges */
     list_t *p_el = NULL;
+
+    fprintf(stdout, "add initializing edges (if any)\n");
+    fflush(stdout);
 
     /* add initializing edges (if any) */
     while (p_init_el) {
@@ -99,8 +102,14 @@ individual_t *individual_mk_with_init_edges(graph_t *p_g, list_t *p_init_el) {
         p_init_el = p_init_el->p_next;
     }
 
+    fprintf(stdout, "random shuffle the edges of the reference graph\n");
+    fflush(stdout);
+
     /* random shuffle the edges of the reference graph */
     graph_edges_random_shuffle(p_g);
+
+    fprintf(stdout, "add edges until cc\n");
+    fflush(stdout);
 
     /* add edges one by one until all terminal nodes are part of the same connected component */
     for (int i = 0; !graph_union_find_terminals_are_connected(p_g) && i < p_g->n_edges; i++) {
@@ -120,6 +129,9 @@ individual_t *individual_mk_with_init_edges(graph_t *p_g, list_t *p_init_el) {
     /*
      * inv: terminals nodes are part of the same connected component.
      */
+
+    fprintf(stdout, "color BLACK all nodes that are part of the terminal connected component\n");
+    fflush(stdout);
 
     /* color BLACK all nodes that are part of the terminal connected component, all other nodes are colored WHITE  */
     graph_node_color_set_all(p_g, WHITE);
