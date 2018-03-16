@@ -112,7 +112,7 @@ individual_t *individual_mk_with_init_edges(graph_t *p_g, list_t *p_init_el) {
 
     /* add edges one by one until all terminal nodes are part of the same connected component */
     int i = 0;
-    while (graph_union_find_terminals_are_connected(p_g) < p_g->n_terminal_nodes && i < p_g->n_edges) {
+    while (graph_union_get_max_connected_terminal_nodes(p_g) < p_g->n_terminal_nodes && i < p_g->n_edges) {
         edge_t e = p_g->p_edges_no_order_guaranteed[i];
         if (graph_union_find_union(p_g, e.n1, e.n2)) {
             edge_t *p_e = graph_search_edge_by_endpoints(p_g, e);
@@ -141,7 +141,7 @@ individual_t *individual_mk_with_init_edges(graph_t *p_g, list_t *p_init_el) {
         }
     }
 
-    fprintf(stdout, "p_g->union_find.max_n_terminal_nodes_in_part=%lu\n", p_g->union_find.max_n_terminal_nodes_in_part);
+    fprintf(stdout, "p_g->union_find.max_connected_terminal_nodes=%lu\n", p_g->union_find.max_connected_terminal_nodes);
     fflush(stdout);
     for (node_t n = 1; n < p_g->n_terminal_nodes; n++) {
         if (graph_node_is_terminal(p_g, n)) {
