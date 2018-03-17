@@ -5,7 +5,7 @@
 
 #include "color.h"
 #include "graph.h"
-#include "list.h"
+#include "edge_list.h"
 #include "random.h"
 #include "utils.h"
 
@@ -678,12 +678,12 @@ void graph_edges_random_shuffle(graph_t *p_g) {
  * @param p_g
  * @return
  */
-list_t *graph_kruskal_min_spanning_tree_on_black_nodes(graph_t *p_g) {
+edge_list_t *graph_kruskal_min_spanning_tree_on_black_nodes(graph_t *p_g) {
     assert(p_g);
 
     graph_union_find_init(p_g);
 
-    list_t *p_mst_l = NULL;
+    edge_list_t *p_mst_el = NULL;
     for (int i = 0; i < p_g->n_edges; i++) {
         edge_t e = p_g->p_edges_sorted_by_weight[i];
         node_t n1 = e.n1;
@@ -696,18 +696,12 @@ list_t *graph_kruskal_min_spanning_tree_on_black_nodes(graph_t *p_g) {
             if (root_n1 != root_n2) {
                 /* add an edge in the minimum spanning tree */
                 graph_union_find_union(p_g, root_n1, root_n2);
-                edge_t *p_e = graph_search_edge_by_endpoints(p_g, e);
-                if (!p_e) {
-                    fprintf(stderr, "graph_kruskal_min_spanning_tree_on_black_nodes. cannot find edge (%u, %u, %u)\n",
-                            e.n1, e.n2, e.weight);
-                    exit(EXIT_FAILURE);
-                }
-                p_mst_l = list_insert_front(p_mst_l, p_e);
+                p_mst_el = edge_list_insert_front(p_mst_el, e);
             }
         }
     }
 
-    return (p_mst_l);
+    return (p_mst_el);
 }
 
 /**

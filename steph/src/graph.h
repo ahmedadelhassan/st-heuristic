@@ -7,7 +7,7 @@
 #include "color.h"
 #include "edge.h"
 #include "node.h"
-#include "list.h"
+#include "edge_list.h"
 #include "weight.h"
 
 typedef struct {
@@ -81,7 +81,7 @@ extern int graph_node_counter_get(graph_t *p_g, node_t i);
 
 extern void graph_edges_random_shuffle(graph_t *p_g);
 
-extern list_t *graph_kruskal_min_spanning_tree_on_black_nodes(graph_t *p_g);
+extern edge_list_t *graph_kruskal_min_spanning_tree_on_black_nodes(graph_t *p_g);
 
 extern void graph_union_find_init(graph_t *p_g);
 
