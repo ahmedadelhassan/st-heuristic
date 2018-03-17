@@ -7,6 +7,7 @@
 #include "graph.h"
 #include "list.h"
 #include "random.h"
+#include "utils.h"
 
 /**
  *
@@ -74,7 +75,7 @@ static void graph_union_find_release(graph_t *p_g) {
     memset(p_g->union_find.p_n_terminal_nodes, 0x0, p_g->n_nodes * sizeof(size_t));
     free(p_g->union_find.p_n_terminal_nodes);
 
-    memset(&(p_g->union_find), 0x0, sizeof(union_find_t));
+    memset(ADDR(p_g->union_find), 0x0, sizeof(union_find_t));
 }
 
 /**
@@ -169,7 +170,7 @@ int graph_union_find_union(graph_t *p_g, node_t n1, node_t n2) {
             }
         } else {
             /* p_g->union_find.p_ranks[n1_root] > p_g->union_find.p_ranks[n2_root] */
-            p_g->union_find.p_parents[n1_root] = n1_root;
+            p_g->union_find.p_parents[n2_root] = n1_root;
             p_g->union_find.p_n_terminal_nodes[n1_root] += p_g->union_find.p_n_terminal_nodes[n2_root];
             if (p_g->union_find.p_n_terminal_nodes[n1_root] > p_g->union_find.max_connected_terminal_nodes) {
                 p_g->union_find.max_connected_terminal_nodes = p_g->union_find.p_n_terminal_nodes[n1_root];
@@ -207,7 +208,7 @@ graph_t *graph_read(FILE *stream) {
         exit(EXIT_FAILURE);
     }
 
-    if (fscanf(stream, "%d", &n_nodes) != 1) {
+    if (fscanf(stream, "%d", ADDR(n_nodes)) != 1) {
         fprintf(stderr, "graph_read. parse error: could not read number of nodes.\n");
         exit(EXIT_FAILURE);
     }
@@ -217,7 +218,7 @@ graph_t *graph_read(FILE *stream) {
         exit(EXIT_FAILURE);
     }
 
-    if (fscanf(stream, "%d", &n_edges) != 1) {
+    if (fscanf(stream, "%d", ADDR(n_edges)) != 1) {
         fprintf(stderr, "graph_read. parse error: could not read number of edges.\n");
         exit(EXIT_FAILURE);
     }
@@ -285,7 +286,7 @@ graph_t *graph_read(FILE *stream) {
         node_t n1;
         node_t n2;
         weight_t weight;
-        if (fscanf(stream, "%*s %d %d %d", &n1, &n2, &weight) != 3) {
+        if (fscanf(stream, "%*s %d %d %d", ADDR(n1), ADDR(n2), ADDR(weight)) != 3) {
             fprintf(stderr, "graph_read. parse error: could not read %d-th edge\n.", i);
             exit(EXIT_FAILURE);
         }
@@ -338,7 +339,7 @@ graph_t *graph_read(FILE *stream) {
     }
 
     int n_terminal_nodes;
-    if (fscanf(stream, "%d", &n_terminal_nodes) != 1) {
+    if (fscanf(stream, "%d", ADDR(n_terminal_nodes)) != 1) {
         fprintf(stderr, "graph_read. parse error: could not read number of terminal nodes.\n");
         exit(EXIT_FAILURE);
     }
@@ -349,7 +350,7 @@ graph_t *graph_read(FILE *stream) {
     /* Read the terminals */
     for (int i = 0; i < p_g->n_terminal_nodes; i++) {
         node_t n;
-        if (fscanf(stream, "%*s %d", &n) != 1) {
+        if (fscanf(stream, "%*s %d", ADDR(n)) != 1) {
             fprintf(stderr, "graph_read. parse error: could not read %d-th terminal node\n", i);
             exit(EXIT_FAILURE);
         }
@@ -682,17 +683,18 @@ list_t *graph_kruskal_min_spanning_tree_on_black_nodes(graph_t *p_g) {
 
     graph_union_find_init(p_g);
 
-    list_t *p_el = NULL;
+    list_t *p_mst_l = NULL;
     for (int i = 0; i < p_g->n_edges; i++) {
         edge_t e = p_g->p_edges_sorted_by_weight[i];
         node_t n1 = e.n1;
         node_t n2 = e.n2;
 
-        if ((p_g->p_node_colors[n1] == BLACK) && (p_g->p_node_colors[n2] == BLACK)) {
+        if (p_g->p_node_colors[n1] == BLACK && p_g->p_node_colors[n2] == BLACK) {
             node_t root_n1 = graph_union_find_find(p_g, n1);
             node_t root_n2 = graph_union_find_find(p_g, n2);
 
             if (root_n1 != root_n2) {
+                /* add an edge in the minimum spanning tree */
                 graph_union_find_union(p_g, root_n1, root_n2);
                 edge_t *p_e = graph_search_edge_by_endpoints(p_g, e);
                 if (!p_e) {
@@ -700,12 +702,12 @@ list_t *graph_kruskal_min_spanning_tree_on_black_nodes(graph_t *p_g) {
                             e.n1, e.n2, e.weight);
                     exit(EXIT_FAILURE);
                 }
-                list_insert_front(p_el, p_e);
+                p_mst_l = list_insert_front(p_mst_l, p_e);
             }
         }
     }
 
-    return (p_el);
+    return (p_mst_l);
 }
 
 /**
@@ -729,9 +731,9 @@ edge_t *graph_search_edge_by_endpoints(graph_t *p_g, edge_t e) {
 
         /* if the edge is present at the middle itself */
         if (middle_e.n1 == e.n1 && middle_e.n2 == e.n2) {
-            return (&(p_g->p_edges_sorted_by_endpoints[middle]));
+            return (ADDR(p_g->p_edges_sorted_by_endpoints[middle]));
         } else {
-            /* if the edge is smaller than middle, then it can only be present in left subarray */
+            /* if the edge is smaller than middle, then it can only be present in left sub-array */
             if (e.n1 < middle_e.n1 || (e.n1 == middle_e.n1 && e.n2 < middle_e.n2)) {
                 right = middle - 1;
             } else {

@@ -1,12 +1,14 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "configuration.h"
 #include "graph.h"
 #include "optimizer.h"
 
 int main(int argc, char *argv[]) {
+    srand(time(NULL));
 
     /* load graph */
     graph_t *p_g = graph_read(stdin);

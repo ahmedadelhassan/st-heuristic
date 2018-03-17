@@ -10,17 +10,11 @@ typedef struct {
     weight_t weight; /**< Edge's weight.  */
 } edge_t;
 
-extern edge_t *edge_alloc(node_t n1, node_t n2, weight_t w);
-
-extern void edge_release(edge_t *p_e);
+extern edge_t edge_mk(node_t n1, node_t n2, weight_t w);
 
 extern int edge_compar(const void *p1, const void *p2);
 
-extern int edge_compar_p(const void *p1, const void *p2);
-
 extern int edge_weight_compar(const void *p1, const void *p2);
-
-extern int edge_weight_compar_p(const void *p1, const void *p2);
 
 extern void edge_print(edge_t e);
 

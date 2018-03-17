@@ -7,7 +7,7 @@
 
 typedef struct individual_t {
     size_t n_edges;
-    edge_t **p_edges;
+    edge_t *p_edges;
     weight_t total_weight;
 } individual_t;
 
@@ -28,7 +28,5 @@ extern individual_t *individual_drop_out(graph_t *p_g, individual_t *p_individua
 extern void individual_print(graph_t *p_g, individual_t *p_individual);
 
 extern int individual_compar(const void* p1, const void *p2);
-
-extern int individual_compar_p(const void* p1, const void *p2);
 
 #endif /* ST_HEURISTIC_INDIVIDUAL_H */

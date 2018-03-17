@@ -21,37 +21,55 @@ static individual_t *individual_alloc(list_t *p_el) {
         exit(EXIT_FAILURE);
     }
 
-    fprintf(stdout, "individual_alloc. p_el=%p\n", p_el),
+    fprintf(stdout, "individual_alloc. p_el=%p\n", p_el);
+    fprintf(stdout, "list_size(p_el)=%lu\n", list_size(p_el));
     fflush(stdout);
 
+    p_individual->n_edges = 0;
+    p_individual->p_edges = NULL;
+
     if (!p_el) {
-        p_individual->n_edges = 0;
-        p_individual->p_edges = NULL;
-    } else {
-        p_individual->n_edges = list_size(p_el);
-        p_individual->p_edges = (edge_t **) calloc(p_individual->n_edges, sizeof(edge_t*));
-        p_individual->total_weight = 0;
-
-        fprintf(stdout, "n_edges=%lu\n", p_individual->n_edges);
-        fflush(stdout);
-
-        /* copy edges and compute total weight */
-        int i = 0;
-        while (p_el) {
-            edge_t *p_e = (edge_t*) p_el->data;
-
-            edge_print(*p_e);
-            fflush(stdout);
-
-            p_individual->p_edges[i] = p_e;
-            p_individual->total_weight += p_e->weight;
-            p_el = p_el->p_next;
-            i++;
-        }
+        return (p_individual);
     }
 
+    p_individual->p_edges = (edge_t **) calloc(p_individual->n_edges, sizeof(edge_t *));
+    if (!p_individual->p_edges) {
+        fprintf(stderr, "individual_alloc. memory allocation error\n");
+        exit(EXIT_FAILURE);
+    }
+
+    /* copy edges and compute total weight */
+    int i = 0;
+    while (p_el) {
+        edge_t *p_e = (edge_t *) p_el->data;
+
+        edge_print(*p_e);
+        fflush(stdout);
+
+        p_individual->n_edges += 1;
+        p_individual->p_edges[i] = p_e;
+        p_individual->total_weight += p_e->weight;
+        p_el = p_el->p_next;
+        i++;
+    }
+
+    fprintf(stdout, "\np_individual->n_edges=%lu\n", p_individual->n_edges);
+    fprintf(stdout, "individual_alloc. sorting edges\n");
+    fflush(stdout);
+
     /* edges are sorted according to the edge_compar function (i.e., n1 and next n2) */
-    qsort(p_individual->p_edges, p_individual->n_edges, sizeof(edge_t*), edge_compar_p);
+    for(i = 0; i < p_individual->n_edges; i++) {
+        printf("%d: ", i);
+        edge_print(*(p_individual->p_edges[i]));
+        printf(" addr=%p (next=%p, diff=%ld)\n", &(p_individual->p_edges[i]), &(p_individual->p_edges[i+1]),
+               &(p_individual->p_edges[i+1])- &(p_individual->p_edges[i]));
+        fflush(stdout);
+    }
+    qsort(p_individual->p_edges, p_individual->n_edges, sizeof(edge_t *), edge_compar_p);
+
+    fprintf(stdout, "individual_alloc. end\n");
+    fflush(stdout);
+    exit(0);
 
     return (p_individual);
 }
@@ -62,7 +80,7 @@ static individual_t *individual_alloc(list_t *p_el) {
  */
 void individual_release(individual_t *p_individual) {
     if (!p_individual) {
-        memset(p_individual->p_edges, 0x0, p_individual->n_edges * sizeof(edge_t*));
+        memset(p_individual->p_edges, 0x0, p_individual->n_edges * sizeof(edge_t *));
         free(p_individual->p_edges);
 
         memset(p_individual, 0x0, sizeof(individual_t));
@@ -142,11 +160,19 @@ individual_t *individual_mk_with_init_edges(graph_t *p_g, list_t *p_init_el) {
     }
 
     fprintf(stdout, "p_g->union_find.max_connected_terminal_nodes=%lu\n", p_g->union_find.max_connected_terminal_nodes);
+    fprintf(stdout, "p_g->n_terminal_nodes=%lu\n", p_g->n_terminal_nodes);
     fflush(stdout);
-    for (node_t n = 1; n < p_g->n_terminal_nodes; n++) {
+    for (node_t n = 1; n < p_g->n_nodes; n++) {
+        fprintf(stdout, "node=%u\n", n);
+        fflush(stdout);
         if (graph_node_is_terminal(p_g, n)) {
             fprintf(stdout, "terminal node=%u with color=%d\n", n, graph_node_color_get(p_g, n));
+            fflush(stdout);
             graph_node_color_assert(p_g, n, BLACK);
+        }
+        if (graph_node_color_get(p_g, n) == BLACK) {
+            fprintf(stdout, "BLACK\n");
+            fflush(stdout);
         }
     }
 
@@ -160,19 +186,44 @@ individual_t *individual_mk_with_init_edges(graph_t *p_g, list_t *p_init_el) {
          * inv 2: BLACK nodes do form a connected subgraph of p_g.
          */
 
+        fprintf(stdout, "MST\n");
+        fflush(stdout);
+
         /* compute a minimum spanning tree on BLACK vertices */
         p_mst_el = graph_kruskal_min_spanning_tree_on_black_nodes(p_g);
 
+        fprintf(stdout, "MST print\n");
+        fprintf(stdout, "p_mst_el=%p\n", p_mst_el);
+        fprintf(stdout, "list_size(p_mst_el)=%lu\n", list_size(p_mst_el));
+        fflush(stdout);
+        list_t *ll = p_mst_el;
+        int i = 1;
+        while (ll) {
+            edge_t *e = (edge_t *) ll->data;
+            fprintf(stdout, "%d: ", i++);
+            edge_print(*e);
+            fprintf(stdout, "\n");
+            fflush(stdout);
+            ll = ll->p_next;
+        }
+
+        fprintf(stdout, "reset counters\n");
+        fflush(stdout);
+
         /* reset node's counters */
-        list_t *p_it_mst_el = p_it_mst_el;
+        list_t *p_it_mst_el = p_mst_el;
         while (p_it_mst_el) {
             edge_t *p_e = (edge_t *) p_it_mst_el->data;
             graph_node_counter_reset(p_g, p_e->n1);
             graph_node_counter_reset(p_g, p_e->n2);
+            p_it_mst_el = p_it_mst_el->p_next;
         }
 
+        fprintf(stdout, "compute degre\n");
+        fflush(stdout);
+
         /* compute the degree of each node in the spanning tree */
-        p_it_mst_el = p_it_mst_el;
+        p_it_mst_el = p_mst_el;
         while (p_it_mst_el) {
             edge_t *p_e = (edge_t *) p_it_mst_el->data;
             graph_node_counter_increment(p_g, p_e->n1);
@@ -180,24 +231,34 @@ individual_t *individual_mk_with_init_edges(graph_t *p_g, list_t *p_init_el) {
             p_it_mst_el = p_it_mst_el->p_next;
         }
 
+        fprintf(stdout, "color WHITE degree 1\n");
+        fflush(stdout);
+
         /* find (if it exists) a non-terminal BLACK node with degree 1 in the spanning tree */
         int found = 0;
-        for (node_t n = 0; n < p_g->n_nodes; n++) {
-            int n_is_non_terminal = graph_node_is_non_terminal(p_g, n);
-            int n_is_black = graph_node_color_get(p_g, n) == BLACK;
-            int n_counter = graph_node_counter_get(p_g, n);
-
-            if (n_is_non_terminal && n_is_black && n_counter == 1) {
-                found = ~0;
-                graph_node_color_set(p_g, n, WHITE);
+        for (node_t n = 1; n < p_g->n_nodes; n++) {
+            if (graph_node_is_non_terminal(p_g, n)) {
+                if (graph_node_color_get(p_g, n) == BLACK) {
+                    if (graph_node_counter_get(p_g, n) == 1) {
+                        found = ~0;
+                        graph_node_color_set(p_g, n, WHITE);
+                    }
+                }
             }
         }
+
+        fprintf(stdout, "found=%d\n", found);
+        fflush(stdout);
 
         if (!found) {
             /* we did find at least one non-terminal BLACK node with degree 1 in the mst */
             done = ~0;
         }
     } while (!done);
+
+    fprintf(stdout, "p_mst_el=%p\n", p_mst_el);
+    fprintf(stdout, "list_size(p_mst_el)=%lu\n", list_size(p_mst_el));
+    fprintf(stdout, "temp exit\n");
 
     /*
      * inv 1: terminal nodes are BLACK in graph g (some non-terminal nodes are BLACK).
