@@ -16,7 +16,7 @@ typedef struct {
     individual_t individual2;
 } individuals2_t;
 
-extern void individual_clean(individual_t p_individual);
+extern void individual_release(individual_t *p_individual);
 
 extern individual_t individual_mk(graph_t *p_g);
 

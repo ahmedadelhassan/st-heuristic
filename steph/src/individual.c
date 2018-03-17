@@ -25,15 +25,15 @@ static individual_t *individual_alloc(edge_list__t *p_el) {
     fprintf(stdout, "edge_list__size(p_el)=%lu\n", edge_list__size(p_el));
     fflush(stdout);
 
-    individual->n_edges = 0;
-    individual->p_edges = NULL;
+    individual.n_edges = 0;
+    individual.p_edges = NULL;
 
     if (!p_el) {
         return (individual);
     }
 
-    individual->p_edges = (edge_t *) calloc(individual->n_edges, sizeof(edge_t));
-    if (!individual->p_edges) {
+    individual.p_edges = (edge_t *) calloc(individual.n_edges, sizeof(edge_t));
+    if (!individual.p_edges) {
         fprintf(stderr, "individual_alloc. memory allocation error\n");
         exit(EXIT_FAILURE);
     }
@@ -42,25 +42,25 @@ static individual_t *individual_alloc(edge_list__t *p_el) {
     int i = 0;
     while (p_el) {
         edge_t e = p_el->edge;
-        individual->total_weight += e.weight;
-        individual->n_edges += 1;
-        individual->p_edges[i++] = e;
+        individual.total_weight += e.weight;
+        individual.n_edges += 1;
+        individual.p_edges[i++] = e;
         p_el = p_el->p_next;
     }
 
-    fprintf(stdout, "\nindividual->n_edges=%lu\n", individual->n_edges);
+    fprintf(stdout, "\nindividual.n_edges=%lu\n", individual.n_edges);
     fprintf(stdout, "individual_alloc. sorting edges\n");
     fflush(stdout);
 
     /* edges are sorted according to the edge_compar function (i.e., n1 and next n2) */
-    for(i = 0; i < individual->n_edges; i++) {
+    for(i = 0; i < individual.n_edges; i++) {
         printf("%d: ", i);
-        edge_print(*(individual->p_edges[i]));
-        printf(" addr=%p (next=%p, diff=%ld)\n", &(individual->p_edges[i]), &(individual->p_edges[i+1]),
-               &(individual->p_edges[i+1])- &(individual->p_edges[i]));
+        edge_print(*(individual.p_edges[i]));
+        printf(" addr=%p (next=%p, diff=%ld)\n", &(individual.p_edges[i]), &(individual.p_edges[i+1]),
+               &(individual.p_edges[i+1])- &(individual.p_edges[i]));
         fflush(stdout);
     }
-    qsort(individual->p_edges, individual->n_edges, sizeof(edge_t *), edge_compar_p);
+    qsort(individual.p_edges, individual.n_edges, sizeof(edge_t *), edge_compar_p);
 
     fprintf(stdout, "individual_alloc. end\n");
     fflush(stdout);
@@ -69,10 +69,12 @@ static individual_t *individual_alloc(edge_list__t *p_el) {
     return (individual);
 }
 
-void individual_clean(individual_t individual) {
-    if (!individual.p_edges) {
-        memset(individual.p_edges, 0x0, individual->n_edges * sizeof(edge_t));
-        free(individual.p_edges);
+void individual_release(individual_t *p_individual) {
+    if (p_individual) {
+        if (!individual.p_edges) {
+            memset(individual.p_edges, 0x0, individual.n_edges * sizeof(edge_t));
+            free(individual.p_edges);
+        }
         memset(individual, 0x0, sizeof(individual_t));
     }
 }
@@ -278,22 +280,22 @@ individual_t *individual_union(graph_t *p_g, individual_t individual1, individua
     /* add edges from individual 1 and individual2 (do not add duplicate) */
     int i1 = 0;
     int i2 = 0;
-    while (i1 < individual1->n_edges && i2 < individual2->n_edges) {
-        edge_t *p_e1 = individual1->p_edges[i1];
-        edge_t *p_e2 = individual2->p_edges[i2];
+    while (i1 < individual1.n_edges && i2 < individual2.n_edges) {
+        edge_t *p_e1 = individual1.p_edges[i1];
+        edge_t *p_e2 = individual2.p_edges[i2];
 
         if (edge_compar(p_e1, p_e2) < 0) {
-            edge_t *p_e = individual1->p_edges[i1];
+            edge_t *p_e = individual1.p_edges[i1];
             p_l = edge_list__insert_front(p_l, p_e);
             i1++;
         } else {
             if (edge_compar(p_e1, p_e2) > 0) {
-                edge_t *p_e = individual2->p_edges[i1];
+                edge_t *p_e = individual2.p_edges[i1];
                 p_l = edge_list__insert_front(p_l, p_e);
                 i2++;
             } else {
                 /* edge_compar(p_e1, p_e2) == 0 */
-                edge_t *p_e = individual1->p_edges[i1];
+                edge_t *p_e = individual1.p_edges[i1];
                 p_l = edge_list__insert_front(p_l, p_e);
                 i1++;
                 i2++;
@@ -302,15 +304,15 @@ individual_t *individual_union(graph_t *p_g, individual_t individual1, individua
     }
 
     /* add remaining edges from individual1 */
-    while (i1 < individual1->n_edges) {
-        edge_t *p_e = individual1->p_edges[i1];
+    while (i1 < individual1.n_edges) {
+        edge_t *p_e = individual1.p_edges[i1];
         p_l = edge_list__insert_front(p_l, p_e);
         i1++;
     }
 
     /* add remaining edges from individual2 */
-    while (i2 < individual2->n_edges) {
-        edge_t *p_e = individual2->p_edges[i1];
+    while (i2 < individual2.n_edges) {
+        edge_t *p_e = individual2.p_edges[i1];
         p_l = edge_list__insert_front(p_l, p_e);
         i2++;
     }
@@ -342,9 +344,9 @@ individual_t *individual_intersection(graph_t *p_g, individual_t individual1, in
     /* add edges from individual 1 and individual2 (edges have to be part of the two) */
     int i1 = 0;
     int i2 = 0;
-    while (i1 < individual1->n_edges && i2 < individual2->n_edges) {
-        edge_t *p_e1 = individual1->p_edges[i1];
-        edge_t *p_e2 = individual2->p_edges[i2];
+    while (i1 < individual1.n_edges && i2 < individual2.n_edges) {
+        edge_t *p_e1 = individual1.p_edges[i1];
+        edge_t *p_e2 = individual2.p_edges[i2];
 
         if (edge_compar(p_e1, p_e2) < 0) {
             i1++;
@@ -387,23 +389,23 @@ individuals2 individual_crossing(graph_t *p_g, individual_t individual1, individ
     edge_list__t *p_el2 = NULL;
 
     /* add edges from individual 1 and individual2 (do not add duplicate) */
-    for (int i = 0; i < individual1->n_edges; i++) {
+    for (int i = 0; i < individual1.n_edges; i++) {
         if (probability_rand() <= probability) {
-            edge_t *p_e = individual1->p_edges[i];
+            edge_t *p_e = individual1.p_edges[i];
             p_el1 = edge_list__insert_front(p_el1, p_e);
         } else {
-            edge_t *p_e = individual1->p_edges[i];
+            edge_t *p_e = individual1.p_edges[i];
             p_el2 = edge_list__insert_front(p_el2, p_e);
         }
     }
 
     /* add edges from individual 1 and individual2 (do not add duplicate) */
-    for (int i = 0; i < individual2->n_edges; i++) {
+    for (int i = 0; i < individual2.n_edges; i++) {
         if (probability_rand() <= probability) {
-            edge_t *p_e = individual2->p_edges[i];
+            edge_t *p_e = individual2.p_edges[i];
             p_el1 = edge_list__insert_front(p_el1, p_e);
         } else {
-            edge_t *p_e = individual2->p_edges[i];
+            edge_t *p_e = individual2.p_edges[i];
             p_el2 = edge_list__insert_front(p_el2, p_e);
         }
     }
@@ -438,10 +440,10 @@ individual_t *individual_drop_out(graph_t *p_g, individual_t individual, double 
     edge_list__t *p_l = NULL;
 
     /* drop out edges with probability p */
-    for (int i = 0; i < individual->n_edges; i++) {
+    for (int i = 0; i < individual.n_edges; i++) {
         if (probability_rand() > probability) {
             /* probability is for dropping out edges */
-            edge_t *p_e = individual->p_edges[i];
+            edge_t *p_e = individual.p_edges[i];
             p_l = edge_list__insert_front(p_l, p_e);
         }
     }
@@ -467,9 +469,9 @@ void individual_print(graph_t *p_g, individual_t individual) {
     graph_node_color_set_all(p_g, WHITE);
 
     /* count the number of non-terminal nodes */
-    for (int i = 0; i < individual->n_edges; i++) {
-        node_t n1 = individual->p_edges[i]->n1;
-        node_t n2 = individual->p_edges[i]->n2;
+    for (int i = 0; i < individual.n_edges; i++) {
+        node_t n1 = individual.p_edges[i]->n1;
+        node_t n2 = individual.p_edges[i]->n2;
         graph_node_color_set(p_g, n1, BLACK);
         graph_node_color_set(p_g, n2, BLACK);
     }
@@ -483,8 +485,8 @@ void individual_print(graph_t *p_g, individual_t individual) {
     /* reset graph node's color */
     graph_node_color_set_all(p_g, WHITE);
 
-    fprintf(stdout, "individual. total weight=%u\t#edges=%zu\t#non terminals=%zu\n", individual->total_weight,
-            individual->n_edges, n_non_terminals);
+    fprintf(stdout, "individual. total weight=%u\t#edges=%zu\t#non terminals=%zu\n", individual.total_weight,
+            individual.n_edges, n_non_terminals);
 }
 
 /**

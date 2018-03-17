@@ -290,7 +290,7 @@ static void optimizer_step_renew(optimizer_t *p_optimizer, int epoch) {
     /* remove n_renewed_individuals */
     for (int i = 0; i < n_renewed_individuals; i++) {
         individual_t individual = population_extract_max_total_weight_individual(p_optimizer->p_population);
-        individual_clean(individual);
+        individual_release(ADDR(individual));
     }
 
     /* insert n_renewed_individuals new individuals */
