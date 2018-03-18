@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
     /* general */
     configuration.graph = p_g;
     configuration.n_individuals = 4;
-    configuration.n_epochs = 3;
+    configuration.n_epochs = 10;
 
     /* union */
     configuration.configuration_union.event_probability = 1.0;

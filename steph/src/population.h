@@ -25,10 +25,6 @@ extern individual_t population_extract_max_total_weight_individual(population_t 
 
 extern individual_t population_extract_min__total_weight_individual(population_t *p_population);
 
-extern individual_t population_get_max_total_weight_individual(const population_t *p_population);
-
-extern individual_t population_get_min_total_weight_individual(const population_t *p_population);
-
 extern void population_statistics_fprint(FILE *f, const population_t *p_population);
 
 #endif /* ST_HEURISTIC_POPULATION_H */
