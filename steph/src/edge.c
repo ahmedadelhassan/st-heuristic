@@ -57,6 +57,6 @@ int edge_weight_compar(const void *p1, const void *p2) {
  *
  * @param e
  */
-void edge_print(edge_t e) {
-    fprintf(stdout, "(%u, %u, %u)", e.n1, e.n2, e.weight);
+void edge_fprint(FILE *f, edge_t e) {
+    fprintf(f, "(%u - %u, %u)", e.n1, e.n2, e.weight);
 }

@@ -81,6 +81,8 @@ extern int graph_node_counter_get(graph_t *p_g, node_t i);
 
 extern void graph_edges_random_shuffle(graph_t *p_g);
 
+extern void graph_edges_random_shuffle_weight_respectful(graph_t *p_g);
+
 extern edge_list_t *graph_kruskal_min_spanning_tree_on_black_nodes(graph_t *p_g);
 
 extern void graph_union_find_init(graph_t *p_g);

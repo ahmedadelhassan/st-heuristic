@@ -672,6 +672,10 @@ void graph_edges_random_shuffle(graph_t *p_g) {
     }
 }
 
+void graph_edges_random_shuffle_weight_respectful(graph_t *p_g) {
+
+}
+
 /**
  *
  *

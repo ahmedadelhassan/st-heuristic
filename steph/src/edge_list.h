@@ -14,12 +14,18 @@ extern edge_list_t *edge_list_alloc(edge_t e);
 
 extern void edge_list_release(edge_list_t *p_el);
 
+extern edge_list_t *edge_list_copy(edge_list_t *p_el);
+
+extern edge_list_t *edge_list_reverse(edge_list_t *p_el);
+
 extern size_t edge_list_size(edge_list_t *p_el);
 
 extern edge_list_t *edge_list_insert_front(edge_list_t *p_el, edge_t e);
 
-extern edge_list_t *edge_list_sort(edge_list_t *p_el);
+extern edge_list_t *edge_list_sort_by_endpoints(edge_list_t *p_el);
 
-extern void edge_list_print(const edge_list_t *p_le);
+extern edge_list_t *edge_list_sort_by_weight(edge_list_t *p_el);
+
+extern void edge_list_fprint(const edge_list_t *p_el, FILE *f);
 
 #endif /* ST_HEURISTIC_EDGE_edge_list_H */

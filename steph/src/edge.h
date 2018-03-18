@@ -1,6 +1,8 @@
 #ifndef ST_HEURISTIC_EDGE_H
 #define ST_HEURISTIC_EDGE_H
 
+#include <stdio.h>
+
 #include "node.h"
 #include "weight.h"
 
@@ -12,10 +14,10 @@ typedef struct {
 
 extern edge_t edge_mk(node_t n1, node_t n2, weight_t w);
 
-extern int edge_compar(const void *p1, const void *p2);
+extern int edge_compar_by_endpoints(const void *p1, const void *p2);
 
-extern int edge_weight_compar(const void *p1, const void *p2);
+extern int edge_compar_by_weight(const void *p1, const void *p2);
 
-extern void edge_print(edge_t e);
+extern void edge_fprint(FILE *f, edge_t e);
 
 #endif /* ST_HEURISTIC_EDGE_H */

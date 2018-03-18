@@ -35,6 +35,33 @@ void edge_list_release(edge_list_t *p_el) {
     }
 }
 
+edge_list_t *edge_list_copy(edge_list_t *p_el) {
+    if (!p_el) {
+        return (NULL);
+    }
+
+    edge_list_t *p_copy_el = edge_list_alloc(p_el->edge);
+    edge_list_t *p_it_el = p_el->p_next;
+    edge_list_t *p_it_copy_el = p_copy_el;
+    while (p_it_el) {
+        p_it_copy_el->p_next = edge_list_alloc(p_it_el->edge);
+        p_it_el = p_it_el->p_next;
+        p_it_copy_el = p_it_copy_el->p_next;
+    }
+
+    return (p_copy_el);
+}
+
+edge_list_t edge_list_reverse(edge_list_t *p_el) {
+    edge_list_t *p_rev_el = NULL;
+    while (p_el) {
+        edge_t e = p_el->edge;
+        edge_list_insert_front(p_rev_el, e);
+        p_el = p_el->p_next;
+    }
+    return (p_rev_el);
+}
+
 size_t edge_list_size(edge_list_t *p_el) {
     size_t size = 0;
     while (p_el) {
@@ -44,7 +71,7 @@ size_t edge_list_size(edge_list_t *p_el) {
     return (size);
 }
 
-static edge_list_t *list_move(edge_list_t *p_el) {
+static edge_list_t *list_move(edge_list_t *p_el, int (compar)(const void *, const void *)) {
     edge_list_t *p_it_el;
     edge_list_t *p_prev_el;
     edge_list_t *p_new_el;
@@ -52,7 +79,7 @@ static edge_list_t *list_move(edge_list_t *p_el) {
     p_prev_el = p_el;
     p_it_el = p_el->p_next;
     p_new_el = p_it_el;
-    while (p_it_el && edge_compar(ADDR(p_el->edge), ADDR(p_it_el->edge)) > 0) {
+    while (p_it_el && compar(ADDR(p_el->edge), ADDR(p_it_el->edge)) > 0) {
         p_prev_el = p_it_el;
         p_it_el = p_it_el->p_next;
     }
@@ -64,14 +91,27 @@ static edge_list_t *list_move(edge_list_t *p_el) {
     return (p_new_el);
 }
 
-edge_list_t *edge_list_sort(edge_list_t *p_el) {
+edge_list_t *edge_list_sort_by_endpoints(edge_list_t *p_el) {
     if (!p_el) {
         return (NULL);
     }
 
     p_el->p_next = edge_list_sort(p_el->p_next);
-    if (p_el->p_next && edge_compar(ADDR(p_el->edge), ADDR(p_el->p_next->edge)) > 0) {
-        p_el = list_move(p_el);
+    if (p_el->p_next && edge_compar_by_endpoints(ADDR(p_el->edge), ADDR(p_el->p_next->edge)) > 0) {
+        p_el = list_move(p_el, edge_compar_by_endpoints);
+    }
+
+    return (p_el);
+}
+
+edge_list_t *edge_list_sort_by_weight(edge_list_t *p_el) {
+    if (!p_el) {
+        return (NULL);
+    }
+
+    p_el->p_next = edge_list_sort(p_el->p_next);
+    if (p_el->p_next && edge_compar_by_weight(ADDR(p_el->edge), ADDR(p_el->p_next->edge)) > 0) {
+        p_el = list_move(p_el, edge_compar_by_weight);
     }
 
     return (p_el);
@@ -83,3 +123,14 @@ edge_list_t *edge_list_insert_front(edge_list_t *p_el, edge_t e) {
     return (p_new_el);
 }
 
+void edge_list_fprint(FILE *f, edge_list_t *p_el) {
+    while (p_el) {
+        edge_t e = p_el->edge;
+        edge_fprint(f, e);
+        p_el = p_el->p_next;
+        if (p_el) {
+            fprintf(f, ",");
+        }
+    }
+    fprintf(f, "\n");
+}

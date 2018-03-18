@@ -16,11 +16,11 @@ typedef struct {
     individual_t individual2;
 } individuals2_t;
 
-extern void individual_release(individual_t *p_individual);
+extern void individual_cleanup(individual_t individual);
 
-extern individual_t individual_mk(graph_t *p_g);
+extern individual_t individual_mk(graph_t *p_g, list_t *p_init_el);
 
-extern individual_t individual_mk_with_init_edges(graph_t *p_g, list_t *init_el);
+extern individual_t individual_mk_reduced(graph_t *p_g, list_t *p_init_el);
 
 extern individual_t individual_union(graph_t *p_g, individual_t individual1, individual_t individual2);
 
