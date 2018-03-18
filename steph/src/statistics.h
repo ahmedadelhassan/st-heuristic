@@ -1,7 +1,9 @@
 #ifndef ST_HEURISTIC_STATISTICS_H
 #define ST_HEURISTIC_STATISTICS_H
 
+#include <stdio.h>
 #include <stdlib.h>
+
 #include "weight.h"
 
 typedef struct {
@@ -14,6 +16,6 @@ typedef struct {
 
 extern statistics_t statistics_mk(weight_t *array, size_t n);
 
-extern void statistics_print(statistics_t statistics);
+extern void statistics_fprint(FILE *f, statistics_t statistics);
 
 #endif /* ST_HEURISTIC_STATISTICS_H */

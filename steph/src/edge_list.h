@@ -26,6 +26,6 @@ extern edge_list_t *edge_list_sort_by_endpoints(edge_list_t *p_el);
 
 extern edge_list_t *edge_list_sort_by_weight(edge_list_t *p_el);
 
-extern void edge_list_fprint(const edge_list_t *p_el, FILE *f);
+extern void edge_list_fprint(FILE *f, const edge_list_t *p_el);
 
 #endif /* ST_HEURISTIC_EDGE_edge_list_H */

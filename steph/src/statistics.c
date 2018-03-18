@@ -34,6 +34,8 @@ statistics_t statistics_mk(weight_t *array, size_t n) {
         return (statistics);
     }
 
+    statistics.n_samples = n;
+
     for (int i = 0; i < n; i++) {
         statistics.sum += array[i];
     }
@@ -42,7 +44,7 @@ statistics_t statistics_mk(weight_t *array, size_t n) {
 
     double acc = 0.0;
     for (int i = 0; i < n; i++) {
-        acc += +pow(((double) array[i] - statistics.mean), 2);
+        acc += pow(((double) array[i] - statistics.mean), 2);
     }
     statistics.variance = acc / (double) n;
     statistics.std_deviation = sqrt(statistics.variance);
@@ -54,15 +56,15 @@ statistics_t statistics_mk(weight_t *array, size_t n) {
  *
  * @param statistics
  */
-void statistics_print(statistics_t statistics) {
-    fprintf(stdout, "n=%lu", statistics.n_samples);
-    fprintf(stdout, "\t");
-    fprintf(stdout, "mean=%f", statistics.mean);
-    fprintf(stdout, "\t");
-    fprintf(stdout, "var=%f", statistics.variance);
-    fprintf(stdout, "\t");
-    fprintf(stdout, "std dev=%f", statistics.std_deviation);
-    fprintf(stdout, "\t");
-    fprintf(stdout, "sum=%u", statistics.sum);
-    fprintf(stdout, "\n");
+void statistics_fprint(FILE *f, statistics_t statistics) {
+    fprintf(f, "n=%lu", statistics.n_samples);
+    fprintf(f, ", ");
+    fprintf(f, "mean=%f", statistics.mean);
+    fprintf(f, ", ");
+    fprintf(f, "var=%f", statistics.variance);
+    fprintf(f, ", ");
+    fprintf(f, "std dev=%f", statistics.std_deviation);
+    fprintf(f, ", ");
+    fprintf(f, "sum=%u", statistics.sum);
+    fprintf(f, "\n");
 }

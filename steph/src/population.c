@@ -6,6 +6,7 @@
 #include "individual.h"
 #include "population.h"
 #include "statistics.h"
+#include "utils.h"
 
 #define POPULATION_PARENT(i) (((i) - 1) >> 1)
 #define POPULATION_LEFT(i)   (((i) << 1) + 1)
@@ -46,7 +47,7 @@ void population_release(population_t *p_population) {
     if (p_population) {
         /* release all individuals */
         for (int i = 0; i < p_population->n_individuals; i++) {
-            individual_release(ADDR(p_population->p_individuals[i]));
+            individual_cleanup(p_population->p_individuals[i]);
         }
         memset(p_population->p_individuals, 0x0, p_population->n_individuals * sizeof(individual_t *));
         free(p_population->p_individuals);
@@ -88,10 +89,10 @@ int population_insert_individual(population_t *p_population, individual_t indivi
         if (max_weight > individual.total_weight) {
             /* the new individual is inserted and a max weight individual is released to make room */
             individual_t individual_max = population_extract_max_total_weight_individual(p_population);
-            individual_release(ADDR(individual_max));
+            individual_cleanup(individual_max);
         } else {
             /* the new individual is not inserted */
-            individual_release(ADDR(individual));
+            individual_cleanup(individual);
             return (0);
         }
     }
@@ -265,7 +266,7 @@ individual_t population_get_min_total_weight_individual(const population_t *p_po
  *
  * @param p_population
  */
-void population_statistics_print(const population_t *p_population) {
+void population_statistics_fprint(FILE *f, const population_t *p_population) {
     assert(p_population);
 
     size_t n_individuals = p_population->n_individuals;
@@ -284,16 +285,16 @@ void population_statistics_print(const population_t *p_population) {
 
     /* reporting */
     statistics_t statistics = statistics_mk(p_weight, n_individuals);
-    statistics_print(statistics);
+    statistics_fprint(f, statistics);
     for (int i = 0; i < n_individuals; i++) {
         if (i % 5 == 0) {
-            fprintf(stdout, "\n");
+            fprintf(f, "\n");
         } else {
-            fprintf(stdout, "\t");
+            fprintf(f, "\t");
         }
-        fprintf(stdout, "%u", p_weight[i]);
+        fprintf(f, "%u", p_weight[i]);
     }
-    fprintf(stdout, "\n");
+    fprintf(f, "\n\n");
 
     /* clean and release the statistics array */
     memset(p_weight, 0x0, n_individuals * sizeof(weight_t));

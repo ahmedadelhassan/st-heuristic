@@ -21,7 +21,7 @@ edge_t edge_mk(node_t n1, node_t n2, weight_t w) {
  * considered to be respectively less than, equal to, or greater than the second.
  * Edges are sorted on the first node, and next on the second node.
  */
-int edge_compar(const void *p1, const void *p2) {
+int edge_compar_by_endpoints(const void *p1, const void *p2) {
     assert(p1);
     assert(p2);
 
@@ -44,7 +44,7 @@ int edge_compar(const void *p1, const void *p2) {
  * @return An integer less than, equal to, or greater than zero if the first edge's weight is
  * considered to be respectively less than, equal to, or greater than the second.
  */
-int edge_weight_compar(const void *p1, const void *p2) {
+int edge_compar_by_weight(const void *p1, const void *p2) {
     assert(p1);
     assert(p2);
 

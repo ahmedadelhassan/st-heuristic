@@ -1,6 +1,8 @@
 #ifndef ST_HEURISTIC_POPULATION_H
 #define ST_HEURISTIC_POPULATION_H
 
+#include <stdio.h>
+
 #include "individual.h"
 
 typedef struct {
@@ -27,6 +29,6 @@ extern individual_t population_get_max_total_weight_individual(const population_
 
 extern individual_t population_get_min_total_weight_individual(const population_t *p_population);
 
-extern void population_statistics_print(const population_t *p_population);
+extern void population_statistics_fprint(FILE *f, const population_t *p_population);
 
 #endif /* ST_HEURISTIC_POPULATION_H */

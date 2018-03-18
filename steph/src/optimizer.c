@@ -140,7 +140,7 @@ static void optimizer_init(optimizer_t *p_optimizer) {
 #endif /* ST_HEURISTIC_RELEASE */
 
     for (int i = 0; i < p_optimizer->configuration.n_individuals; i++) {
-        individual_t individual = individual_mk(p_optimizer->configuration.graph);
+        individual_t individual = individual_mk(p_optimizer->configuration.graph, NULL);
         population_insert_individual(p_optimizer->p_population, individual);
     }
 
@@ -174,7 +174,7 @@ static void optimizer_step_union(optimizer_t *p_optimizer, int epoch) {
     population_insert_individual(p_optimizer->p_population, union_individual);
 
 #ifndef ST_HEURISTIC_RELEASE
-    population_statistics_print(p_optimizer->p_population);
+    population_statistics_fprint(stdout, p_optimizer->p_population);
     fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 }
@@ -203,7 +203,7 @@ static void optimizer_step_intersection(optimizer_t *p_optimizer, int epoch) {
     population_insert_individual(p_optimizer->p_population, intersection_individual);
 
 #ifndef ST_HEURISTIC_RELEASE
-    population_statistics_print(p_optimizer->p_population);
+    population_statistics_fprint(stdout, p_optimizer->p_population);
     fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 }
@@ -236,7 +236,7 @@ static void optimizer_step_crossing(optimizer_t *p_optimizer, int epoch) {
     population_insert_individual(p_optimizer->p_population, crossed_individuals.individual2);
 
 #ifndef ST_HEURISTIC_RELEASE
-    population_statistics_print(p_optimizer->p_population);
+    population_statistics_fprint(stdout, p_optimizer->p_population);
     fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 }
@@ -265,7 +265,7 @@ static void optimizer_step_drop_out(optimizer_t *p_optimizer, int epoch) {
     population_insert_individual(p_optimizer->p_population, dropped_out_individual);
 
 #ifndef ST_HEURISTIC_RELEASE
-    population_statistics_print(p_optimizer->p_population);
+    population_statistics_fprint(stdout, p_optimizer->p_population);
     fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 }
@@ -290,18 +290,18 @@ static void optimizer_step_renew(optimizer_t *p_optimizer, int epoch) {
     /* remove n_renewed_individuals */
     for (int i = 0; i < n_renewed_individuals; i++) {
         individual_t individual = population_extract_max_total_weight_individual(p_optimizer->p_population);
-        individual_release(ADDR(individual));
+        individual_cleanup(individual);
     }
 
     /* insert n_renewed_individuals new individuals */
     for (int i = 0; i < n_renewed_individuals; i++) {
-        individual_t individual = individual_mk(p_g);
+        individual_t individual = individual_mk(p_g, NULL);
         population_insert_individual(p_optimizer->p_population, individual);
     }
 
 
 #ifndef ST_HEURISTIC_RELEASE
-    population_statistics_print(p_optimizer->p_population);
+    population_statistics_fprint(stdout, p_optimizer->p_population);
     fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 }
@@ -369,7 +369,7 @@ void optimizer_run(configuration_t configuration) {
     optimizer_init(p_optimizer);
 
     if (p_optimizer->configuration.n_epochs > 0) {
-        for (int i = 0; i < p_optimizer->configuration.n_epochs; i++) {
+        for (int i = 1; i <= p_optimizer->configuration.n_epochs; i++) {
             optimizer_step(p_optimizer, i);
         }
     } else {

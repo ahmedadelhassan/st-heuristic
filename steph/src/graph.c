@@ -312,10 +312,10 @@ graph_t *graph_read(FILE *stream) {
     }
 
     /* order guarantee for edges_sorted_by_endpoints */
-    qsort(p_g->p_edges_sorted_by_endpoints, n_edges, sizeof(edge_t), edge_compar);
+    qsort(p_g->p_edges_sorted_by_endpoints, n_edges, sizeof(edge_t), edge_compar_by_endpoints);
 
     /* order guarantee for edges_sorted_by_weight */
-    qsort(p_g->p_edges_sorted_by_weight, n_edges, sizeof(edge_t), edge_weight_compar);
+    qsort(p_g->p_edges_sorted_by_weight, n_edges, sizeof(edge_t), edge_compar_by_weight);
 
 
     if ((fscanf(stream, "%s", buffer) != 1) || strcmp(buffer, "END")) {
