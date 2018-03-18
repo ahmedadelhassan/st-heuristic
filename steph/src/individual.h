@@ -34,7 +34,7 @@ extern individuals2_t individual_crossing(graph_t *p_g, individual_t individual1
 
 extern individual_t individual_drop_out(graph_t *p_g, individual_t individual, double p);
 
-extern void individual_print(FILE *f, graph_t *p_g, individual_t individual);
+extern void individual_fprint(FILE *f, graph_t *p_g, individual_t individual);
 
 extern int individual_compar(individual_t individual1, individual_t individual2);
 

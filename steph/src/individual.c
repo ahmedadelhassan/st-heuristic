@@ -10,6 +10,11 @@
 #include "probability.h"
 #include "utils.h"
 
+/**
+ *
+ * @param p_el
+ * @return
+ */
 static individual_t individual_init(edge_list_t *p_el) {
     individual_t individual;
 
@@ -43,6 +48,10 @@ static individual_t individual_init(edge_list_t *p_el) {
     return (individual);
 }
 
+/**
+ *
+ * @param individual
+ */
 void individual_cleanup(individual_t individual) {
     if (individual.p_edges) {
         memset(individual.p_edges, 0x0, individual.n_edges * sizeof(edge_t));
@@ -525,7 +534,7 @@ individual_t individual_drop_out(graph_t *p_g, individual_t individual, double p
  * @param p_g
  * @param individual
  */
-void individual_print(FILE *f, graph_t *p_g, individual_t individual) {
+void individual_fprint(FILE *f, graph_t *p_g, individual_t individual) {
     graph_node_color_assert_all_white(p_g);
     graph_node_color_set_all(p_g, WHITE);
 

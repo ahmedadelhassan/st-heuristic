@@ -116,6 +116,10 @@ static optimizer_t *optimizer_alloc(configuration_t configuration) {
  * @param p_optimizer
  */
 static void optimizer_release(optimizer_t *p_optimizer) {
+#ifndef ST_HEURISTIC_RELEASE
+    fprintf(stdout, "releasing optimizer...\n");
+#endif /* ST_HEURISTIC_RELEASE */
+
     if (p_optimizer) {
         /* release the population */
         population_release(p_optimizer->p_population);
@@ -168,10 +172,23 @@ static void optimizer_step_union(optimizer_t *p_optimizer, int epoch) {
     individual_t individual2 = population_extract_rand_individual(p_optimizer->p_population);
     individual_t union_individual = individual_union(p_g, individual1, individual2);
 
+#ifndef ST_HEURISTIC_RELEASE
+    fprintf(stdout, "extract individual (tw=%u).\n", individual1.total_weight);
+    fprintf(stdout, "extract individual (tw=%u).\n", individual2.total_weight);
+    fflush(stdout);
+#endif /* ST_HEURISTIC_RELEASE */
+
     /* insert the 3 individuals (over-weighted individuals are drooped out) */
     population_insert_individual(p_optimizer->p_population, individual1);
     population_insert_individual(p_optimizer->p_population, individual2);
     population_insert_individual(p_optimizer->p_population, union_individual);
+
+#ifndef ST_HEURISTIC_RELEASE
+    fprintf(stdout, "insert individual (tw=%u).\n", individual1.total_weight);
+    fprintf(stdout, "insert individual (tw=%u).\n", individual2.total_weight);
+    fprintf(stdout, "insert new individual (tw=%u).\n", union_individual.total_weight);
+    fflush(stdout);
+#endif /* ST_HEURISTIC_RELEASE */
 
 #ifndef ST_HEURISTIC_RELEASE
     population_statistics_fprint(stdout, p_optimizer->p_population);
@@ -197,10 +214,23 @@ static void optimizer_step_intersection(optimizer_t *p_optimizer, int epoch) {
     individual_t individual2 = population_extract_rand_individual(p_optimizer->p_population);
     individual_t intersection_individual = individual_intersection(p_g, individual1, individual2);
 
+#ifndef ST_HEURISTIC_RELEASE
+    fprintf(stdout, "extract individual (tw=%u).\n", individual1.total_weight);
+    fprintf(stdout, "extract individual (tw=%u).\n", individual2.total_weight);
+    fflush(stdout);
+#endif /* ST_HEURISTIC_RELEASE */
+
     /* insert the 3 individuals (over-weighted individuals are drooped out) */
     population_insert_individual(p_optimizer->p_population, individual1);
     population_insert_individual(p_optimizer->p_population, individual2);
     population_insert_individual(p_optimizer->p_population, intersection_individual);
+
+#ifndef ST_HEURISTIC_RELEASE
+    fprintf(stdout, "insert individual (tw=%u).\n", individual1.total_weight);
+    fprintf(stdout, "insert individual (tw=%u).\n", individual2.total_weight);
+    fprintf(stdout, "insert new individual (tw=%u).\n", intersection_individual.total_weight);
+    fflush(stdout);
+#endif /* ST_HEURISTIC_RELEASE */
 
 #ifndef ST_HEURISTIC_RELEASE
     population_statistics_fprint(stdout, p_optimizer->p_population);

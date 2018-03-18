@@ -22,14 +22,14 @@ int main(int argc, char *argv[]) {
 
     /* general */
     configuration.graph = p_g;
-    configuration.n_individuals = 4;
-    configuration.n_epochs = 10;
+    configuration.n_individuals = 20;
+    configuration.n_epochs = 100;
 
     /* union */
-    configuration.configuration_union.event_probability = 1.0;
+    configuration.configuration_union.event_probability = 0.5;
 
     /* intersection */
-    configuration.configuration_intersection.event_probability = 0.0;
+    configuration.configuration_intersection.event_probability = 0.5;
 
     /* intersection */
     configuration.configuration_crossing.event_probability = 0.0;
