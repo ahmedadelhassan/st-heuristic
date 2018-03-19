@@ -45,10 +45,6 @@ population_t *population_alloc(size_t capacity) {
  * @param p_population
  */
 void population_release(population_t *p_population) {
-#ifndef ST_HEURISTIC_RELEASE
-    fprintf(stdout, "releasing population...\n");
-#endif /* ST_HEURISTIC_RELEASE */
-
     if (p_population) {
         /* cleanup all individuals */
         for (int i = 0; i < p_population->n_individuals; i++) {
@@ -66,12 +62,26 @@ void population_release(population_t *p_population) {
 /**
  *
  * @param p_population
+ * @param i
+ * @return
+ */
+static int population_is_leaf_at_index(population_t *p_population, int i) {
+    assert(p_population);
+    assert(i < p_population->n_individuals);
+
+    return (POPULATION_LEFT(i) >= p_population->n_individuals);
+}
+
+/**
+ *
+ * @param p_population
  * @return
  */
 static void population_update_max_total_weight(population_t *p_population) {
     assert(p_population);
     assert(p_population->n_individuals > 0);
 
+    /* update minimum total weight (it has to be at the root) */
     p_population->max_total_weight = p_population->p_individuals[0].total_weight;
 }
 
@@ -84,15 +94,17 @@ static void population_update_min_total_weight(population_t *p_population) {
     assert(p_population);
     assert(p_population->n_individuals > 0);
 
+    /* search for minimum total weight (it has to be at a leaf) */
     int i = p_population->n_individuals - 1;
     weight_t min_total_weight = p_population->p_individuals[i].total_weight;
-    while (POPULATION_LEFT(i) > p_population->n_individuals && POPULATION_RIGHT(i) > p_population->n_individuals) {
+    while (population_is_leaf_at_index(p_population, i)) {
         if (p_population->p_individuals[i].total_weight < min_total_weight) {
             min_total_weight = p_population->p_individuals[i].total_weight;
         }
         i--;
     }
 
+    /* update minimum total weight */
     p_population->min_total_weight = min_total_weight;
 }
 
@@ -104,12 +116,21 @@ static void population_update_min_total_weight(population_t *p_population) {
 static void population_bubble_up(population_t *p_population, int i) {
     assert(p_population);
 
-    int parent_i = POPULATION_PARENT(i);
-    while (parent_i > 0 && p_population->p_individuals[i].total_weight > p_population->p_individuals[parent_i].total_weight) {
-        individual_t p_tmp_individual = p_population->p_individuals[i];
-        p_population->p_individuals[i] = p_population->p_individuals[parent_i];
-        p_population->p_individuals[parent_i] = p_tmp_individual;
-        parent_i = POPULATION_PARENT(i);
+    individual_t *p_individuals = p_population->p_individuals;
+
+    while (i > 0) {
+        int parent_i = POPULATION_PARENT(i);
+        weight_t individual_total_weight = p_individuals[i].total_weight;
+        weight_t parent_individual_total_weight = p_individuals[parent_i].total_weight;
+
+        if (individual_total_weight <= parent_individual_total_weight) {
+            return;
+        }
+
+        individual_t p_tmp_individual = p_individuals[i];
+        p_individuals[i] = p_individuals[parent_i];
+        p_individuals[parent_i] = p_tmp_individual;
+        i = parent_i;
     }
 }
 
@@ -121,11 +142,6 @@ static void population_bubble_up(population_t *p_population, int i) {
  */
 int population_insert_individual(population_t *p_population, individual_t individual) {
     assert(p_population);
-
-/*    fprintf(stdout, "population_insert_individual\n");
-    fprintf(stdout, "p_population->n_individuals=%lu\n", p_population->n_individuals);
-    fprintf(stdout, "individual.n_edges=%zu, individual.total_weight=%u\n", individual.n_edges, individual.total_weight);
-    fflush(stdout);*/
 
     if (p_population->n_individuals == p_population->capacity) {
         if (p_population->max_total_weight > individual.total_weight) {
@@ -139,7 +155,9 @@ int population_insert_individual(population_t *p_population, individual_t indivi
     }
 
     /* insert the new individual */
-    p_population->p_individuals[p_population->n_individuals++] = individual;
+    assert(p_population->n_individuals < p_population->capacity);
+    p_population->p_individuals[p_population->n_individuals] = individual;
+    p_population->n_individuals++;
     population_bubble_up(p_population, p_population->n_individuals - 1);
 
     if (p_population->max_total_weight < individual.total_weight) {
@@ -151,19 +169,6 @@ int population_insert_individual(population_t *p_population, individual_t indivi
     }
 
     return (1);
-}
-
-/**
- *
- * @param p_population
- * @param i
- * @return
- */
-static int population_is_leaf_at_index(population_t *p_population, int i) {
-    assert(p_population);
-    assert(i < p_population->n_individuals);
-
-    return (POPULATION_LEFT(i) >= p_population->n_individuals);
 }
 
 /**
@@ -185,14 +190,19 @@ static void population_bubble_down(population_t *p_population, int i) {
     /* init */
     int max_i = i;
 
+    weight_t total_weight_i = p_population->p_individuals[i].total_weight;
+    weight_t total_weight_left_i = p_population->p_individuals[left_i].total_weight;
+
     /* test left subtree */
-    if (p_population->p_individuals[i].total_weight < p_population->p_individuals[left_i].total_weight) {
+    if (total_weight_i < total_weight_left_i) {
         max_i = left_i;
     }
 
     /* test right subtree */
     if (right_i < p_population->n_individuals) {
-        if (p_population->p_individuals[i].total_weight < p_population->p_individuals[left_i].total_weight) {
+        weight_t total_weight_right_i = p_population->p_individuals[right_i].total_weight;
+
+        if (total_weight_i < total_weight_right_i) {
             max_i = right_i;
         }
     }
@@ -216,10 +226,10 @@ static individual_t population_extract_individual(population_t *p_population, in
     assert(p_population);
     assert(i < p_population->n_individuals);
 
-/*    fprintf(stdout, "population_extract_individual at index %d\n", i);
+    fprintf(stdout, "population_extract_individual at index %d\n", i);
     fprintf(stdout, "p_population->n_individuals=%lu\n", p_population->n_individuals);
     fprintf(stdout, "individual.n_edges=%zu, individual.total_weight=%u\n", p_population->p_individuals[i].n_edges, p_population->p_individuals[i].total_weight);
-    fflush(stdout);*/
+    fflush(stdout);
 
     individual_t individual = p_population->p_individuals[i];
 
@@ -246,7 +256,7 @@ static individual_t population_extract_individual(population_t *p_population, in
     /* update max total weight if needed */
     if (individual.total_weight == p_population->max_total_weight) {
         population_update_max_total_weight(p_population);
-    } 
+    }
 
     return (individual);
 }
@@ -323,7 +333,7 @@ void population_statistics_fprint(FILE *f, const population_t *p_population) {
     /* reporting */
     statistics_t statistics = statistics_mk(p_weight, n_individuals);
     statistics_fprint(f, statistics);
-    qsort(p_weight, n_individuals, sizeof(weight_t), weight_compar);
+    //qsort(p_weight, n_individuals, sizeof(weight_t), weight_compar);
     for (int i = 0; i < n_individuals; i++) {
         if (i % 10 == 0) {
             fprintf(f, "\n");

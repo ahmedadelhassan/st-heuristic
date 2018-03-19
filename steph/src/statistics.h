@@ -12,6 +12,8 @@ typedef struct {
     double variance;
     double std_deviation;
     weight_t sum;
+    weight_t min;
+    weight_t max;
 } statistics_t;
 
 extern statistics_t statistics_mk(weight_t *array, size_t n);

@@ -16,7 +16,9 @@ static statistics_t statistics_null() {
     statistics.mean = 0.0;
     statistics.variance = 0.0;
     statistics.std_deviation = 0.0;
-    statistics.sum = 0.0;
+    statistics.min = 0;
+    statistics.max = 0;
+    statistics.sum = 0;
 
     return (statistics);
 }
@@ -36,7 +38,16 @@ statistics_t statistics_mk(weight_t *array, size_t n) {
 
     statistics.n_samples = n;
 
+    statistics.min = array[0];
+    statistics.max = array[0];
+
     for (int i = 0; i < n; i++) {
+        if (statistics.min > array[i]) {
+            statistics.min = array[i];
+        }
+        if (statistics.max < array[i]) {
+            statistics.max = array[i];
+        }
         statistics.sum += array[i];
     }
 
@@ -64,6 +75,10 @@ void statistics_fprint(FILE *f, statistics_t statistics) {
     fprintf(f, "var=%f", statistics.variance);
     fprintf(f, ", ");
     fprintf(f, "std dev=%f", statistics.std_deviation);
+    fprintf(f, "\n");
+    fprintf(f, "min=%u", statistics.min);
+    fprintf(f, ", ");
+    fprintf(f, "max=%u", statistics.max);
     fprintf(f, ", ");
     fprintf(f, "sum=%u", statistics.sum);
     fprintf(f, "\n");

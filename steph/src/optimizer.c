@@ -149,10 +149,20 @@ static void optimizer_init(optimizer_t *p_optimizer) {
     }
 
 #ifndef ST_HEURISTIC_RELEASE
-    fprintf(stdout, "done\n");
+    fprintf(stdout, " done\n\n");
     fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 }
+
+#ifndef ST_HEURISTIC_RELEASE
+void optimizer_print_acceptance(int flag) {
+    if (flag) {
+        fprintf(stdout, "accepted\n");
+    } else {
+        fprintf(stdout, "rejected\n");
+    }
+}
+#endif /* ST_HEURISTIC_RELEASE */
 
 /**
  *
@@ -166,27 +176,30 @@ static void optimizer_step_union(optimizer_t *p_optimizer, int epoch) {
     fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 
-    /* extract at random two individuals and construct the union individual */
+    /* extract at random total weighto individuals and construct the union individual */
     graph_t *p_g = p_optimizer->configuration.graph;
     individual_t individual1 = population_extract_rand_individual(p_optimizer->p_population);
     individual_t individual2 = population_extract_rand_individual(p_optimizer->p_population);
     individual_t union_individual = individual_union(p_g, individual1, individual2);
 
 #ifndef ST_HEURISTIC_RELEASE
-    fprintf(stdout, "extract individual (tw=%u).\n", individual1.total_weight);
-    fprintf(stdout, "extract individual (tw=%u).\n", individual2.total_weight);
+    fprintf(stdout, "extract individual (total weight=%u).\n", individual1.total_weight);
+    fprintf(stdout, "extract individual (total weight=%u).\n", individual2.total_weight);
     fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 
     /* insert the 3 individuals (over-weighted individuals are drooped out) */
-    population_insert_individual(p_optimizer->p_population, individual1);
-    population_insert_individual(p_optimizer->p_population, individual2);
-    population_insert_individual(p_optimizer->p_population, union_individual);
+    int insert1 = population_insert_individual(p_optimizer->p_population, individual1);
+    int insert2 = population_insert_individual(p_optimizer->p_population, individual2);
+    int insert_union = population_insert_individual(p_optimizer->p_population, union_individual);
 
 #ifndef ST_HEURISTIC_RELEASE
-    fprintf(stdout, "insert individual (tw=%u).\n", individual1.total_weight);
-    fprintf(stdout, "insert individual (tw=%u).\n", individual2.total_weight);
-    fprintf(stdout, "insert new individual (tw=%u).\n", union_individual.total_weight);
+    fprintf(stdout, "insert back individual (total weight=%u) ... ", individual1.total_weight);
+    optimizer_print_acceptance(insert1);
+    fprintf(stdout, "insert back individual (total weight=%u) ... ", individual2.total_weight);
+    optimizer_print_acceptance(insert2);
+    fprintf(stdout, "insert new individual (total weight=%u) ... ", union_individual.total_weight);
+    optimizer_print_acceptance(insert_union);
     fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 
@@ -208,27 +221,30 @@ static void optimizer_step_intersection(optimizer_t *p_optimizer, int epoch) {
     fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 
-    /* extract at random two individuals and construct the intersection individual */
+    /* extract at random total weighto individuals and construct the intersection individual */
     graph_t *p_g = p_optimizer->configuration.graph;
     individual_t individual1 = population_extract_rand_individual(p_optimizer->p_population);
     individual_t individual2 = population_extract_rand_individual(p_optimizer->p_population);
     individual_t intersection_individual = individual_intersection(p_g, individual1, individual2);
 
 #ifndef ST_HEURISTIC_RELEASE
-    fprintf(stdout, "extract individual (tw=%u).\n", individual1.total_weight);
-    fprintf(stdout, "extract individual (tw=%u).\n", individual2.total_weight);
+    fprintf(stdout, "extract individual (total weight=%u).\n", individual1.total_weight);
+    fprintf(stdout, "extract individual (total weight=%u).\n", individual2.total_weight);
     fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 
     /* insert the 3 individuals (over-weighted individuals are drooped out) */
-    population_insert_individual(p_optimizer->p_population, individual1);
-    population_insert_individual(p_optimizer->p_population, individual2);
-    population_insert_individual(p_optimizer->p_population, intersection_individual);
+    int insert1 = population_insert_individual(p_optimizer->p_population, individual1);
+    int insert2 = population_insert_individual(p_optimizer->p_population, individual2);
+    int insert_intersection = population_insert_individual(p_optimizer->p_population, intersection_individual);
 
 #ifndef ST_HEURISTIC_RELEASE
-    fprintf(stdout, "insert individual (tw=%u).\n", individual1.total_weight);
-    fprintf(stdout, "insert individual (tw=%u).\n", individual2.total_weight);
-    fprintf(stdout, "insert new individual (tw=%u).\n", intersection_individual.total_weight);
+    fprintf(stdout, "insert back individual (total weight=%u) ... ", individual1.total_weight);
+    optimizer_print_acceptance(insert1);
+    fprintf(stdout, "insert back individual (total weight=%u) ... ", individual2.total_weight);
+    optimizer_print_acceptance(insert2);
+    fprintf(stdout, "insert new individual (total weight=%u) ... ", intersection_individual.total_weight);
+    optimizer_print_acceptance(insert_intersection);
     fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 
@@ -251,7 +267,7 @@ static void optimizer_step_crossing(optimizer_t *p_optimizer, int epoch) {
     fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 
-    /* extract at random two individuals and construct the two crossing individuals */
+    /* extract at random total weighto individuals and construct the total weighto crossing individuals */
     individual_t individual1 = population_extract_rand_individual(p_optimizer->p_population);
     individual_t individual2 = population_extract_rand_individual(p_optimizer->p_population);
 
@@ -283,7 +299,7 @@ static void optimizer_step_drop_out(optimizer_t *p_optimizer, int epoch) {
     fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 
-    /* extract at random one individual and construct the two dropped out individuals */
+    /* extract at random one individual and construct the total weighto dropped out individuals */
     individual_t individual = population_extract_rand_individual(p_optimizer->p_population);
 
     graph_t *p_g = p_optimizer->configuration.graph;
@@ -397,6 +413,11 @@ void optimizer_run(configuration_t configuration) {
     /* init */
     optimizer_t *p_optimizer = optimizer_alloc(configuration);
     optimizer_init(p_optimizer);
+
+#ifndef ST_HEURISTIC_RELEASE
+    population_statistics_fprint(stdout, p_optimizer->p_population);
+    fflush(stdout);
+#endif /* ST_HEURISTIC_RELEASE */
 
     if (p_optimizer->configuration.n_epochs > 0) {
         for (int i = 1; i <= p_optimizer->configuration.n_epochs; i++) {

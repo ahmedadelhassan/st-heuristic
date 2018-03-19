@@ -89,12 +89,14 @@ static edge_list_t *individual_mk_init(graph_t *p_g, edge_list_t *p_init_el) {
 
     /* add edges one by one until all terminal nodes are part of the same connected component */
     int i = 0;
-    while (graph_union_get_max_connected_terminal_nodes(p_g) < p_g->n_terminal_nodes && i < p_g->n_edges) {
+    int max_connected_terminal_nodes = graph_union_get_max_connected_terminal_nodes(p_g);
+    while (i < p_g->n_edges && max_connected_terminal_nodes < p_g->n_terminal_nodes) {
         edge_t e = p_g->p_edges_no_order_guaranteed[i];
         if (graph_union_find_union(p_g, e.n1, e.n2)) {
             p_el = edge_list_insert_front(p_el, e);
         }
         i++;
+        max_connected_terminal_nodes = graph_union_get_max_connected_terminal_nodes(p_g);
     }
 
     /* keep only edges that are part of the connected component that includes all terminal nodes */
@@ -103,20 +105,17 @@ static edge_list_t *individual_mk_init(graph_t *p_g, edge_list_t *p_init_el) {
     edge_list_t *p_cc_el = NULL;
     while (p_el) {
         edge_t e = p_el->edge;
-        int drop_n1 = graph_union_find_find(p_g, e.n1) != fst_terminal_node_root;
-        int drop_n2 = graph_union_find_find(p_g, e.n2) != fst_terminal_node_root;
-        assert(drop_n1 == drop_n2);
-        if (!drop_n1 && !drop_n2) {
-            edge_list_t *p_next_el = p_el->p_next;
+        edge_list_t *p_next_el = p_el->p_next;
+
+        if (graph_union_find_find(p_g, e.n1) == fst_terminal_node_root) {
+            assert(graph_union_find_find(p_g, e.n2) == fst_terminal_node_root);
             p_el->p_next = p_cc_el;
             p_cc_el = p_el;
-            p_el = p_next_el;
         } else {
-            edge_list_t *p_next_el = p_el->p_next;
             p_el->p_next = NULL;
             edge_list_release(p_el);
-            p_el = p_next_el;
         }
+        p_el = p_next_el;
     }
 
     return (p_cc_el);
@@ -128,6 +127,7 @@ static edge_list_t *individual_mk_init(graph_t *p_g, edge_list_t *p_init_el) {
  * @param p_el
  * @return
  */
+/*
 static edge_list_t *individual_mk_spanning_tree(graph_t *p_g, edge_list_t *p_el) {
     assert(p_g);
 
@@ -135,12 +135,16 @@ static edge_list_t *individual_mk_spanning_tree(graph_t *p_g, edge_list_t *p_el)
         return (NULL);
     }
 
-    /* sort edges by increasing weight */
+    */
+/* sort edges by increasing weight *//*
+
     p_el = edge_list_copy(p_el);
     p_el = edge_list_sort_by_weight(p_el);
 
 
-    /* minimum spanning tree in p_el */
+    */
+/* minimum spanning tree in p_el *//*
+
     graph_union_find_init(p_g);
     edge_list_t *p_it_el = p_el;
     edge_list_t *p_sp_el = NULL;
@@ -154,6 +158,7 @@ static edge_list_t *individual_mk_spanning_tree(graph_t *p_g, edge_list_t *p_el)
 
     return (p_sp_el);
 }
+*/
 
 /**
  *
@@ -161,9 +166,8 @@ static edge_list_t *individual_mk_spanning_tree(graph_t *p_g, edge_list_t *p_el)
  * @param p_el a list of edges
  * @return a list of edges
  */
-static edge_list_t *individual_mk_prune(graph_t *p_g, edge_list_t *p_el, int *flag) {
-    /* *flag = 1 if at least one edge is pruned */
-    *flag = 0;
+static int individual_mk_prune(graph_t *p_g, edge_list_t *p_el) {
+    int do_white = 0;
 
     /* reset node's counters */
     edge_list_t *p_it_el = p_el;
@@ -183,61 +187,77 @@ static edge_list_t *individual_mk_prune(graph_t *p_g, edge_list_t *p_el, int *fl
         p_it_el = p_it_el->p_next;
     }
 
-    /* keep edges of p_el that does not contain a non-terminal node with degree 1 */
-    edge_list_t *p_pruned_el = NULL;
+    /* color WHITE all BLACK nodes of p_el that does contain a non-terminal node with degree 1 */
     p_it_el = p_el;
     while (p_it_el) {
         edge_t e = p_it_el->edge;
-        int drop_n1 = graph_node_is_non_terminal(p_g, e.n1) && graph_node_counter_get(p_g, e.n1) == 1;
-        int drop_n2 = graph_node_is_non_terminal(p_g, e.n2) && graph_node_counter_get(p_g, e.n2) == 1;
-        if (!drop_n1 && !drop_n2) {
-            p_pruned_el = edge_list_insert_front(p_pruned_el, e);
-        } else {
-            *flag = 1;
+        if (graph_node_is_non_terminal(p_g, e.n1) && graph_node_counter_get(p_g, e.n1) == 1) {
+            graph_node_color_set(p_g, e.n1, WHITE);
+            do_white++;
+        }
+        if (graph_node_is_non_terminal(p_g, e.n2) && graph_node_counter_get(p_g, e.n2) == 1) {
+            graph_node_color_set(p_g, e.n2, WHITE);
+            do_white++;
         }
         p_it_el = p_it_el->p_next;
     }
 
-    return (p_pruned_el);
+    return (do_white);
 }
+/*
 
+*/
 /**
  *
  * @param p_g
  * @param p_el
  * @return
- */
+ *//*
+
 #ifdef INDIVIDUAL_MK_SIMPLE
 
 static individual_t individual_mk_simple(graph_t *p_g, edge_list_t *p_el) {
     assert(p_g);
 
-    /* random edges that induce a connected component including all terminal nodes */
+    */
+/* random edges that induce a connected component including all terminal nodes *//*
+
     edge_list_t *p_init_el = individual_mk_init(p_g, p_el);
 
-    /* (non necessarily minimum) spanning tree that includes all terminal nodes */
+    */
+/* (non necessarily minimum) spanning tree that includes all terminal nodes *//*
+
     edge_list_t *p_sp_el = individual_mk_spanning_tree(p_g, p_init_el);
 
-    /* releasing */
+    */
+/* releasing *//*
+
     edge_list_release(p_init_el);
 
-    /* (non necessarily minimum) spanning tree that includes all terminal nodes, all non-terminal nodes have degree at least 2 */
+    */
+/* (non necessarily minimum) spanning tree that includes all terminal nodes, all non-terminal nodes have degree at least 2 *//*
+
     int dont_care_flag = 0;
     edge_list_t *p_pruned_sp_el = individual_mk_prune(p_g, p_sp_el, ADDR(dont_care_flag));
 
-    /* releasing */
+    */
+/* releasing *//*
+
     edge_list_release(p_sp_el);
 
-    /* build an individual from edges */
+    */
+/* build an individual from edges *//*
+
     individual_t individual = individual_init(p_pruned_sp_el);
 
-    /* releasing */
+    */
+/* releasing *//*
+
     edge_list_release(p_pruned_sp_el);
 
     return (individual);
 }
-
-#endif
+*/
 
 /**
  *
@@ -245,7 +265,6 @@ static individual_t individual_mk_simple(graph_t *p_g, edge_list_t *p_el) {
  * @param p_el
  * @return
  */
-#ifdef INDIVIDUAL_MK_REDUCED
 static individual_t individual_mk_reduced(graph_t *p_g, edge_list_t *p_el) {
     assert(p_g);
 
@@ -269,44 +288,19 @@ static individual_t individual_mk_reduced(graph_t *p_g, edge_list_t *p_el) {
         p_mst_el = graph_kruskal_min_spanning_tree_on_black_nodes(p_g);
 
         /* remove edges that do contain a non-terminal node with degree 1 */
-        p_pruned_el = individual_mk_prune(p_g, p_mst_el, ADDR(found));
+        int pruned = individual_mk_prune(p_g, p_mst_el);
 
-        if (!found) {
-            /* at least one non-terminal node with degree 1 has been removed */
-
-            /* color WHITE the nodes of p_mst_el */
-            edge_list_t *p_it_mst_el = p_mst_el;
-            while (p_it_mst_el) {
-                edge_t e = p_it_mst_el->edge;
-                graph_node_color_set(p_g, e.n1, WHITE);
-                graph_node_color_set(p_g, e.n2, WHITE);
-                p_it_mst_el = p_it_mst_el->p_next;
-            }
-
-            /* release p_mst_el */
+        if (pruned) {
+            /* cleaning: release the edges of the minimum spanning tree on BLACK nodes */
             edge_list_release(p_mst_el);
-
-            /* color BLACK the nodes of p_mst_el */
-            edge_list_t *p_it_pruned_el = p_pruned_el;
-            while (p_it_pruned_el) {
-                edge_t e = p_it_pruned_el->edge;
-                graph_node_color_set(p_g, e.n1, BLACK);
-                graph_node_color_set(p_g, e.n2, BLACK);
-                p_it_pruned_el = p_it_pruned_el->p_next;
-            }
-
-            /* release p_pruned_el */
-            edge_list_release(p_pruned_el);
-
-            /* keep on computing minimum spanning tree */
-            done = ~0;
+            p_mst_el = NULL;
+            done = 0;
         } else {
-            /* no non-terminal node with degree 1 has been removed */
-            edge_list_release(p_pruned_el);
+            done = 1;
         }
     } while (!done);
 
-    /* color WHITE the nodes of p_mst_el */
+    /* cleaning: color WHITE the nodes of p_mst_el */
     edge_list_t *p_it_mst_el = p_mst_el;
     while (p_it_mst_el) {
         edge_t e = p_it_mst_el->edge;
@@ -315,13 +309,14 @@ static individual_t individual_mk_reduced(graph_t *p_g, edge_list_t *p_el) {
         p_it_mst_el = p_it_mst_el->p_next;
     }
 
+    /* make individual */
     individual_t individual = individual_init(p_mst_el);
 
+    /* cleaning: release the edges of the minimum spanning tree on BLACK nodes */
     edge_list_release(p_mst_el);
 
     return (individual);
 }
-#endif
 
 /**
  *
@@ -330,17 +325,7 @@ static individual_t individual_mk_reduced(graph_t *p_g, edge_list_t *p_el) {
  * @return
  */
 individual_t individual_mk(graph_t *p_g, edge_list_t *p_el) {
-    individual_t individual;
-
-#ifdef INDIVIDUAL_MK_SIMPLE
-    individual = individual_mk_simple(p_g, p_el);
-#endif
-
-#ifdef INDIVIDUAL_MK_REDUCED
-    individual = individual_mk_reduced(p_g, p_el);
-#endif
-
-    return (individual);
+    return (individual_mk_reduced(p_g, p_el));
 }
 
 /**
@@ -567,14 +552,4 @@ void individual_fprint(FILE *f, graph_t *p_g, individual_t individual) {
 
     fprintf(f, "individual. total weight=%u\t#edges=%zu\t#non terminals=%zu\n", individual.total_weight,
             individual.n_edges, n_non_terminals);
-}
-
-/**
- *
- * @param p1
- * @param p2
- * @return
- */
-int individual_compar(individual_t individual1, individual_t individual2) {
-    return (individual1.total_weight - individual2.total_weight);
 }

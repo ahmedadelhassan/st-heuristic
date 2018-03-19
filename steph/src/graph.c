@@ -699,7 +699,7 @@ edge_list_t *graph_kruskal_min_spanning_tree_on_black_nodes(graph_t *p_g) {
 
             if (root_n1 != root_n2) {
                 /* add an edge in the minimum spanning tree */
-                graph_union_find_union(p_g, root_n1, root_n2);
+                graph_union_find_union(p_g, n1, n2);
                 p_mst_el = edge_list_insert_front(p_mst_el, e);
             }
         }

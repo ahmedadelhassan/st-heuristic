@@ -6,11 +6,6 @@
 #include "graph.h"
 #include "pair.h"
 
-#define INDIVIDUAL_MK_SIMPLE
-#define INDIVIDUAL_MK_REDUCED
-
-#undef INDIVIDUAL_MK_REDUCED
-
 typedef struct  {
     size_t n_edges;
     edge_t *p_edges;
@@ -35,7 +30,5 @@ extern individuals2_t individual_crossing(graph_t *p_g, individual_t individual1
 extern individual_t individual_drop_out(graph_t *p_g, individual_t individual, double p);
 
 extern void individual_fprint(FILE *f, graph_t *p_g, individual_t individual);
-
-extern int individual_compar(individual_t individual1, individual_t individual2);
 
 #endif /* ST_HEURISTIC_INDIVIDUAL_H */
