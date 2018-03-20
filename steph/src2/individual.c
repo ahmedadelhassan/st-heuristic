@@ -1,0 +1,332 @@
+#include <assert.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "edge.h"
+#include "individual.h"
+#include "edge_list.h"
+#include "random.h"
+#include "probability.h"
+#include "utils.h"
+
+/**
+ *
+ * @param p_el
+ * @return
+ */
+static individual_t individual_init(pool_t *p_pool) {
+    assert(p_pool);
+    assert(p_graph);
+
+    individual_t individual;
+    individual.p_bvector = pool_get(p_pool);
+    individual.n_nodes = 0;
+    individual.total_weight = 0;
+
+    return (individual);
+}
+
+/**
+ *
+ * @param individual
+ */
+void individual_cleanup(pool_t *p_pool, individual_t individual) {
+    pool_release(p_pool, individual.p_bvector);
+}
+
+/**
+ *
+ * @param p_graph A pointer to a graph
+ * @param p_init_el A list of edges of \a p_graph
+ * @return a list of edges that induce a connected component including all terminal nodes.
+ */
+static void individual_mk_init(pool_t *p_pool, graph_t *p_graph) {
+    assert(p_pool);
+    assert(p_graph);
+
+    /* new union find */
+    graph_union_find_init(p_graph);
+
+    /* add initializing nodes (if any) */
+    int first = bvector_first_true_index(p_bvector);
+    if (first >= 0) {
+        for (int i = first + 1; i < p_bvector->n_bools; i++) {
+            if (bvector_is_true(p_bvector, i)) {
+                graph_union_find_union(p_graph, start, i);
+            }
+        }
+    }
+
+    /* random shuffle the edges of the reference graph */
+    graph_edges_random_shuffle(p_graph);
+
+    /* add edges one by one until all terminal nodes are part of the same connected component */
+    int i = 0;
+    int max_connected_terminal_nodes = graph_union_find_get_max_connected_terminal_nodes(p_graph);
+    while (i < p_graph->n_edges && max_connected_terminal_nodes < p_graph->n_terminal_nodes) {
+        edge_t e = p_graph->p_nodes_no_order_guaranteed[i];
+        if (graph_union_find_union(p_graph, e.n1, e.n2)) {
+            bvector_set_all(p_graph->p_bvector, e.n1, TRUE);
+            bvector_set_all(p_graph->p_bvector, e.n2, TRUE);
+        }
+        i++;
+        max_connected_terminal_nodes = graph_union_get_max_connected_terminal_nodes(p_graph);
+    }
+
+    /* keep only nodes that are part of the connected component that includes all terminal nodes */
+    node_t fst_terminal_node = p_graph->fst_terminal_node;
+    node_t fst_terminal_node_root = graph_union_find_find(p_graph, fst_terminal_node);
+    for (int i = 0; i < p_graph->n_nodes; i++) {
+        if (bvector_is_true(p_graph->p_bvector, i)) {
+            if (graph_union_find_find(p_graph, i) != fst_terminal_node_root) {
+                bvector_set(p_graph->p_bvector, i, FALSE);
+            }
+        }
+    }
+}
+
+/**
+ *
+ * @param p_graph
+ * @param p_el a list of edges
+ * @return a list of edges
+ */
+static int individual_mk_prune(graph_t *p_graph, edge_list_t *p_el) {
+    int done = 1;
+
+    /* reset node's counters */
+    edge_list_t *p_it_el = p_el;
+    while (p_it_el) {
+        edge_t e = p_it_el->edge;
+        graph_node_counter_reset(p_graph, e.n1);
+        graph_node_counter_reset(p_graph, e.n2);
+        p_it_el = p_it_el->p_next;
+    }
+
+    /* compute the degree of each node in the spanning tree */
+    p_it_el = p_el;
+    while (p_it_el) {
+        edge_t e = p_it_el->edge;
+        graph_node_counter_increment(p_graph, e.n1);
+        graph_node_counter_increment(p_graph, e.n2);
+        p_it_el = p_it_el->p_next;
+    }
+
+    /* remove all non-terminal node degree 1 nodes */
+    p_it_el = p_el;
+    while (p_it_el) {
+        edge_t e = p_it_el->edge;
+        if (graph_node_is_non_terminal(p_graph, e.n1) && graph_node_counter_get(p_graph, e.n1) == 1) {
+            bvector_set_false(p_graph->p_bvector, e.n1);
+            done = 0;
+        }
+        if (graph_node_is_non_terminal(p_graph, e.n2) && graph_node_counter_get(p_graph, e.n2) == 1) {
+            bvector_set_false(p_graph->p_bvector, e.n1);
+            done = 0;
+        }
+        p_it_el = p_it_el->p_next;
+    }
+
+    return (done);
+}
+
+/*
+
+/**
+ *
+ * @param p_graph
+ * @param p_el
+ * @return
+ */
+static individual_t individual_mk(pool_t *p_pool, graph_t *p_graph, bvector_t *p_bvector) {
+    assert(p_pool);
+    assert(p_graph);
+
+    if (p_bvector) {
+        bvector_copy(p_graph->p_bvector, b_vector);
+    }
+
+    /* random edges that induce a connected component including all terminal nodes */
+    individual_mk_init(p_pool, p_graph);
+
+    int done = 0;
+    edge_list_t *p_mst_el = NULL;
+    do {
+        /* compute a minimum spanning tree on BLACK vertices */
+        p_mst_el = graph_mst(p_graph);
+
+        /* remove edges that do contain a non-terminal node with degree 1 */
+        done = individual_mk_prune(p_graph, p_mst_el);
+
+        if (done) {
+            weight_t total_weight = edge_list_total_weight(p_mst_el);
+        }
+
+        edge_list_release(p_mst_el);
+    } while (!done);
+
+    /* cleaning: color WHITE the nodes of p_mst_el */
+    bvector_set_all_false(p_graph->p_bvector);
+
+    /* make individual */
+    individual_t individual = individual_init(p_pool, p_graph), total_weight;
+    individual.total_weight = total_weight;
+    bvector_copy(individual.p_bvector, p_graph->p_bvector);
+
+    return (individual);
+}
+
+/**
+ *
+ * @param p_graph
+ * @param individual1
+ * @param individual2
+ * @return
+ */
+individual_t individual_union(pool_t *p_pool, graph_t *p_graph, individual_t individual1, individual_t individual2) {
+    assert(p_pool);
+    assert(p_graph);
+
+    bvector_t *p_bvector = pool_get(pool);
+
+    for (int i = 0; i < p_graph->n_nodes; i++) {
+        if (individual1.p_bvector[i] || individual2.p_bvector[i]) {
+            bvector_set_true(p_bvector, i);
+        }
+    }
+
+    individual_t individual = individual_mk(p_pool, p_graph, p_bvector);
+
+    pool_return(p_pool, p_bvector);
+
+    return (individual);
+}
+
+/**
+ *
+ * @param p_graph
+ * @param individual1
+ * @param individual2
+ * @return
+ */
+individual_t
+individual_intersection(pool_t *p_pool, graph_t *p_graph, individual_t individual1, individual_t individual2) {
+    assert(p_pool);
+    ssert(p_graph);
+
+    bvector_t *p_bvector = pool_get(pool);
+
+    for (int i = 0; i < p_graph->n_nodes; i++) {
+        if (individual1.p_bvector[i] && individual2.p_bvector[i]) {
+            bvector_set_true(p_bvector, i);
+        }
+    }
+
+    individual_t individual = individual_mk(p_pool, p_graph, p_bvector);
+
+    pool_return(p_pool, p_bvector);
+
+    return (individual);
+}
+
+
+individuals_t
+individual_crossing(pool_t *p_pool, graph_t *p_graph, individual_t individual1, individual_t individual2) {
+    assert(p_graph);
+
+    bvector_t *p_bvector1 = pool_get(pool);
+    bvector_t *p_bvector2 = pool_get(pool);
+
+    int cross_point = rand() % p_graph->n_nodes;
+
+    for (int i = 0; i < cross_point; i++) {
+        if (individual1.p_bvector[i]) {
+            bvector_set_true(p_bvector1, i);
+        }
+        if (individual2.p_bvector[i]) {
+            bvector_set_true(p_bvector2, i);
+        }
+    }
+
+    for (int i = cross_point; i < p_graph->n_nodes; i++) {
+        if (individual1.p_bvector[i]) {
+            bvector_set_true(p_bvector2, i);
+        }
+        if (individual2.p_bvector[i]) {
+            bvector_set_true(p_bvector1, i);
+        }
+    }
+
+    individuals_t individuals;
+    individuals.individual1 = individual_mk(p_pool, p_graph, p_bvector1);
+    individuals.individual2 = individual_mk(p_pool, p_graph, p_bvector2);
+
+    pool_return(p_pool, p_bvector1);
+    pool_return(p_pool, p_bvector2);
+
+    return (individuals);
+}
+
+/**
+ *
+ * @param p_pool
+ * @param p_graph
+ * @param individual
+ * @param probability
+ * @return
+ */
+individual_t individual_drop_out(pool_t *p_pool, graph_t *p_graph, individual_t individual, double probability) {
+    assert(p_graph);
+    assert(p_pool);
+
+    bvector_t *p_bvector = pool_get(p_pool);
+
+    for (int i = 1; i < p_graph->n_nodes; i++) {
+        if (bvector_is_true(individual1.p_bvector, i) && probability_rand() > probability) {
+            bvector_set_true(p_bvector, i);
+        }
+    }
+
+    individual_t individual = individual_mk(p_pool, p_graph, p_bvector);
+
+    pool_return(p_pool, p_bvector);
+
+    return (individual);
+}
+
+/**
+ *
+ * @param p_pool
+ * @param p_graph
+ * @param individual
+ * @param probability
+ * @return
+ */
+individual_t individual_insert(pool_t *p_pool, graph_t *p_graph, individual_t individual, double probability) {
+    assert(p_graph);
+    assert(p_pool);
+
+    bvector_t *p_bvector = pool_get(p_pool);
+
+    for (int i = 1; i < p_graph->n_nodes; i++) {
+        if (bvector_is_false(individual1.p_bvector, i) && probability_rand() <= probability) {
+            bvector_set_true(p_bvector, i);
+        }
+    }
+
+    individual_t individual = individual_mk(p_pool, p_graph, p_bvector);
+
+    pool_return(p_pool, p_bvector);
+
+    return (individual);
+}
+
+/**
+ *
+ * @param p_graph
+ * @param individual
+ */
+void individual_fprint(FILE *f, graph_t *p_graph, individual_t individual) {
+
+}
