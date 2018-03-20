@@ -38,8 +38,9 @@ static individual_t individual_init(edge_list_t *p_el) {
     while (p_el) {
         edge_t e = p_el->edge;
         individual.total_weight += e.weight;
-        individual.p_edges[i++] = e;
+        individual.p_edges[i] = e;
         p_el = p_el->p_next;
+        i++;
     }
 
     /* edges are sorted according to their endpoints */

@@ -18,6 +18,15 @@ typedef struct {
     size_t max_connected_terminal_nodes;
 } union_find_t;
 
+typedef struct {
+    int start_idx;
+    size_t len;
+} plateau_t;
+
+typedef struct {
+    plateau_t *p_plateaux;
+    size_t n_plateaux;
+} plateaux_t;
 
 typedef struct graph_t {
     size_t n_nodes;                      /**< Number of nodes.                                    */
@@ -31,6 +40,7 @@ typedef struct graph_t {
     edge_t *p_edges_sorted_by_endpoints; /**< Edges' array. (edges are sorted on n1 and next n2). */
     edge_t *p_edges_sorted_by_weight;    /**< Edges' array. (edges are sorted on weight).         */
     edge_t *p_edges_no_order_guaranteed; /**< Edges' array. (no order is guaranteed)              */
+    plateaux_t plateaux;
     union_find_t union_find;             /**< Union find facility.                                */
 } graph_t;
 

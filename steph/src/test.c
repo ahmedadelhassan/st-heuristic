@@ -23,25 +23,25 @@ int main(int argc, char *argv[]) {
     /* general */
     configuration.graph = p_g;
     configuration.n_individuals = 20;
-    configuration.n_epochs = 100;
+    configuration.n_epochs = 5000;
 
     /* union */
-    configuration.configuration_union.event_probability = 0.5;
+    configuration.configuration_union.event_probability = 0.35;
 
     /* intersection */
-    configuration.configuration_intersection.event_probability = 0.5;
+    configuration.configuration_intersection.event_probability = 0.35;
 
     /* intersection */
-    configuration.configuration_crossing.event_probability = 0.0;
-    configuration.configuration_crossing.crossing_probability = 0.0;
+    configuration.configuration_crossing.event_probability = 0.1;
+    configuration.configuration_crossing.crossing_probability = 0.1;
 
     /* drop out */
-    configuration.configuration_drop_out.event_probability = 0.0;
-    configuration.configuration_drop_out.drop_out_probability = 0.0;
+    configuration.configuration_drop_out.event_probability = 0.1;
+    configuration.configuration_drop_out.drop_out_probability = 0.1;
 
     /* renew */
-    configuration.configuration_renew.event_probability = 0.0;
-    configuration.configuration_renew.probability = 0.0;
+    configuration.configuration_renew.event_probability = 0.1;
+    configuration.configuration_renew.probability = 0.1;
 
 #ifndef ST_HEURISTIC_RELEASE
     configuration_print(configuration);

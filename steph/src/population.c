@@ -226,25 +226,26 @@ static individual_t population_extract_individual(population_t *p_population, in
     assert(p_population);
     assert(i < p_population->n_individuals);
 
-    fprintf(stdout, "population_extract_individual at index %d\n", i);
-    fprintf(stdout, "p_population->n_individuals=%lu\n", p_population->n_individuals);
-    fprintf(stdout, "individual.n_edges=%zu, individual.total_weight=%u\n", p_population->p_individuals[i].n_edges, p_population->p_individuals[i].total_weight);
-    fflush(stdout);
-
     individual_t individual = p_population->p_individuals[i];
 
     if (p_population->n_individuals == 1) {
+        /* we are left with an empty population */
+        assert(i == 0);
         p_population->n_individuals = 0;
         p_population->min_total_weight = 0;
         p_population->max_total_weight = 0;
+        memset(ADDR(p_population->p_individuals[i]), 0x0, sizeof(individual_t));
         return (individual);
     }
 
-    if (p_population->n_individuals - 1 < i) {
+    if (i != p_population->n_individuals - 1) {
+        /* we did not remove the last individual */
         p_population->p_individuals[i] = p_population->p_individuals[p_population->n_individuals - 1];
+        memset(ADDR(p_population->p_individuals[p_population->n_individuals - 1]), 0x0, sizeof(individual_t));
         p_population->n_individuals--;
         population_bubble_down(p_population, i);
     } else {
+        /* we did remove the last individual */
         p_population->n_individuals--;
     }
 

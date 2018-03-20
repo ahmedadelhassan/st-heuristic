@@ -4,7 +4,6 @@
 #include <stdio.h>
 
 #include "graph.h"
-#include "pair.h"
 
 typedef struct  {
     size_t n_edges;

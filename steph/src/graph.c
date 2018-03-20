@@ -295,7 +295,7 @@ graph_t *graph_read(FILE *stream) {
         edge_t e;
         e.n1 = (n1 < n2) ? n1 : n2;
         e.n2 = (n1 < n2) ? n2 : n1,
-        e.weight = weight;
+                e.weight = weight;
 
         /* sanity check */
         assert(n1 < n_nodes);
@@ -316,6 +316,46 @@ graph_t *graph_read(FILE *stream) {
 
     /* order guarantee for edges_sorted_by_weight */
     qsort(p_g->p_edges_sorted_by_weight, n_edges, sizeof(edge_t), edge_compar_by_weight);
+
+    /* make plateaux facility */
+    p_g->plateaux.p_plateaux = (plateau_t *) calloc(n_edges, sizeof(plateau_t));
+    if (!p_g->plateaux.p_plateaux) {
+        fprintf(stderr, "memory allocation error: could not alloc \"p_g->plateaux.p_plateaux\" array\n");
+        exit(EXIT_FAILURE);
+    }
+
+    /* read edges by increasing weight */
+    int n_plateaux = 0;
+    weight_t current_weight = 0;
+    int len = 0;
+    for (int i = 0; i < n_edges; i++) {
+        edge_t e = p_g->p_edges_sorted_by_weight[i];
+        if (current_weight == e.weight) {
+            len++;
+        } else {
+            if (len > 1) {
+                plateau_t plateau;
+                plateau.start_idx = i - len + 1;
+                plateau.len = len;
+                p_g->plateaux.p_plateaux[n_plateaux] = plateau;
+                n_plateaux++;
+            }
+            len = 1;
+            current_weight = e.weight;
+        }
+    }
+    if (len > 1) {
+        plateau_t plateau;
+        plateau.start_idx = n_edges - len;
+        plateau.len = len;
+        p_g->plateaux.p_plateaux[n_plateaux] = plateau;
+    }
+    p_g->plateaux.p_plateaux = (plateau_t *) realloc(p_g->plateaux.p_plateaux, n_plateaux * sizeof(plateau_t));
+    if (!p_g->plateaux.p_plateaux) {
+        fprintf(stderr, "memory allocation error: could not realloc \"p_g->plateaux.p_plateaux\" array\n");
+        exit(EXIT_FAILURE);
+    }
+    p_g->plateaux.n_plateaux = n_plateaux;
 
 
     if ((fscanf(stream, "%s", buffer) != 1) || strcmp(buffer, "END")) {
@@ -441,6 +481,12 @@ void graph_release(graph_t *p_g) {
 
         memset(p_g->p_edges_no_order_guaranteed, 0x0, p_g->n_edges * sizeof(edge_t));
         free(p_g->p_edges_no_order_guaranteed);
+
+        /* release plateaux */
+        if (p_g->plateaux.p_plateaux) {
+            memset(p_g->plateaux.p_plateaux, 0x0, p_g->plateaux.n_plateaux * sizeof(plateau_t));
+            free(p_g->plateaux.p_plateaux);
+        }
 
         /* release union find facility */
         graph_union_find_release(p_g);
@@ -672,8 +718,28 @@ void graph_edges_random_shuffle(graph_t *p_g) {
     }
 }
 
+/**
+ *
+ * @param p_g
+ */
 void graph_edges_random_shuffle_weight_respectful(graph_t *p_g) {
+    assert(p_g);
 
+    for (int i = 0; i < p_g->plateaux.n_plateaux; i++) {
+        plateau_t plateau = p_g->plateaux.p_plateaux[i];
+        int start_idx = plateau.start_idx;
+        size_t len = plateau.len;
+
+        for (int j = start_idx + len - 1; j > start_idx; j--) {
+            int k = rand() % (i + 1);
+            if (k != j) {
+                edge_t tmp_e = p_g->p_edges_sorted_by_weight[j];
+                p_g->p_edges_sorted_by_weight[j] = p_g->p_edges_sorted_by_weight[k];
+                p_g->p_edges_sorted_by_weight[k] = tmp_e;
+            }
+        }
+
+    }
 }
 
 /**
@@ -686,6 +752,8 @@ edge_list_t *graph_kruskal_min_spanning_tree_on_black_nodes(graph_t *p_g) {
     assert(p_g);
 
     graph_union_find_init(p_g);
+
+    graph_edges_random_shuffle_weight_respectful(p_g);
 
     edge_list_t *p_mst_el = NULL;
     for (int i = 0; i < p_g->n_edges; i++) {
