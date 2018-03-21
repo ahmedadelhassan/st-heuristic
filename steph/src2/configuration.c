@@ -9,7 +9,6 @@
 void configuration_print(configuration_t configuration) {
     /* general */
     fprintf(stdout, "configuration: ");
-    fprintf(stdout, "graph=%p, ", configuration.graph);
     fprintf(stdout, "#individuals=%lu, ", configuration.n_individuals);
     fprintf(stdout, "#epochs=%lu, ", configuration.n_epochs);
 
@@ -21,7 +20,6 @@ void configuration_print(configuration_t configuration) {
 
     /* intersection */
     fprintf(stdout, "probability crossing event=%f, ", configuration.configuration_crossing.event_probability);
-    fprintf(stdout, "probability crossing=%f, ", configuration.configuration_crossing.crossing_probability);
 
     /* drop out */
     fprintf(stdout, "probability drop out event=%f, ", configuration.configuration_drop_out.event_probability);

@@ -25,11 +25,6 @@ typedef struct {
  * @param configuration
  */
 static void optimizer_check_configuration(configuration_t configuration) {
-    if (!graph) {
-        fprintf(stderr, "optimizer_check_configuration. NULL graph.\n");
-        exit(EXIT_FAILURE);
-    }
-
     if (configuration.n_individuals == 0) {
         fprintf(stderr, "optimizer_check_configuration. zero individuals.\n");
         exit(EXIT_FAILURE);
@@ -55,12 +50,6 @@ static void optimizer_check_configuration(configuration_t configuration) {
         exit(EXIT_FAILURE);
     }
 
-    probability = configuration.configuration_crossing.crossing_probability;
-    if (!probability_check(probability)) {
-        fprintf(stderr, "optimizer_check_configuration. bad crossing probability %f\n.", probability);
-        exit(EXIT_FAILURE);
-    }
-
     probability = configuration.configuration_drop_out.event_probability;
     if (!probability_check(probability)) {
         fprintf(stderr, "optimizer_check_configuration. bad event drop out probability %f\n.", probability);
@@ -70,6 +59,18 @@ static void optimizer_check_configuration(configuration_t configuration) {
     probability = configuration.configuration_drop_out.drop_out_probability;
     if (!probability_check(probability)) {
         fprintf(stderr, "optimizer_check_configuration. bad drop out probability %f\n.", probability);
+        exit(EXIT_FAILURE);
+    }
+
+    probability = configuration.configuration_insert.event_probability;
+    if (!probability_check(probability)) {
+        fprintf(stderr, "optimizer_check_configuration. bad event insert probability %f\n.", probability);
+        exit(EXIT_FAILURE);
+    }
+
+    probability = configuration.configuration_insert.insert_probability;
+    if (!probability_check(probability)) {
+        fprintf(stderr, "optimizer_check_configuration. bad insert probability %f\n.", probability);
         exit(EXIT_FAILURE);
     }
 
@@ -90,6 +91,7 @@ static void optimizer_check_configuration(configuration_t configuration) {
     p_total += configuration.configuration_intersection.event_probability;
     p_total += configuration.configuration_crossing.event_probability;
     p_total += configuration.configuration_drop_out.event_probability;
+    p_total += configuration.configuration_insert.event_probability;
     p_total += configuration.configuration_renew.event_probability;
 
     if (!probability_check(p_total)) {
@@ -103,7 +105,7 @@ static void optimizer_check_configuration(configuration_t configuration) {
  * @param configuration
  * @return
  */
-static optimizer_t *optimizer_alloc(configuration_t configuration) {
+static optimizer_t *optimizer_alloc(graph_t *p_graph, configuration_t configuration) {
     optimizer_check_configuration(configuration);
 
     optimizer_t *p_optimizer = (optimizer_t *) malloc(sizeof(optimizer_t));
@@ -112,10 +114,11 @@ static optimizer_t *optimizer_alloc(configuration_t configuration) {
         exit(EXIT_FAILURE);
     }
 
+    p_optimizer->p_graph = p_graph;
     p_optimizer->configuration = configuration;
     p_optimizer->min_total_weight = 0;
     p_optimizer->max_total_weight = 0;
-    p_optimizer->p_population = population_alloc(configuration.n_individuals);
+    p_optimizer->p_population = population_alloc(configuration.n_individuals, p_graph->n_nodes);
 
     return (p_optimizer);
 }
@@ -188,10 +191,11 @@ static void optimizer_step_union(optimizer_t *p_optimizer, int epoch) {
 #endif /* ST_HEURISTIC_RELEASE */
 
     /* extract at random total weighto individuals and construct the union individual */
-    graph_t *p_g = p_optimizer->configuration.graph;
+    pool_t *p_pool = p_optimizer->p_population->p_pool;
+    graph_t *p_graph = p_optimizer->p_graph;
     individual_t individual1 = population_extract_min_total_weight_individual(p_optimizer->p_population);
     individual_t individual2 = population_extract_rand_individual(p_optimizer->p_population);
-    individual_t union_individual = individual_union(p_g, individual1, individual2);
+    individual_t union_individual = individual_union(p_pool, p_graph, individual1, individual2);
 
 #ifndef ST_HEURISTIC_RELEASE
     fprintf(stdout, "extract individual (total weight=%u).\n", individual1.total_weight);
@@ -233,10 +237,12 @@ static void optimizer_step_intersection(optimizer_t *p_optimizer, int epoch) {
 #endif /* ST_HEURISTIC_RELEASE */
 
     /* extract at random total weighto individuals and construct the intersection individual */
-    graph_t *p_g = p_optimizer->configuration.graph;
+    pool_t *p_pool = p_optimizer->p_population->p_pool;
+    graph_t *p_graph = p_optimizer->p_graph;
+
     individual_t individual1 = population_extract_min_total_weight_individual(p_optimizer->p_population);
     individual_t individual2 = population_extract_rand_individual(p_optimizer->p_population);
-    individual_t intersection_individual = individual_intersection(p_g, individual1, individual2);
+    individual_t intersection_individual = individual_intersection(p_pool, p_graph, individual1, individual2);
 
 #ifndef ST_HEURISTIC_RELEASE
     fprintf(stdout, "extract individual (total weight=%u).\n", individual1.total_weight);
@@ -288,9 +294,9 @@ static void optimizer_step_crossing(optimizer_t *p_optimizer, int epoch) {
     fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 
-    graph_t *p_g = p_optimizer->configuration.graph;
-    probability_t probability = p_optimizer->configuration.configuration_crossing.crossing_probability;
-    individuals2_t crossed_individuals = individual_crossing(p_g, individual1, individual2, probability);
+    pool_t *p_pool = p_optimizer->p_population->p_pool;
+    graph_t *p_graph = p_optimizer->p_graph;
+    individuals_t crossed_individuals = individual_crossing(p_pool, p_graph, individual1, individual2);
 
     /* insert the 4 individuals (over-weighted individuals are drooped out) */
     int insert1 = population_insert_individual(p_optimizer->p_population, individual1);
@@ -336,9 +342,11 @@ static void optimizer_step_drop_out(optimizer_t *p_optimizer, int epoch) {
     fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 
-    graph_t *p_g = p_optimizer->configuration.graph;
-    probability_t probability = p_optimizer->configuration.configuration_crossing.crossing_probability;
-    individual_t dropped_out_individual = individual_drop_out(p_g, individual, probability);
+    pool_t *p_pool = p_optimizer->p_population->p_pool;
+    graph_t *p_graph = p_optimizer->p_graph;
+    probability_t probability = p_optimizer->configuration.configuration_drop_out.drop_out_probability;
+
+    individual_t dropped_out_individual = individual_drop_out(p_pool, p_graph, individual, probability);
 
     /* insert the 2 individuals (over-weighted individuals are drooped out) */
     int insert = population_insert_individual(p_optimizer->p_population, individual);
@@ -374,7 +382,9 @@ static void optimizer_step_renew(optimizer_t *p_optimizer, int epoch) {
     fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 
-    graph_t *p_g = p_optimizer->configuration.graph;
+    pool_t *p_pool = p_optimizer->p_population->p_pool;
+    graph_t *p_graph = p_optimizer->p_graph;
+
     /* remove n_renewed_individuals */
     for (int i = 0; i < n_renewed_individuals; i++) {
         individual_t individual = population_extract_max_total_weight_individual(p_optimizer->p_population);
@@ -384,12 +394,12 @@ static void optimizer_step_renew(optimizer_t *p_optimizer, int epoch) {
         fflush(stdout);
 #endif /* ST_HEURISTIC_RELEASE */
 
-        individual_cleanup(individual);
+        individual_cleanup(p_pool, individual);
     }
 
     /* insert n_renewed_individuals new individuals */
     for (int i = 0; i < n_renewed_individuals; i++) {
-        individual_t individual = individual_mk(p_g, NULL);
+        individual_t individual = individual_mk(p_pool, p_graph, NULL);
         int insert = population_insert_individual(p_optimizer->p_population, individual);
 
 #ifndef ST_HEURISTIC_RELEASE
@@ -462,10 +472,10 @@ static void optimizer_step(optimizer_t *p_optimizer, int epoch) {
  *
  * @param configuration
  */
-void optimizer_run(configuration_t configuration) {
+void optimizer_run(graph_t *p_graph, configuration_t configuration) {
 
     /* init */
-    optimizer_t *p_optimizer = optimizer_alloc(configuration);
+    optimizer_t *p_optimizer = optimizer_alloc(p_graph, configuration);
     optimizer_init(p_optimizer);
 
 #ifndef ST_HEURISTIC_RELEASE

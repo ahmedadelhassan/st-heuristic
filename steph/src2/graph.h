@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "color.h"
+#include "bvector.h"
 #include "edge.h"
 #include "node.h"
 #include "edge_list.h"
@@ -34,7 +34,7 @@ typedef struct graph_t {
     size_t n_non_terminal_nodes;         /**< Number of non-terminal nodes                        */
     int *p_node_is_terminal;             /**< p_node_is_terminal[n] != 0 if node n is terminal    */
     node_t fst_terminal_node;
-    bvector_t *p_bvector;              /**< A color for each node                               */
+    bvector_t *p_bvector;
     int *p_node_counters;                /**< A counter for each node                             */
     size_t n_edges;                      /**< Number of edges.                                    */
     edge_t *p_edges_sorted_by_endpoints; /**< Edges' array. (edges are sorted on n1 and next n2). */
@@ -56,20 +56,6 @@ extern void graph_release(graph_t *p_g);
 extern int graph_node_is_terminal(graph_t *p_g, node_t i);
 
 extern int graph_node_is_non_terminal(graph_t *p_g, node_t i);
-
-extern void graph_node_color_assert(graph_t *p_g, node_t node, color_t c);
-
-extern void graph_node_color_assert_all(graph_t *p_g, color_t c);
-
-extern void graph_node_color_assert_all_white(graph_t *p_g);
-
-extern void graph_node_color_assert_all_black(graph_t *p_g);
-
-extern void graph_node_color_set_all(graph_t *p_g, color_t c);
-
-extern void graph_node_color_set(graph_t *p_g, node_t i, color_t c);
-
-extern color_t graph_node_color_get(graph_t *p_g, node_t i);
 
 extern void graph_node_counter_assert_all(graph_t *p_g, int counter_val);
 

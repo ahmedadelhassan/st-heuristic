@@ -111,20 +111,6 @@ weight_t edge_list_total_weight(const edge_list_t *p_el) {
 /**
  *
  * @param p_el
- * @return
- */
-weight_t edge_list_total_weight(edge_list_t *p_el) {
-    weight_t weight = 0;
-    while (p_el) {
-        weight += p_el->edge.weight;
-        p_el = p_el->p_next;
-    }
-    return (weight;)
-}
-
-/**
- *
- * @param p_el
  * @param compar
  * @return
  */

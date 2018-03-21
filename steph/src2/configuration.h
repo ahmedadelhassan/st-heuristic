@@ -24,7 +24,7 @@ typedef struct {
 
 typedef struct {
     probability_t event_probability;
-    probability_t drop_out_probability;
+    probability_t insert_probability;
 } configuration_insert_t;
 
 typedef struct {

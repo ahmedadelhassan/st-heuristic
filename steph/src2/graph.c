@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include "color.h"
+#include "bvector.h"
 #include "graph.h"
 #include "edge_list.h"
 #include "random.h"
@@ -115,7 +115,7 @@ node_t graph_union_find_find(graph_t *p_graph, node_t n) {
  * @param p_graph
  * @return
  */
-size_t graph_union_get_max_connected_terminal_nodes(graph_t *p_graph) {
+size_t graph_union_find_get_max_connected_terminal_nodes(graph_t *p_graph) {
     assert(p_graph);
     assert(p_graph->n_nodes == 0 || p_graph->union_find.p_parents);
     assert(p_graph->n_nodes == 0 || p_graph->union_find.p_ranks);
@@ -233,15 +233,7 @@ graph_t *graph_read(FILE *stream) {
     graph_union_find_alloc(p_graph);
 
     /* nodes init */
-    p_graph->p_node_colors = (color_t *) calloc(n_nodes, sizeof(color_t));
-    if (!p_graph->p_node_colors) {
-        fprintf(stderr, "graph_read. memory allocation error: could not alloc \"node_colors\" array.\n");
-        exit(EXIT_FAILURE);
-    }
-    for (int n = 0; n < n_nodes; n++) {
-        /* init all nodes as WHITE nodes */
-        p_graph->p_node_colors[n] = WHITE;
-    }
+    p_graph->p_bvector = bvector_alloc(n_nodes);
 
     p_graph->p_node_counters = (int *) calloc(n_nodes, sizeof(int));
     if (!p_graph->p_node_counters) {
@@ -430,7 +422,7 @@ graph_t *graph_alloc() {
     p_graph->n_terminal_nodes = 0;
     p_graph->n_non_terminal_nodes = 0;
     p_graph->p_node_is_terminal = NULL;
-    p_graph->p_node_colors = NULL;
+    p_graph->p_bvector = NULL;
     p_graph->p_node_counters = NULL;
 
     /* edges init */
@@ -456,15 +448,10 @@ graph_t *graph_alloc() {
 void graph_release(graph_t *p_graph) {
     if (p_graph) {
         /* release nodes arrays */
-        assert(p_graph->n_nodes == 0 || p_graph->p_node_is_terminal);
-        assert(p_graph->n_nodes == 0 || p_graph->p_node_colors);
-        assert(p_graph->n_nodes == 0 || p_graph->p_node_counters);
-
         memset(p_graph->p_node_is_terminal, 0X0, p_graph->n_nodes * sizeof(int));
         free(p_graph->p_node_is_terminal);
 
-        memset(p_graph->p_node_colors, 0x0, p_graph->n_nodes * sizeof(color_t));
-        free(p_graph->p_node_colors);
+        bvector_release(p_graph->p_bvector);
 
         memset(p_graph->p_node_counters, 0x0, p_graph->n_nodes * sizeof(int));
         free(p_graph->p_node_counters);
@@ -524,81 +511,6 @@ int graph_node_is_non_terminal(graph_t *p_graph, node_t n) {
     assert(n < p_graph->n_nodes);
 
     return (p_graph->p_node_is_terminal[n] == 0);
-}
-
-void graph_node_color_assert(graph_t *p_graph, node_t n, color_t c) {
-    assert(p_graph);
-    assert(n < p_graph->n_nodes);
-
-    assert(p_graph->p_node_colors[n] == c);
-}
-
-/**
- *
- * @param p_graph
- * @param c
- */
-void graph_node_color_assert_all(graph_t *p_graph, color_t c) {
-    assert(p_graph);
-
-    for (node_t n = 1; n < p_graph->n_nodes; n++) {
-        assert(p_graph->p_node_colors[n] == c);
-    }
-}
-
-/**
- *
- * @param p_graph
- */
-void graph_node_color_assert_all_white(graph_t *p_graph) {
-    graph_node_color_assert_all(p_graph, WHITE);
-}
-
-/**
- *
- * @param p_graph
- */
-void graph_node_color_assert_all_black(graph_t *p_graph) {
-    graph_node_color_assert_all(p_graph, BLACK);
-}
-
-/**
- *
- * @param p_graph
- * @param c
- */
-void graph_node_color_set_all(graph_t *p_graph, color_t c) {
-    assert(p_graph);
-
-    for (node_t n = 1; n < p_graph->n_nodes; n++) {
-        p_graph->p_node_colors[n] = c;
-    }
-}
-
-/**
- *
- * @param p_graph
- * @param n
- * @param c
- */
-void graph_node_color_set(graph_t *p_graph, node_t n, color_t c) {
-    assert(p_graph);
-    assert(n < p_graph->n_nodes);
-
-    p_graph->p_node_colors[n] = c;
-}
-
-/**
- *
- * @param p_graph
- * @param n
- * @return
- */
-color_t graph_node_color_get(graph_t *p_graph, node_t n) {
-    assert(p_graph);
-    assert(n < p_graph->n_nodes);
-
-    return (p_graph->p_node_colors[n]);
 }
 
 /**
@@ -779,6 +691,11 @@ edge_t *graph_search_edge_by_endpoints(graph_t *p_graph, edge_t e) {
     return (NULL);
 }
 
+/**
+ *
+ * @param p_graph
+ * @return
+ */
 edge_list_t *graph_mst(graph_t *p_graph) {
     assert(p_graph);
 
@@ -792,7 +709,7 @@ edge_list_t *graph_mst(graph_t *p_graph) {
         node_t n1 = e.n1;
         node_t n2 = e.n2;
 
-        if (bvector_is_true(p_graph->p_bvector, n1) && bvector_is_true(p_graph->p_bvector, n2)) {
+        if (bvector_get(p_graph->p_bvector, n1) && bvector_get(p_graph->p_bvector, n2)) {
             node_t root_n1 = graph_union_find_find(p_graph, n1);
             node_t root_n2 = graph_union_find_find(p_graph, n2);
 
@@ -803,7 +720,6 @@ edge_list_t *graph_mst(graph_t *p_graph) {
             }
         }
     }
-}
 
-return (p_mst_el);
+    return(p_mst_el);
 }

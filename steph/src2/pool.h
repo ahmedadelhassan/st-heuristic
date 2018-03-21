@@ -3,7 +3,6 @@
 
 #include <stdlib.h>
 #include "bvector.h"
-#include "color.h"
 
 typedef struct pool_item_t {
     struct pool_item_t *p_next;
@@ -11,12 +10,12 @@ typedef struct pool_item_t {
 } pool_item_t;
 
 typedef struct {
-    pool_item_t *p_pool_ready_items;
-    pool_item_t *p_pool_empty_items;
-    size_t n_bools;
+    pool_item_t *p_bvector_queue;
+    pool_item_t *p_queue;
+    size_t size;
 } pool_t;
 
-extern pool_t *pool_alloc();
+extern pool_t *pool_alloc(size_t size);
 
 extern void pool_release(pool_t *p_pool);
 

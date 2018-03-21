@@ -1,41 +1,41 @@
-#ifndef ST_HEURISTIC_bvector_H
-#define ST_HEURISTIC_bvector_H
+#ifndef ST_HEURISTIC_BVECTOR_H
+#define ST_HEURISTIC_BVECTOR_H
 
+#include <stdio.h>
 #include <stdlib.h>
-#include "bool.h"
 
 typedef struct {
-    bool_t *p_bools;
-    size_t n_bools;
+    unsigned char *p_uchars;
+    size_t n_uchars;
+    size_t n_bits;
 } bvector_t;
 
-extern bvector_t* bvector_alloc(size_t n_bools);
+extern bvector_t *bvector_alloc(size_t n);
 
 extern void bvector_release(bvector_t *p_bvector);
 
-extern void bvector_copy(bvector_t *p_dest_bvector, bvector_t *p_src_bvector);
+extern void bvector_copy(bvector_t *p_dest_bvector, const bvector_t *p_src_bvector);
 
-extern bool_t bvector_is_false(bvector_t *p_bvector, int i);
+extern void bvector_set(bvector_t *p_bvector, int i);
 
-extern bool_t bvector_is_true(bvector_t *p_bvector, int i);
+extern void bvector_set_all(bvector_t *p_bvector);
 
-extern bool_t bvector_get(bvector_t *p_bvector, int i);
+extern void bvector_unset(bvector_t *p_bvector, int i);
 
-extern void bvector_set(bvector_t *p_bvector, int i, bool_t b);
+extern void bvector_unset_all(bvector_t *p_bvector);
 
-extern void bvector_set_false(bvector_t *p_bvector, int i);
+extern int bvector_get(const bvector_t *p_bvector, int i);
 
-extern void bvector_set_true(bvector_t *p_bvector, int i);
+extern void bvector_or(bvector_t *p_dest_bvector, const bvector_t *p_bvector1, const bvector_t *p_bvector2);
 
-extern void bvector_set_all(bvector_t *p_bvector, bool_t b);
+extern void bvector_and(bvector_t *p_dest_bvector, const bvector_t *p_bvector1, const bvector_t *p_bvector2);
 
-extern void bvector_set_all_false(bvector_t *p_bvector);
+extern void bvector_complement(bvector_t *p_dest_bvector, const bvector_t *p_src_bvector);
 
-extern void bvector_set_all_true(bvector_t *p_bvector);
+extern int bvector_first_false(bvector_t *p_bvector);
 
-extern int bvector_first_false_index(bvector_t *p_bvector);
+extern int bvector_first_true(bvector_t *p_bvector);
 
-extern int bvector_first_true_index(bvector_t *p_bvector);
+extern void bvector_print(FILE *f, const bvector_t *p_bvector);
 
-
-#endif /* ST_HEURISTIC_bvector_H */
+#endif /* ST_HEURISTIC_BVECTOR_H */

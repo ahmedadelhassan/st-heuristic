@@ -23,8 +23,6 @@ extern size_t edge_list_size(const edge_list_t *p_el);
 
 extern weight_t edge_list_total_weight(const edge_list_t *p_el);
 
-extern weight_t edge_list_total_weight(edge_list_t *p_el);
-
 extern edge_list_t *edge_list_insert_front(edge_list_t *p_el, edge_t e);
 
 extern edge_list_t *edge_list_sort_by_endpoints(edge_list_t *p_el);

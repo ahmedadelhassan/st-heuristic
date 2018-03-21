@@ -14,7 +14,7 @@ typedef struct {
     pool_t *p_pool;
 } population_t;
 
-extern population_t *population_alloc(size_t capacity);
+extern population_t *population_alloc(size_t capacity, size_t size);
 
 extern void population_release(population_t *p_population);
 

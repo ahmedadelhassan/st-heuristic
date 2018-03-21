@@ -18,7 +18,7 @@
  * @param capacity
  * @return
  */
-population_t *population_alloc(size_t capacity) {
+population_t *population_alloc(size_t capacity, size_t size) {
     /* allocate population */
     population_t *p_population = (population_t *) malloc(sizeof(population_t));
     if (!p_population) {
@@ -36,7 +36,7 @@ population_t *population_alloc(size_t capacity) {
     /* initialize population */
     p_population->n_individuals = 0;
     p_population->capacity = capacity;
-    p_population->p_pool = pool_alloc();
+    p_population->p_pool = pool_alloc(size);
 
     return (p_population);
 }
@@ -49,7 +49,7 @@ void population_release(population_t *p_population) {
     if (p_population) {
         /* cleanup all individuals */
         for (int i = 0; i < p_population->n_individuals; i++) {
-            individual_cleanup(p_population->p_individuals[i]);
+            individual_cleanup(p_population->p_pool, p_population->p_individuals[i]);
         }
         memset(p_population->p_individuals, 0x0, p_population->n_individuals * sizeof(individual_t));
         free(p_population->p_individuals);
@@ -150,7 +150,7 @@ int population_insert_individual(population_t *p_population, individual_t indivi
     if (p_population->n_individuals == p_population->capacity) {
         if (p_population->max_total_weight > individual.total_weight) {
             individual_t individual_max = population_extract_max_total_weight_individual(p_population);
-            individual_cleanup(individual_max);
+            individual_cleanup(p_population->p_pool, individual_max);
         } else {
             /* the new individual is not inserted */
             individual_cleanup(p_population->p_pool, individual);

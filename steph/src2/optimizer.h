@@ -3,10 +3,7 @@
 
 #include "configuration.h"
 #include "graph.h"
-#include "pool.h"
-#include "population.h"
-#include "weight.h"
 
-extern void optimizer_run(configuration_t configuration);
+extern void optimizer_run(graph_t *p_graph, configuration_t configuration);
 
 #endif /* ST_HEURISTIC_OPTIMIZER_H */
