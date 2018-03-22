@@ -170,6 +170,51 @@ int graph_union_find_union(graph_t *p_graph, node_t n1, node_t n2, int stage) {
     return (1);
 }
 
+static void graph_mk_plateau(graph_t *p_graph) {
+    /* make plateaux facility */
+    p_graph->plateaux.p_plateaux = (plateau_t *) calloc(p_graph->n_edges, sizeof(plateau_t));
+    if (!p_graph->plateaux.p_plateaux) {
+        fprintf(stderr, "memory allocation error: could not alloc \"p_graph->plateaux.p_plateaux\" array\n");
+        exit(EXIT_FAILURE);
+    }
+
+    /* read edges by increasing weight */
+    p_graph->plateaux.n_plateaux = 0;
+    weight_t current_weight = 0;
+    int len = 0;
+    for (int i = 0; i < n_edges; i++) {
+        edge_t e = p_graph->p_edges_sorted_by_weight[i];
+        if (current_weight == e.weight) {
+            len++;
+        } else {
+            if (len > 1) {
+                plateau_t plateau;
+                plateau.start_idx = i - len + 1;
+                plateau.len = len;
+                p_graph->plateaux.p_plateaux[p_graph->plateaux.n_plateaux] = plateau;
+                p_graph->plateaux.n_plateaux++;
+            }
+            len = 1;
+            current_weight = e.weight;
+        }
+    }
+
+    /* last plateau (if len > 1) */
+    if (len > 1) {
+        plateau_t plateau;
+        plateau.start_idx = n_edges - len;
+        plateau.len = len;
+        p_graph->plateaux.p_plateaux[p_graph->plateaux.n_plateaux] = plateau;
+        p_graph->plateaux.n_plateaux++;
+    }
+
+    /* resize plateau array */
+    p_graph->plateaux.p_plateaux = (plateau_t *) realloc(p_graph->plateaux.p_plateaux, n_plateaux * sizeof(plateau_t));
+    if (!p_graph->plateaux.p_plateaux) {
+        fprintf(stderr, "memory allocation error: could not realloc \"p_graph->plateaux.p_plateaux\" array for %zu plateaux\n", p_graph->plateaux.n_plateaux);
+        exit(EXIT_FAILURE);
+    }
+}
 
 /**
  *
@@ -276,46 +321,7 @@ graph_t *graph_read(FILE *stream) {
     /* order guarantee for edges_sorted_by_weight */
     qsort(p_graph->p_edges_sorted_by_weight, n_edges, sizeof(edge_t), edge_compar_by_weight);
 
-    /* make plateaux facility */
-    p_graph->plateaux.p_plateaux = (plateau_t *) calloc(n_edges, sizeof(plateau_t));
-    if (!p_graph->plateaux.p_plateaux) {
-        fprintf(stderr, "memory allocation error: could not alloc \"p_graph->plateaux.p_plateaux\" array\n");
-        exit(EXIT_FAILURE);
-    }
-
-    /* read edges by increasing weight */
-    int n_plateaux = 0;
-    weight_t current_weight = 0;
-    int len = 0;
-    for (int i = 0; i < n_edges; i++) {
-        edge_t e = p_graph->p_edges_sorted_by_weight[i];
-        if (current_weight == e.weight) {
-            len++;
-        } else {
-            if (len > 1) {
-                plateau_t plateau;
-                plateau.start_idx = i - len + 1;
-                plateau.len = len;
-                p_graph->plateaux.p_plateaux[n_plateaux] = plateau;
-                n_plateaux++;
-            }
-            len = 1;
-            current_weight = e.weight;
-        }
-    }
-    if (len > 1) {
-        plateau_t plateau;
-        plateau.start_idx = n_edges - len;
-        plateau.len = len;
-        p_graph->plateaux.p_plateaux[n_plateaux] = plateau;
-    }
-    p_graph->plateaux.p_plateaux = (plateau_t *) realloc(p_graph->plateaux.p_plateaux, n_plateaux * sizeof(plateau_t));
-    if (!p_graph->plateaux.p_plateaux) {
-        fprintf(stderr, "memory allocation error: could not realloc \"p_graph->plateaux.p_plateaux\" array\n");
-        exit(EXIT_FAILURE);
-    }
-    p_graph->plateaux.n_plateaux = n_plateaux;
-
+    graph_mk_plateau(p_graph);
 
     if ((fscanf(stream, "%s", buffer) != 1) || strcmp(buffer, "END")) {
         fprintf(stderr, "graph_read. parse error: could not read \"END\" token.\n");
