@@ -233,16 +233,6 @@ graph_t *graph_read(FILE *stream) {
         p_graph->p_node_counters[n] = 0;
     }
 
-    p_graph->p_node_is_terminal = (int *) calloc(n_nodes, sizeof(int));
-    if (!p_graph->p_node_is_terminal) {
-        fprintf(stderr, "graph_read. memory allocation error: could not alloc \"p_node_is_terminal\" array.\n");
-        exit(EXIT_FAILURE);
-    }
-    for (int n = 0; n < n_nodes; n++) {
-        /* init all nodes as non-terminal */
-        p_graph->p_node_is_terminal[n] = 0;
-    }
-
     /* edges init */
     p_graph->p_edges_sorted_by_weight = (edge_t *) calloc(n_edges, sizeof(edge_t));
     if (!p_graph->p_edges_sorted_by_weight) {
@@ -363,7 +353,6 @@ graph_t *graph_read(FILE *stream) {
             fprintf(stderr, "graph_read. parse error: could not read %d-th terminal node\n", i);
             exit(EXIT_FAILURE);
         }
-        p_graph->p_node_is_terminal[n] = 1;
         bvector_set(p_graph->p_terminal_bvector, n);
     }
     fprintf(stdout, "bvector_n_trues(p_graph->p_terminal_bvector)=%zu\n", bvector_n_trues(p_graph->p_terminal_bvector));
@@ -396,7 +385,6 @@ graph_t *graph_alloc() {
     p_graph->n_nodes = 0;
     p_graph->n_terminal_nodes = 0;
     p_graph->n_non_terminal_nodes = 0;
-    p_graph->p_node_is_terminal = NULL;
     p_graph->p_bvector = NULL;
     p_graph->p_terminal_bvector = NULL;
     p_graph->p_node_counters = NULL;
@@ -421,9 +409,6 @@ graph_t *graph_alloc() {
 void graph_release(graph_t *p_graph) {
     if (p_graph) {
         /* release nodes arrays */
-        memset(p_graph->p_node_is_terminal, 0X0, p_graph->n_nodes * sizeof(int));
-        free(p_graph->p_node_is_terminal);
-
         bvector_release(p_graph->p_bvector);
         bvector_release(p_graph->p_terminal_bvector);
 
@@ -462,11 +447,7 @@ void graph_release(graph_t *p_graph) {
  * @return
  */
 int graph_node_is_terminal(graph_t *p_graph, node_t n) {
-    assert(p_graph);
-    assert(p_graph->p_node_is_terminal);
-    assert(n < p_graph->n_nodes);
-
-    return (p_graph->p_node_is_terminal[n]);
+    return (bvector_get(p_graph->p_terminal_bvector, n));
 }
 
 /**
@@ -476,11 +457,7 @@ int graph_node_is_terminal(graph_t *p_graph, node_t n) {
  * @return
  */
 int graph_node_is_non_terminal(graph_t *p_graph, node_t n) {
-    assert(p_graph);
-    assert(p_graph->p_node_is_terminal);
-    assert(n < p_graph->n_nodes);
-
-    return (p_graph->p_node_is_terminal[n] == 0);
+    return (!graph_node_is_terminal(p_graph, n));
 }
 
 /**

@@ -50,8 +50,6 @@ int main(int argc, char *argv[]) {
     configuration_print(configuration);
 #endif /* ST_HEURISTIC_RELEASE */
 
-    fprintf(stdout, "bvector_n_trues(p_graph->p_terminal_bvector)=%zu\n", bvector_n_trues(p_graph->p_terminal_bvector));
-
     /* run */
     optimizer_run(p_graph, configuration);
 
