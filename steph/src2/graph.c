@@ -6,6 +6,7 @@
 #include "bvector.h"
 #include "graph.h"
 #include "edge_list.h"
+#include "probability.h"
 #include "random.h"
 #include "utils.h"
 
@@ -27,13 +28,6 @@ static void graph_union_find_alloc(graph_t *p_graph) {
         fprintf(stderr, "%s\n", "graph_union_find_alloc. memory allocation error: cannot allocate ranks' array.\n");
         exit(EXIT_FAILURE);
     }
-
-    p_graph->union_find.p_n_terminal_nodes = (size_t *) calloc(p_graph->n_nodes, sizeof(size_t));
-    if (!p_graph->union_find.p_n_terminal_nodes) {
-        fprintf(stderr, "%s\n",
-                "graph_union_find_alloc. memory allocation error: cannot allocate n_terminals' array.\n");
-        exit(EXIT_FAILURE);
-    }
 }
 
 /**
@@ -43,16 +37,11 @@ static void graph_union_find_alloc(graph_t *p_graph) {
  */
 void graph_union_find_init(graph_t *p_graph) {
     assert(p_graph);
-    assert(p_graph->n_nodes == 0 || p_graph->union_find.p_parents);
-    assert(p_graph->n_nodes == 0 || p_graph->union_find.p_ranks);
-    assert(p_graph->n_nodes == 0 || p_graph->union_find.p_n_terminal_nodes);
 
-    p_graph->union_find.count = p_graph->n_nodes;
-    p_graph->union_find.max_connected_terminal_nodes = 1;
+    p_graph->union_find.count = bvector_n_trues(p_graph->p_bvector);
     for (node_t n = 1; n < p_graph->n_nodes; n++) {
         p_graph->union_find.p_parents[n] = n;
         p_graph->union_find.p_ranks[n] = 0;
-        p_graph->union_find.p_n_terminal_nodes[n] = graph_node_is_terminal(p_graph, n) ? 1 : 0;
     }
 }
 
@@ -62,9 +51,6 @@ void graph_union_find_init(graph_t *p_graph) {
  */
 static void graph_union_find_release(graph_t *p_graph) {
     assert(p_graph);
-    assert(p_graph->n_nodes == 0 || p_graph->union_find.p_parents);
-    assert(p_graph->n_nodes == 0 || p_graph->union_find.p_ranks);
-    assert(p_graph->n_nodes == 0 || p_graph->union_find.p_n_terminal_nodes);
 
     memset(p_graph->union_find.p_parents, 0x0, p_graph->n_nodes * sizeof(node_t));
     free(p_graph->union_find.p_parents);
@@ -72,42 +58,25 @@ static void graph_union_find_release(graph_t *p_graph) {
     memset(p_graph->union_find.p_ranks, 0x0, p_graph->n_nodes * sizeof(size_t));
     free(p_graph->union_find.p_ranks);
 
-    memset(p_graph->union_find.p_n_terminal_nodes, 0x0, p_graph->n_nodes * sizeof(size_t));
-    free(p_graph->union_find.p_n_terminal_nodes);
-
     memset(ADDR(p_graph->union_find), 0x0, sizeof(union_find_t));
 }
 
 /**
- *
- * @param p_graph
- * @param n
- * @return
- */
-static node_t graph_union_find_find_recursive_compression(graph_t *p_graph, node_t n) {
-    assert(p_graph);
-    assert(p_graph->n_nodes == 0 || p_graph->union_find.p_parents);
-    assert(p_graph->n_nodes == 0 || p_graph->union_find.p_ranks);
-    assert(p_graph->n_nodes == 0 || p_graph->union_find.p_n_terminal_nodes);
-    assert(n < p_graph->n_nodes);
-
-    if (p_graph->union_find.p_parents[n] != p_graph->union_find.p_parents[p_graph->union_find.p_parents[n]]) {
-        p_graph->union_find.p_parents[n] = graph_union_find_find_recursive_compression(p_graph,
-                                                                                       p_graph->union_find.p_parents[n]);
-    }
-
-    return (p_graph->union_find.p_parents[n]);
-}
-
-
-/**
- *
+ * Find with recursive compression.
  * @param p_graph
  * @param n
  * @return
  */
 node_t graph_union_find_find(graph_t *p_graph, node_t n) {
-    return (graph_union_find_find_recursive_compression(p_graph, n));
+    assert(p_graph);
+    assert(n < p_graph->n_nodes);
+
+    node_t *p_parents = p_graph->union_find.p_parents;
+    if (p_parents[n] != p_parents[p_parents[n]]) {
+        p_parents[n] = graph_union_find_find(p_graph, p_parents[n]);
+    }
+
+    return (p_parents[n]);
 }
 
 /**
@@ -115,13 +84,10 @@ node_t graph_union_find_find(graph_t *p_graph, node_t n) {
  * @param p_graph
  * @return
  */
-size_t graph_union_find_get_max_connected_terminal_nodes(graph_t *p_graph) {
+int graph_union_find_done(graph_t *p_graph) {
     assert(p_graph);
-    assert(p_graph->n_nodes == 0 || p_graph->union_find.p_parents);
-    assert(p_graph->n_nodes == 0 || p_graph->union_find.p_ranks);
-    assert(p_graph->n_nodes == 0 || p_graph->union_find.p_n_terminal_nodes);
 
-    return (p_graph->union_find.max_connected_terminal_nodes);
+    return (p_graph->union_find.count == 1);
 }
 
 /**
@@ -129,13 +95,11 @@ size_t graph_union_find_get_max_connected_terminal_nodes(graph_t *p_graph) {
  * @param p_graph
  * @param n1
  * @param n2
+ * @param stage
  * @return
  */
-int graph_union_find_union(graph_t *p_graph, node_t n1, node_t n2) {
+int graph_union_find_union(graph_t *p_graph, node_t n1, node_t n2, int stage) {
     assert(p_graph);
-    assert(p_graph->n_nodes == 0 || p_graph->union_find.p_parents);
-    assert(p_graph->n_nodes == 0 || p_graph->union_find.p_ranks);
-    assert(p_graph->n_nodes == 0 || p_graph->union_find.p_n_terminal_nodes);
     assert(n1 < p_graph->n_nodes);
     assert(n2 < p_graph->n_nodes);
 
@@ -152,30 +116,53 @@ int graph_union_find_union(graph_t *p_graph, node_t n1, node_t n2) {
         return (0);
     }
 
+    if (stage > 0) {
+        int black_n1 = bvector_get(p_graph->p_bvector, n1);
+        int black_n2 = bvector_get(p_graph->p_bvector, n2);
+
+        if (!black_n1 && !black_n2) {
+            probability_t probability = probability_mk((stage - 1) * 0.2);
+            if (probability_rand() > probability) {
+                return (0);
+            } else {
+                p_graph->union_find.count += 2;
+            }
+        }
+
+        if (black_n1 && !black_n2) {
+            probability_t probability = probability_mk(stage * 0.25);
+            if (probability_rand() > probability) {
+                return (0);
+            } else {
+                p_graph->union_find.count += 1;
+            }
+        }
+
+        if (!black_n1 && black_n2) {
+            probability_t probability = probability_mk(stage * 0.25);
+            if (probability_rand() > probability) {
+                return (0);
+            } else {
+                p_graph->union_find.count += 1;
+            }
+        }
+    }
+
+    bvector_set(p_graph->p_bvector, n1);
+    bvector_set(p_graph->p_bvector, n2);
+
     /* merging two parts */
     p_graph->union_find.count--;
 
     if (p_graph->union_find.p_ranks[n1_root] == p_graph->union_find.p_ranks[n2_root]) {
         p_graph->union_find.p_parents[n2_root] = n1_root;
-        p_graph->union_find.p_n_terminal_nodes[n1_root] += p_graph->union_find.p_n_terminal_nodes[n2_root];
-        if (p_graph->union_find.p_n_terminal_nodes[n1_root] > p_graph->union_find.max_connected_terminal_nodes) {
-            p_graph->union_find.max_connected_terminal_nodes = p_graph->union_find.p_n_terminal_nodes[n1_root];
-        }
         p_graph->union_find.p_ranks[n1_root]++;
     } else {
         if (p_graph->union_find.p_ranks[n1_root] < p_graph->union_find.p_ranks[n2_root]) {
             p_graph->union_find.p_parents[n1_root] = n2_root;
-            p_graph->union_find.p_n_terminal_nodes[n2_root] += p_graph->union_find.p_n_terminal_nodes[n1_root];
-            if (p_graph->union_find.p_n_terminal_nodes[n2_root] > p_graph->union_find.max_connected_terminal_nodes) {
-                p_graph->union_find.max_connected_terminal_nodes = p_graph->union_find.p_n_terminal_nodes[n2_root];
-            }
         } else {
             /* p_graph->union_find.p_ranks[n1_root] > p_graph->union_find.p_ranks[n2_root] */
             p_graph->union_find.p_parents[n2_root] = n1_root;
-            p_graph->union_find.p_n_terminal_nodes[n1_root] += p_graph->union_find.p_n_terminal_nodes[n2_root];
-            if (p_graph->union_find.p_n_terminal_nodes[n1_root] > p_graph->union_find.max_connected_terminal_nodes) {
-                p_graph->union_find.max_connected_terminal_nodes = p_graph->union_find.p_n_terminal_nodes[n1_root];
-            }
         }
     }
 
@@ -234,6 +221,7 @@ graph_t *graph_read(FILE *stream) {
 
     /* nodes init */
     p_graph->p_bvector = bvector_alloc(n_nodes);
+    p_graph->p_terminal_bvector = bvector_alloc(n_nodes);
 
     p_graph->p_node_counters = (int *) calloc(n_nodes, sizeof(int));
     if (!p_graph->p_node_counters) {
@@ -256,12 +244,6 @@ graph_t *graph_read(FILE *stream) {
     }
 
     /* edges init */
-    p_graph->p_edges_sorted_by_endpoints = (edge_t *) calloc(n_edges, sizeof(edge_t));
-    if (!p_graph->p_edges_sorted_by_endpoints) {
-        fprintf(stderr, "memory allocation error: could not alloc \"edges_sorted_by_endpoints\" array\n");
-        exit(EXIT_FAILURE);
-    }
-
     p_graph->p_edges_sorted_by_weight = (edge_t *) calloc(n_edges, sizeof(edge_t));
     if (!p_graph->p_edges_sorted_by_weight) {
         fprintf(stderr, "memory allocation error: could not alloc \"edges_sorted_by_weight\" array\n");
@@ -279,7 +261,7 @@ graph_t *graph_read(FILE *stream) {
         node_t n1;
         node_t n2;
         weight_t weight;
-        if (fscanf(stream, "%*s %d %d %d", ADDR(n1), ADDR(n2), ADDR(weight)) != 3) {
+        if (fscanf(stream, "%*s %d %d %ld", ADDR(n1), ADDR(n2), ADDR(weight)) != 3) {
             fprintf(stderr, "graph_read. parse error: could not read %d-th edge\n.", i);
             exit(EXIT_FAILURE);
         }
@@ -294,18 +276,12 @@ graph_t *graph_read(FILE *stream) {
         assert(n1 < n_nodes);
         assert(n2 < n_nodes);
 
-        /* edges_sorted_by_endpoints */
-        p_graph->p_edges_sorted_by_endpoints[i] = e;
-
         /* edges_sorted_by_weight */
         p_graph->p_edges_sorted_by_weight[i] = e;
 
         /* edges_no_order_guaranteed */
         p_graph->p_edges_no_order_guaranteed[i] = e;
     }
-
-    /* order guarantee for edges_sorted_by_endpoints */
-    qsort(p_graph->p_edges_sorted_by_endpoints, n_edges, sizeof(edge_t), edge_compar_by_endpoints);
 
     /* order guarantee for edges_sorted_by_weight */
     qsort(p_graph->p_edges_sorted_by_weight, n_edges, sizeof(edge_t), edge_compar_by_weight);
@@ -388,10 +364,9 @@ graph_t *graph_read(FILE *stream) {
             exit(EXIT_FAILURE);
         }
         p_graph->p_node_is_terminal[n] = 1;
-        if (i == 0) {
-            p_graph->fst_terminal_node = n;
-        }
+        bvector_set(p_graph->p_terminal_bvector, n);
     }
+    fprintf(stdout, "bvector_n_trues(p_graph->p_terminal_bvector)=%zu\n", bvector_n_trues(p_graph->p_terminal_bvector));
 
     if ((fscanf(stream, "%s", buffer) != 1) || (strcmp(buffer, "END") != 0)) {
         fprintf(stderr, "graph_read. parse error: could not read \"END\" token.\n");
@@ -423,20 +398,18 @@ graph_t *graph_alloc() {
     p_graph->n_non_terminal_nodes = 0;
     p_graph->p_node_is_terminal = NULL;
     p_graph->p_bvector = NULL;
+    p_graph->p_terminal_bvector = NULL;
     p_graph->p_node_counters = NULL;
 
     /* edges init */
     p_graph->n_edges = 0;
-    p_graph->p_edges_sorted_by_endpoints = NULL;
     p_graph->p_edges_sorted_by_weight = NULL;
     p_graph->p_edges_no_order_guaranteed = NULL;
 
     /* union find init */
     p_graph->union_find.p_parents = NULL;
     p_graph->union_find.p_ranks = NULL;
-    p_graph->union_find.p_n_terminal_nodes = NULL;
     p_graph->union_find.count = 0;
-    p_graph->union_find.max_connected_terminal_nodes = 0;
 
     return (p_graph);
 }
@@ -452,17 +425,14 @@ void graph_release(graph_t *p_graph) {
         free(p_graph->p_node_is_terminal);
 
         bvector_release(p_graph->p_bvector);
+        bvector_release(p_graph->p_terminal_bvector);
 
         memset(p_graph->p_node_counters, 0x0, p_graph->n_nodes * sizeof(int));
         free(p_graph->p_node_counters);
 
         /* release edges arrays */
-        assert(p_graph->n_edges == 0 || p_graph->p_edges_sorted_by_endpoints);
         assert(p_graph->n_edges == 0 || p_graph->p_edges_sorted_by_weight);
         assert(p_graph->n_edges == 0 || p_graph->p_edges_no_order_guaranteed);
-
-        memset(p_graph->p_edges_sorted_by_endpoints, 0x0, p_graph->n_edges * sizeof(edge_t));
-        free(p_graph->p_edges_sorted_by_endpoints);
 
         memset(p_graph->p_edges_sorted_by_weight, 0x0, p_graph->n_edges * sizeof(edge_t));
         free(p_graph->p_edges_sorted_by_weight);
@@ -660,7 +630,7 @@ void graph_edges_random_shuffle_weight_respectful(graph_t *p_graph) {
  * @param p_graph
  * @param p_e
  * @return
- */
+ *//*
 edge_t *graph_search_edge_by_endpoints(graph_t *p_graph, edge_t e) {
     assert(p_graph);
 
@@ -674,11 +644,11 @@ edge_t *graph_search_edge_by_endpoints(graph_t *p_graph, edge_t e) {
         int middle = left + (right - left) / 2;
         edge_t middle_e = p_graph->p_edges_sorted_by_endpoints[middle];
 
-        /* if the edge is present at the middle itself */
+        *//* if the edge is present at the middle itself *//*
         if (middle_e.n1 == e.n1 && middle_e.n2 == e.n2) {
             return (ADDR(p_graph->p_edges_sorted_by_endpoints[middle]));
         } else {
-            /* if the edge is smaller than middle, then it can only be present in left sub-array */
+            *//* if the edge is smaller than middle, then it can only be present in left sub-array *//*
             if (e.n1 < middle_e.n1 || (e.n1 == middle_e.n1 && e.n2 < middle_e.n2)) {
                 right = middle - 1;
             } else {
@@ -687,9 +657,9 @@ edge_t *graph_search_edge_by_endpoints(graph_t *p_graph, edge_t e) {
         }
     }
 
-    /* not found */
+    *//* not found *//*
     return (NULL);
-}
+}*/
 
 /**
  *
@@ -704,7 +674,8 @@ edge_list_t *graph_mst(graph_t *p_graph) {
     graph_edges_random_shuffle_weight_respectful(p_graph);
 
     edge_list_t *p_mst_el = NULL;
-    for (int i = 0; i < p_graph->n_edges; i++) {
+    int i = 0;
+    do {
         edge_t e = p_graph->p_edges_sorted_by_weight[i];
         node_t n1 = e.n1;
         node_t n2 = e.n2;
@@ -715,11 +686,13 @@ edge_list_t *graph_mst(graph_t *p_graph) {
 
             if (root_n1 != root_n2) {
                 /* add an edge in the minimum spanning tree */
-                graph_union_find_union(p_graph, n1, n2);
+                graph_union_find_union(p_graph, n1, n2, 0);
                 p_mst_el = edge_list_insert_front(p_mst_el, e);
             }
         }
-    }
 
-    return(p_mst_el);
+        i++;
+    } while (i < p_graph->n_edges && !graph_union_find_done(p_graph));
+
+    return (p_mst_el);
 }

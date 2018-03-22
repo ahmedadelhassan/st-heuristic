@@ -12,6 +12,11 @@
 
 #define OFFSET(i)  (BYTE - 1 - (i % BYTE))
 
+/**
+ *
+ * @param size
+ * @return
+ */
 bvector_t *bvector_alloc(size_t size) {
     bvector_t *p_bvector = (bvector_t*) malloc(sizeof(bvector_t));
     if (!p_bvector) {
@@ -30,6 +35,10 @@ bvector_t *bvector_alloc(size_t size) {
     return (p_bvector);
 }
 
+/**
+ *
+ * @param p_bvector
+ */
 void bvector_release(bvector_t *p_bvector) {
     if (p_bvector) {
         if (p_bvector->p_uchars) {
@@ -40,6 +49,11 @@ void bvector_release(bvector_t *p_bvector) {
     }
 }
 
+/**
+ *
+ * @param p_dest_bvector
+ * @param p_src_bvector
+ */
 void bvector_copy(bvector_t *p_dest_bvector, const bvector_t *p_src_bvector) {
     assert(p_src_bvector);
     assert(p_dest_bvector);
@@ -50,6 +64,11 @@ void bvector_copy(bvector_t *p_dest_bvector, const bvector_t *p_src_bvector) {
     }
 }
 
+/**
+ *
+ * @param p_bvector
+ * @param i
+ */
 void bvector_set(bvector_t *p_bvector, int i) {
     if (!p_bvector) {
         return;
@@ -57,6 +76,10 @@ void bvector_set(bvector_t *p_bvector, int i) {
     p_bvector->p_uchars[NUCHARS(i)] |= (1u << OFFSET(i));
 }
 
+/**
+ *
+ * @param p_bvector
+ */
 void bvector_set_all(bvector_t *p_bvector) {
     if (!p_bvector) {
         return;
@@ -66,6 +89,11 @@ void bvector_set_all(bvector_t *p_bvector) {
     }
 }
 
+/**
+ *
+ * @param p_bvector
+ * @param i
+ */
 void bvector_unset(bvector_t *p_bvector, int i) {
     if (!p_bvector) {
         return;
@@ -73,6 +101,10 @@ void bvector_unset(bvector_t *p_bvector, int i) {
     p_bvector->p_uchars[NUCHARS(i)] &= ~(1u << OFFSET(i));
 }
 
+/**
+ *
+ * @param p_bvector
+ */
 void bvector_unset_all(bvector_t *p_bvector) {
     if (!p_bvector) {
        return;
@@ -82,20 +114,44 @@ void bvector_unset_all(bvector_t *p_bvector) {
     }
 }
 
+/**
+ *
+ * @param p_bvector
+ * @param i
+ * @return
+ */
 int bvector_get(const bvector_t *p_bvector, int i) {
     assert(p_bvector);
 
     return (p_bvector->p_uchars[NUCHARS(i)] & (1u << OFFSET(i)));
 }
 
+/**
+ *
+ * @param p_bvector
+ * @param i
+ * @return
+ */
 int bvector_is_false(const bvector_t *p_bvector, int i) {
     return (! bvector_get(p_bvector, i));
 }
 
+/**
+ *
+ * @param p_bvector
+ * @param i
+ * @return
+ */
 int bvector_is_true(const bvector_t *p_bvector, int i) {
     return (! bvector_get(p_bvector, i));
 }
 
+/**
+ *
+ * @param p_dest_bvector
+ * @param p_src_bvector1
+ * @param p_src_bvector2
+ */
 void bvector_or(bvector_t *p_dest_bvector, const bvector_t *p_src_bvector1, const bvector_t *p_src_bvector2) {
     assert(p_src_bvector1);
     assert(p_src_bvector2);
@@ -108,6 +164,12 @@ void bvector_or(bvector_t *p_dest_bvector, const bvector_t *p_src_bvector1, cons
     }
 }
 
+/**
+ *
+ * @param p_dest_bvector
+ * @param p_src_bvector1
+ * @param p_src_bvector2
+ */
 void bvector_and(bvector_t *p_dest_bvector, const bvector_t *p_src_bvector1, const bvector_t *p_src_bvector2) {
     assert(p_src_bvector1);
     assert(p_src_bvector2);
@@ -120,6 +182,11 @@ void bvector_and(bvector_t *p_dest_bvector, const bvector_t *p_src_bvector1, con
     }
 }
 
+/**
+ *
+ * @param p_dest_bvector
+ * @param p_src_bvector
+ */
 void bvector_complement(bvector_t *p_dest_bvector, const bvector_t *p_src_bvector) {
     assert(p_src_bvector);
     assert(p_dest_bvector);
@@ -130,56 +197,68 @@ void bvector_complement(bvector_t *p_dest_bvector, const bvector_t *p_src_bvecto
     }
 }
 
-int bvector_first_false(bvector_t *p_bvector) {
+/**
+ *
+ * @param p_bvector
+ * @return
+ */
+size_t bvector_n_falses(const bvector_t *p_bvector) {
     assert(p_bvector);
 
-    int i = 0;
-    while (i < p_bvector->n_uchars) {
-        if (p_bvector->p_uchars[i] != FULL) {
-            int j = 0;
-            while (j < BYTE) {
-                if (~(p_bvector->p_uchars[i]) & (1u << (BYTE - 1 - j))) {
-                    return (j);
-                }
-                j++;
-            }
-        }
-        i++;
-    }
-    return(-1);
+    return (p_bvector->n_bits - bvector_n_trues(p_bvector));
 }
 
-int bvector_first_true(bvector_t *p_bvector) {
+/**
+ *
+ * @param p_bvector
+ * @return
+ */
+size_t bvector_n_trues(const bvector_t *p_bvector) {
     assert(p_bvector);
 
-    int i = 0;
-    while (i < p_bvector->n_uchars) {
-        if (p_bvector->p_uchars[i]) {
-            int j = 0;
-            while (j < BYTE) {
-                if (p_bvector->p_uchars[i] & (1u << (BYTE - 1 - j))) {
-                    return (j);
+    size_t count = 0;
+    for (int i = 0; i < p_bvector->n_uchars; i++) {
+        if (i < p_bvector->n_uchars - 1) {
+            if (p_bvector->p_uchars[i]) {
+                for (int j = 8 * sizeof(unsigned char) - 1; j >= 0; j--) {
+                    if (p_bvector->p_uchars[i] & (1u << j)) {
+                        count++;
+                    }
                 }
-                j++;
             }
         }
-        i++;
+        else {
+            for (int j = 8 - 1; j > OFFSET(p_bvector->n_bits); j--) {
+                if (p_bvector->p_uchars[i] & (1u << j)) {
+                    count++;
+                }
+            }
+        }
     }
-    return(-1);
+    return(count);
 }
 
+/**
+ *
+ * @param f
+ * @param x
+ */
 static void bvector_print_uchar(FILE *f, unsigned char x)
 {
-    for(int i = 8 * sizeof(unsigned char) - 1; i >= 0; i--) {
+    for (int i = 8 - 1; i >= 0; i--) {
         if (x & (1u << i)) {
             fputc((int) '1', f);
         } else {
             fputc((int) '0', f);
         }
-
     }
 }
 
+/**
+ *
+ * @param f
+ * @param p_bvector
+ */
 void bvector_print(FILE *f, const bvector_t *p_bvector) {
     if (!p_bvector) {
         return;
@@ -187,8 +266,18 @@ void bvector_print(FILE *f, const bvector_t *p_bvector) {
 
     fprintf(f, "n_uchars=%lu n_bits=%lu p_uchars=", p_bvector->n_uchars, p_bvector->n_bits);
     for (int i = 0; i < p_bvector->n_uchars; i++) {
-        bvector_print_uchar(f, p_bvector->p_uchars[i]);
-        fputc(' ', f);
+        if (i < p_bvector->n_uchars - 1) {
+            bvector_print_uchar(f, p_bvector->p_uchars[i]);
+            fputc(' ', f);
+        } else {
+            for (int j = 8 - 1; j > OFFSET(p_bvector->n_bits); j--) {
+                if (p_bvector->p_uchars[i] & (1u << j)) {
+                    fputc((int) '1', f);
+                } else {
+                    fputc((int) '0', f);
+                }
+            }
+        }
     }
     fputc('\n', f);
 }

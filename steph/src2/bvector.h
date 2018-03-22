@@ -32,9 +32,13 @@ extern void bvector_and(bvector_t *p_dest_bvector, const bvector_t *p_bvector1, 
 
 extern void bvector_complement(bvector_t *p_dest_bvector, const bvector_t *p_src_bvector);
 
-extern int bvector_first_false(bvector_t *p_bvector);
+//extern int bvector_first_false(const bvector_t *p_bvector);
+//
+//extern int bvector_first_true(const bvector_t *p_bvector);
 
-extern int bvector_first_true(bvector_t *p_bvector);
+extern size_t bvector_n_falses(const bvector_t *p_bvector);
+
+extern size_t bvector_n_trues(const bvector_t *p_bvector);
 
 extern void bvector_print(FILE *f, const bvector_t *p_bvector);
 

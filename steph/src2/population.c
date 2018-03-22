@@ -345,7 +345,7 @@ void population_statistics_fprint(FILE *f, const population_t *p_population) {
         } else {
             fprintf(f, "\t");
         }
-        fprintf(f, "%u", p_weight[i]);
+        fprintf(f, "%lu", p_weight[i]);
     }
     fprintf(f, "\n\n");
 

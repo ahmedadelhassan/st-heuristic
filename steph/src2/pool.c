@@ -107,7 +107,6 @@ bvector_t *pool_get(pool_t *p_pool) {
 void pool_return(pool_t *p_pool, bvector_t *p_bvector) {
     assert(p_pool);
     assert(p_bvector);
-    assert(p_pool->p_queue);
 
     bvector_unset_all(p_bvector);
 

@@ -76,10 +76,10 @@ void statistics_fprint(FILE *f, statistics_t statistics) {
     fprintf(f, ", ");
     fprintf(f, "std dev=%f", statistics.std_deviation);
     fprintf(f, "\n");
-    fprintf(f, "min=%u", statistics.min);
+    fprintf(f, "min=%lu", statistics.min);
     fprintf(f, ", ");
-    fprintf(f, "max=%u", statistics.max);
+    fprintf(f, "max=%lu", statistics.max);
     fprintf(f, ", ");
-    fprintf(f, "sum=%u", statistics.sum);
+    fprintf(f, "sum=%lu", statistics.sum);
     fprintf(f, "\n");
 }
