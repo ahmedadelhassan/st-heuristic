@@ -18,7 +18,7 @@
  * @param capacity
  * @return
  */
-population_t *population_alloc(size_t capacity, size_t size) {
+population_t *population_alloc(pool_t *p_pool, size_t capacity) {
     /* allocate population */
     population_t *p_population = (population_t *) malloc(sizeof(population_t));
     if (!p_population) {
@@ -36,7 +36,6 @@ population_t *population_alloc(size_t capacity, size_t size) {
     /* initialize population */
     p_population->n_individuals = 0;
     p_population->capacity = capacity;
-    p_population->p_pool = pool_alloc(size);
 
     return (p_population);
 }
@@ -45,17 +44,14 @@ population_t *population_alloc(size_t capacity, size_t size) {
  *
  * @param p_population
  */
-void population_release(population_t *p_population) {
+void population_release(pool_t *p_pool, population_t *p_population) {
     if (p_population) {
         /* cleanup all individuals */
         for (int i = 0; i < p_population->n_individuals; i++) {
-            individual_cleanup(p_population->p_pool, p_population->p_individuals[i]);
+            individual_cleanup(p_pool, p_population->p_individuals[i]);
         }
         memset(p_population->p_individuals, 0x0, p_population->n_individuals * sizeof(individual_t));
         free(p_population->p_individuals);
-
-        /* pool */
-        pool_release(p_population->p_pool);
 
         /* release the population itself */
         memset(p_population, 0x0, sizeof(population_t));
@@ -144,16 +140,16 @@ static void population_bubble_up(population_t *p_population, int i) {
  * @param individual
  * @return
  */
-int population_insert_individual(population_t *p_population, individual_t individual) {
+int population_insert_individual(pool_t *p_pool, population_t *p_population, individual_t individual) {
     assert(p_population);
 
     if (p_population->n_individuals == p_population->capacity) {
         if (p_population->max_total_weight > individual.total_weight) {
             individual_t individual_max = population_extract_max_total_weight_individual(p_population);
-            individual_cleanup(p_population->p_pool, individual_max);
+            individual_cleanup(p_pool, individual_max);
         } else {
             /* the new individual is not inserted */
-            individual_cleanup(p_population->p_pool, individual);
+            individual_cleanup(p_pool, individual);
             return (0);
         }
     }

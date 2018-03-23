@@ -35,6 +35,20 @@ void individual_cleanup(pool_t *p_pool, individual_t individual) {
 
 /**
  *
+ * @param p_pool
+ * @param individual
+ * @return
+ */
+individual_t individual_copy(pool_t *p_pool, individual_t individual) {
+    individual_t new_individual = individual_init(p_pool);
+    bvector_copy(new_individual.p_bvector, individual.p_bvector);
+    new_individual.total_weight = individual.total_weight;
+    return(new_individual);
+}
+
+
+/**
+ *
  * @param p_graph A pointer to a graph
  * @param p_init_el A list of edges of \a p_graph
  * @return a list of edges that induce a connected component including all terminal nodes.
@@ -267,42 +281,23 @@ individual_crossing(pool_t *p_pool, graph_t *p_graph, individual_t individual1, 
  * @param probability
  * @return
  */
-individual_t individual_drop_out(pool_t *p_pool, graph_t *p_graph, individual_t individual, double probability) {
+individual_t individual_alter(pool_t *p_pool, graph_t *p_graph, individual_t individual, double probability) {
     assert(p_graph);
     assert(p_pool);
 
     bvector_t *p_bvector = pool_get(p_pool);
 
     for (int i = 1; i < p_graph->n_nodes; i++) {
-        if (bvector_get(individual.p_bvector, i) && probability_rand() > probability) {
+        if (bvector_get(individual.p_bvector, i)) {
             bvector_set(p_bvector, i);
         }
-    }
 
-    bvector_copy(p_graph->p_bvector, p_bvector);
-    pool_return(p_pool, p_bvector);
-    individual_t new_individual = individual_mk(p_pool, p_graph);
-
-    return (new_individual);
-}
-
-/**
- *
- * @param p_pool
- * @param p_graph
- * @param individual
- * @param probability
- * @return
- */
-individual_t individual_insert(pool_t *p_pool, graph_t *p_graph, individual_t individual, double probability) {
-    assert(p_pool);
-    assert(p_graph);
-
-    bvector_t *p_bvector = pool_get(p_pool);
-
-    for (int i = 1; i < p_graph->n_nodes; i++) {
-        if (!bvector_get(individual.p_bvector, i) && probability_rand() <= probability) {
-            bvector_set(p_bvector, i);
+        if (probability_rand() <= probability) {
+            if (bvector_get(individual.p_bvector, i)) {
+                bvector_unset(p_bvector, i);
+            } else {
+                bvector_set(p_bvector, i);
+            }
         }
     }
 

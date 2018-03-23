@@ -22,37 +22,32 @@ int main(int argc, char *argv[]) {
     configuration_t configuration;
 
     /* general */
-    configuration.n_individuals = 30;
-    configuration.n_epochs = -1;
+    configuration.n_individuals = 50;
+    configuration.n_steps = -1;
 
     /* union */
-    configuration.configuration_union.event_probability = 0.1;
+    configuration.configuration_union.event_probability = 0.05;
 
     /* intersection */
-    configuration.configuration_intersection.event_probability = 0.40;
+    configuration.configuration_intersection.event_probability = 0.50;
 
     /* intersection */
-    configuration.configuration_crossing.event_probability = 0.30;
+    configuration.configuration_crossing.event_probability = 0.20;
 
-    /* drop out */
-    configuration.configuration_drop_out.event_probability = 0.1;
-    configuration.configuration_drop_out.drop_out_probability = 0.05;
-
-    /* insert */
-    configuration.configuration_insert.event_probability = 0.1;
-    configuration.configuration_insert.insert_probability = 0.025;
+    /* alter */
+    configuration.configuration_alter.event_probability = 0.10;
+    configuration.configuration_alter.alter_probability = 0.10;
 
     /* renew */
-    configuration.configuration_renew.tick = 500;
+    configuration.configuration_renew.event_probability = 0.10;
+    configuration.configuration_renew.tick = 1000;
     configuration.configuration_renew.probability = 0.25;
 
 #ifndef ST_HEURISTIC_RELEASE
     configuration_print(configuration);
 #endif /* ST_HEURISTIC_RELEASE */
 
-    fprintf(stdout, "bvector_n_trues(p_graph->p_terminal_bvector)=%zu\n", bvector_n_trues(p_graph->p_terminal_bvector));
-
-    /* run */
+    /* here we go */
     optimizer_run(p_graph, configuration);
 
     return (0);

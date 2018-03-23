@@ -19,27 +19,22 @@ typedef struct {
 
 typedef struct {
     probability_t event_probability;
-    probability_t drop_out_probability;
-} configuration_drop_out_t;
+    probability_t alter_probability;
+} configuration_alter_t;
 
 typedef struct {
     probability_t event_probability;
-    probability_t insert_probability;
-} configuration_insert_t;
-
-typedef struct {
     double probability;
     int tick;
 } configuration_renew_t;
 
 typedef struct {
     size_t n_individuals;
-    size_t n_epochs;
+    size_t n_steps;
     configuration_union_t configuration_union;
     configuration_intersection_t configuration_intersection;
     configuration_crossing_t configuration_crossing;
-    configuration_drop_out_t configuration_drop_out;
-    configuration_insert_t configuration_insert;
+    configuration_alter_t configuration_alter;
     configuration_renew_t configuration_renew;
 } configuration_t;
 

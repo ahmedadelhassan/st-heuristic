@@ -121,7 +121,7 @@ int graph_union_find_union(graph_t *p_graph, node_t n1, node_t n2, int stage) {
         int black_n2 = bvector_get(p_graph->p_bvector, n2);
 
         if (!black_n1 && !black_n2) {
-            probability_t probability = probability_mk((stage - 1) * 0.01);
+            probability_t probability = probability_mk((stage - 1) * 0.2);
             if (probability_rand() <= probability) {
                 p_graph->union_find.count += 2;
             } else {
@@ -130,7 +130,7 @@ int graph_union_find_union(graph_t *p_graph, node_t n1, node_t n2, int stage) {
         }
 
         if (black_n1 && !black_n2) {
-            probability_t probability = probability_mk(stage * 0.1);
+            probability_t probability = probability_mk(stage * 0.25);
             if (probability_rand() <= probability) {
                 p_graph->union_find.count += 1;
             } else {
@@ -139,7 +139,7 @@ int graph_union_find_union(graph_t *p_graph, node_t n1, node_t n2, int stage) {
         }
 
         if (!black_n1 && black_n2) {
-            probability_t probability = probability_mk(stage * 0.1);
+            probability_t probability = probability_mk(stage * 0.25);
             if (probability_rand() <= probability) {
                 p_graph->union_find.count += 1;
             } else {
@@ -170,6 +170,10 @@ int graph_union_find_union(graph_t *p_graph, node_t n1, node_t n2, int stage) {
     return (1);
 }
 
+/**
+ *
+ * @param p_graph
+ */
 static void graph_mk_plateau(graph_t *p_graph) {
     /* make plateaux facility */
     p_graph->plateaux.p_plateaux = (plateau_t *) calloc(p_graph->n_edges, sizeof(plateau_t));
@@ -182,7 +186,7 @@ static void graph_mk_plateau(graph_t *p_graph) {
     p_graph->plateaux.n_plateaux = 0;
     weight_t current_weight = 0;
     int len = 0;
-    for (int i = 0; i < n_edges; i++) {
+    for (int i = 0; i < p_graph->n_edges; i++) {
         edge_t e = p_graph->p_edges_sorted_by_weight[i];
         if (current_weight == e.weight) {
             len++;
@@ -202,14 +206,14 @@ static void graph_mk_plateau(graph_t *p_graph) {
     /* last plateau (if len > 1) */
     if (len > 1) {
         plateau_t plateau;
-        plateau.start_idx = n_edges - len;
+        plateau.start_idx = p_graph->n_edges - len;
         plateau.len = len;
         p_graph->plateaux.p_plateaux[p_graph->plateaux.n_plateaux] = plateau;
         p_graph->plateaux.n_plateaux++;
     }
 
     /* resize plateau array */
-    p_graph->plateaux.p_plateaux = (plateau_t *) realloc(p_graph->plateaux.p_plateaux, n_plateaux * sizeof(plateau_t));
+    p_graph->plateaux.p_plateaux = (plateau_t *) realloc(p_graph->plateaux.p_plateaux, p_graph->plateaux.n_plateaux * sizeof(plateau_t));
     if (!p_graph->plateaux.p_plateaux) {
         fprintf(stderr, "memory allocation error: could not realloc \"p_graph->plateaux.p_plateaux\" array for %zu plateaux\n", p_graph->plateaux.n_plateaux);
         exit(EXIT_FAILURE);
@@ -361,7 +365,6 @@ graph_t *graph_read(FILE *stream) {
         }
         bvector_set(p_graph->p_terminal_bvector, n);
     }
-    fprintf(stdout, "bvector_n_trues(p_graph->p_terminal_bvector)=%zu\n", bvector_n_trues(p_graph->p_terminal_bvector));
 
     if ((fscanf(stream, "%s", buffer) != 1) || (strcmp(buffer, "END") != 0)) {
         fprintf(stderr, "graph_read. parse error: could not read \"END\" token.\n");
