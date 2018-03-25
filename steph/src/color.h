@@ -1,11 +1,11 @@
 #ifndef ST_HEURISTIC_COLOR_H
 #define ST_HEURISTIC_COLOR_H
 
-typedef int color_t;
+typedef enum {
+    WHITE, /**< WHITE to denote not selected element */
+    BLACK  /**< BLACK to denote selected elements    */
+} color_t;
 
-/* WHITE, GREY, BLACK colors */
-#define WHITE ((color_t) 0)
-#define GREY  ((color_t) 1)
-#define BLACK ((color_t) 2)
+extern color_t color_switch(color_t c);
 
 #endif /* ST_HEURISTIC_COLOR_H */
